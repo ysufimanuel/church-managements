@@ -555,11 +555,11 @@ function setLanguage(lang) {
     currentLanguage = lang;
     localStorage.setItem('cmsLanguage', lang);
     applyLanguage();
-
+    
     // Update active state on language buttons
     document.querySelectorAll('.lang-btn, .lang-btn-small').forEach(btn => {
         btn.classList.remove('active');
-        if (btn.textContent.includes(lang.toUpperCase()) ||
+        if (btn.textContent.includes(lang.toUpperCase()) || 
             (lang === 'id' && btn.textContent.includes('Indonesia')) ||
             (lang === 'en' && btn.textContent.includes('English'))) {
             btn.classList.add('active');
@@ -583,7 +583,7 @@ function applyLanguage() {
             }
         }
     });
-
+    
     // Update placeholders
     document.querySelectorAll('[data-lang-placeholder]').forEach(el => {
         const key = el.getAttribute('data-lang-placeholder');
@@ -718,7 +718,7 @@ function initData() {
         localStorage.removeItem('cmsV3Initialized');
         localStorage.setItem('cmsV5Initialized', 'true');
     }
-
+    
     const stored = localStorage.getItem('cmsV2Data');
     if (!stored) {
         localStorage.setItem('cmsV2Data', JSON.stringify(defaultData));
@@ -726,7 +726,7 @@ function initData() {
         // Merge dengan default users untuk memastikan user default selalu ada
         const existing = JSON.parse(stored);
         let updated = false;
-
+        
         defaultData.users.forEach(defaultUser => {
             const exists = existing.users.find(u => u.username === defaultUser.username);
             if (!exists) {
@@ -734,7 +734,7 @@ function initData() {
                 updated = true;
             }
         });
-
+        
         // Ensure groups have showPhone property
         if (existing.groups) {
             existing.groups.forEach(g => {
@@ -744,7 +744,7 @@ function initData() {
                 }
             });
         }
-
+        
         // Ensure events have status property
         if (existing.events) {
             existing.events.forEach(e => {
@@ -754,7 +754,7 @@ function initData() {
                 }
             });
         }
-
+        
         // Ensure volunteers have external data properties
         if (existing.volunteers) {
             existing.volunteers.forEach(v => {
@@ -766,7 +766,7 @@ function initData() {
                 }
             });
         }
-
+        
         // Ensure assignments have new properties
         if (existing.assignments) {
             existing.assignments.forEach(a => {
@@ -778,7 +778,7 @@ function initData() {
                 }
             });
         }
-
+        
         // Ensure Finance data exists
         if (!existing.finance) {
             existing.finance = { saldoAwal: 5000000, saldoAkhir: 0 };
@@ -804,7 +804,7 @@ function initData() {
             existing.donatur = defaultData.donatur;
             updated = true;
         }
-
+        
         if (updated) {
             localStorage.setItem('cmsV2Data', JSON.stringify(existing));
         }
@@ -822,7 +822,7 @@ let dataListeners = [];
 // Initialize data cache from Firestore
 async function initDataCache() {
     console.log('[APP] initDataCache START');
-
+    
     // Wait for Firebase to initialize
     let attempts = 0;
     while (!isFirebaseReady() && attempts < 10) {
@@ -830,29 +830,29 @@ async function initDataCache() {
         await new Promise(resolve => setTimeout(resolve, 200));
         attempts++;
     }
-
+    
     if (!isFirebaseReady()) {
         console.log('[APP] Firebase not ready after waiting, using localStorage fallback');
         showToast('Mode offline aktif - data tersimpan lokal', 'warning');
         return initDataLocal();
     }
-
+    
     console.log('[APP] Firebase ready, initializing...');
     showLoading(true);
-
+    
     try {
         // Initialize default data in Firestore if needed
         console.log('[APP] Initializing Firestore data...');
         await window.initializeFirestoreData();
-
+        
         // Migrate from localStorage if exists
         console.log('[APP] Checking localStorage migration...');
         await window.migrateFromLocalStorage();
-
+        
         // Load all data from Firestore
         console.log('[APP] Loading data from Firestore...');
         dataCache = await loadAllDataFromFirestore();
-
+        
         if (dataCache) {
             console.log('[APP] Data loaded successfully from Firestore');
             showToast('Terhubung ke database', 'success');
@@ -860,7 +860,7 @@ async function initDataCache() {
             console.log('[APP] Failed to load from Firestore, using localStorage');
             dataCache = initDataLocal();
         }
-
+        
         showLoading(false);
         return dataCache;
     } catch (error) {
@@ -875,15 +875,15 @@ async function initDataCache() {
 // Load all data from Firestore
 async function loadAllDataFromFirestore() {
     console.log('[APP] loadAllDataFromFirestore START');
-
+    
     if (!isFirebaseReady()) {
         console.log('[APP] Firebase not ready, returning null');
         return null;
     }
-
+    
     try {
         console.log('[APP] Fetching all collections...');
-
+        
         const [
             members,
             families,
@@ -919,9 +919,9 @@ async function loadAllDataFromFirestore() {
             window.getDocumentById(window.DB_COLLECTIONS.FINANCE_CONFIG, 'config'),
             window.getAllDocuments(window.DB_COLLECTIONS.APPROVAL_HISTORY)
         ]);
-
+        
         console.log('[APP] All collections fetched successfully');
-
+        
         return {
             members: members || [],
             families: families || [],
@@ -967,7 +967,7 @@ function initDataLocal() {
         localStorage.removeItem('cmsV5Initialized');
         localStorage.setItem('cmsV6Initialized', 'true');
     }
-
+    
     const stored = localStorage.getItem('cmsV2Data');
     if (!stored) {
         localStorage.setItem('cmsV2Data', JSON.stringify(defaultData));
@@ -975,7 +975,7 @@ function initDataLocal() {
         // Merge dengan default users untuk memastikan user default selalu ada
         const existing = JSON.parse(stored);
         let updated = false;
-
+        
         defaultData.users.forEach(defaultUser => {
             const exists = existing.users.find(u => u.username === defaultUser.username);
             if (!exists) {
@@ -983,7 +983,7 @@ function initDataLocal() {
                 updated = true;
             }
         });
-
+        
         if (updated) {
             localStorage.setItem('cmsV2Data', JSON.stringify(existing));
         }
@@ -996,12 +996,12 @@ function initDataLocal() {
 async function saveData(data) {
     // Update cache
     dataCache = data;
-
+    
     if (isFirebaseReady()) {
         // Firestore saves are handled per-collection in specific functions
         return true;
     }
-
+    
     // Fallback to localStorage
     try {
         localStorage.setItem('cmsV2Data', JSON.stringify(data));
@@ -1018,7 +1018,7 @@ function getData() {
     if (dataCache) {
         return dataCache;
     }
-
+    
     // Fallback to localStorage
     try {
         const data = localStorage.getItem('cmsV2Data');
@@ -1048,13 +1048,13 @@ function backupData() {
         showToast(currentLanguage === 'id' ? 'Tidak ada data untuk backup' : 'No data to backup', 'warning');
         return;
     }
-
+    
     const backup = {
         version: 'v5',
         timestamp: new Date().toISOString(),
         data: data
     };
-
+    
     const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -1064,24 +1064,24 @@ function backupData() {
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
-
+    
     showToast(currentLanguage === 'id' ? 'Backup berhasil diunduh' : 'Backup downloaded successfully', 'success');
 }
 
 // Restore data from file
 function restoreData(file) {
     const reader = new FileReader();
-    reader.onload = function (e) {
+    reader.onload = function(e) {
         try {
             const backup = JSON.parse(e.target.result);
             if (!backup.data) {
                 showToast(currentLanguage === 'id' ? 'File backup tidak valid' : 'Invalid backup file', 'error');
                 return;
             }
-
+            
             showConfirm(
-                currentLanguage === 'id'
-                    ? 'Data saat ini akan diganti dengan data backup. Lanjutkan?'
+                currentLanguage === 'id' 
+                    ? 'Data saat ini akan diganti dengan data backup. Lanjutkan?' 
                     : 'Current data will be replaced with backup data. Continue?',
                 () => {
                     saveData(backup.data);
@@ -1099,8 +1099,8 @@ function restoreData(file) {
 // Clear all data
 function clearAllData() {
     showConfirm(
-        currentLanguage === 'id'
-            ? 'PERINGATAN: Semua data akan dihapus permanen! Lanjutkan?'
+        currentLanguage === 'id' 
+            ? 'PERINGATAN: Semua data akan dihapus permanen! Lanjutkan?' 
             : 'WARNING: All data will be permanently deleted! Continue?',
         () => {
             localStorage.removeItem('cmsV2Data');
@@ -1163,45 +1163,45 @@ function canApprove() {
 // AUTHENTICATION
 // ========================================
 
-async function login(usernameOrEmail, password) {
-    if (isAuthReady()) {
-        const user = await window.loginWithFirebase(usernameOrEmail, password);
+async function login(username, password) {
+    // Try Firebase login first
+    if (isFirebaseReady()) {
+        const user = await window.loginWithFirebase(username, password);
         if (user) {
             currentUser = user;
             sessionStorage.setItem('currentUser', JSON.stringify(user));
+            
+            // Update last login in Firestore
+            await window.updateDocument(window.DB_COLLECTIONS.USERS, user.id, {
+                lastLogin: new Date().toISOString()
+            });
+            
+            // Refresh data cache after login
+            await refreshDataCache();
+            
             return { success: true, user };
         }
-        if (isFirebaseReady()) {
-            return {
-                success: false,
-                message: currentLanguage === 'id'
-                    ? 'Email/username atau password salah!'
-                    : 'Email/username or password is incorrect!'
-            };
-        }
     }
-
-    // Fallback localStorage (offline total)
+    
+    // Fallback to localStorage
     const data = getData();
-    const user = data.users.find(u =>
-        (u.username === usernameOrEmail || u.email === usernameOrEmail) &&
-        u.password === password
-    );
+    const user = data.users.find(u => u.username === username && u.password === password);
+    
     if (user) {
         currentUser = user;
         sessionStorage.setItem('currentUser', JSON.stringify(user));
+        
+        // Update last login
+        const index = data.users.findIndex(u => u.id === user.id);
+        data.users[index].lastLogin = new Date().toISOString();
+        saveData(data);
+        
         return { success: true, user };
     }
-    return {
-        success: false,
-        message: currentLanguage === 'id'
-            ? 'Username atau password salah!'
-            : 'Username or password is incorrect!'
-    };
+    return { success: false, message: getLang(currentLanguage === 'id' ? 'Username atau password salah!' : 'Username or password is incorrect!') };
 }
 
-async function logout() {
-    if (isAuthReady()) await window.logoutFromFirebase();
+function logout() {
     currentUser = null;
     sessionStorage.removeItem('currentUser');
     document.getElementById('main-app').classList.add('hidden');
@@ -1211,93 +1211,48 @@ async function logout() {
 }
 
 function checkSession() {
-    if (isAuthReady()) {
-        let sessionInitialized = false; // flag: cegah _showMainApp dipanggil lebih dari sekali
-
-        window.firebaseOnAuthStateChanged(window.auth, async (firebaseUser) => {
-            if (firebaseUser) {
-                // Kalau session sudah diinisialisasi, skip — jangan reload app
-                if (sessionInitialized) {
-                    console.log('[AUTH] Auth state refreshed, session already active — skip');
-                    return;
-                }
-
-                const profile = await window.getUserProfile(firebaseUser.uid);
-                if (profile) {
-                    window.setActiveChurch(profile.churchId);
-
-                    const { password: _p, ...safe } = profile;
-                    currentUser = safe;
-                    sessionStorage.setItem('currentUser', JSON.stringify(safe));
-
-                    await refreshDataCache();
-
-                    sessionInitialized = true; // set flag SEBELUM showMainApp
-                    _showMainApp(safe);
-                }
-            } else {
-                // User benar-benar logout
-                if (sessionInitialized) {
-                    // Hanya redirect ke login kalau session sebelumnya aktif
-                    sessionInitialized = false;
-                    sessionStorage.removeItem('currentUser');
-                    currentUser = null;
-                    document.getElementById('main-app').classList.add('hidden');
-                    document.getElementById('login-page').classList.remove('hidden');
-                }
-            }
-        });
-        return;
+    const user = sessionStorage.getItem('currentUser');
+    if (user) {
+        currentUser = JSON.parse(user);
+        document.getElementById('login-page').classList.add('hidden');
+        document.getElementById('main-app').classList.remove('hidden');
+        document.getElementById('user-name').textContent = currentUser.nama;
+        document.getElementById('user-role').textContent = getRoleLabel(currentUser.role);
+        document.getElementById('welcome-name').textContent = currentUser.nama;
+        
+        // Apply UI restrictions for view-only users
+        applyViewOnlyRestrictions();
+        
+        initDashboard();
+        
+        // Load notifications
+        loadNotifications();
     }
-
-    // Fallback sessionStorage
-    const stored = sessionStorage.getItem('currentUser');
-    if (stored) {
-        currentUser = JSON.parse(stored);
-        _showMainApp(currentUser);
-    }
-}
-
-// ====================================
-// 4. HELPER — tampilkan main app
-// Fungsi baru.
-// ====================================
-function _showMainApp(user) {
-    document.getElementById('login-page').classList.add('hidden');
-    document.getElementById('main-app').classList.remove('hidden');
-    document.getElementById('user-name').textContent = user.nama;
-    document.getElementById('user-role').textContent = getRoleLabel(user.role);
-    document.getElementById('welcome-name').textContent = user.nama;
-    applyViewOnlyRestrictions();
-    initDashboard();
-    loadNotifications();
-    // Check birthday notifications after data is loaded
-    setTimeout(() => checkBirthdayNotifications(), 1500);
 }
 
 function applyViewOnlyRestrictions() {
     const isUser = isViewOnly();
     const isAdmin = currentUser && currentUser.role === 'admin';
     const isSuperAdmin = currentUser && currentUser.role === 'superadmin';
-
+    
     // Hide User Management menu for regular users AND admin (only Super Admin can see)
     const userManagementMenu = document.getElementById('menu-users');
     if (userManagementMenu) {
         userManagementMenu.style.display = isSuperAdmin ? 'block' : 'none';
     }
-
+    
     // Hide Families menu for regular users
     const familiesMenu = document.getElementById('menu-families');
     if (familiesMenu) {
         familiesMenu.style.display = isUser ? 'none' : 'block';
     }
-
+    
     // Hide quick actions for view-only users
     const quickActions = document.getElementById('quick-actions');
     if (quickActions) {
         quickActions.style.display = isUser ? 'none' : 'flex';
     }
-
+    
     // Hide admin-only columns in tables
     document.querySelectorAll('.admin-only-col').forEach(col => {
         col.style.display = isUser ? 'none' : '';
@@ -1305,7 +1260,7 @@ function applyViewOnlyRestrictions() {
 }
 
 function getRoleLabel(role) {
-    switch (role) {
+    switch(role) {
         case 'superadmin': return 'Super Admin';
         case 'admin': return 'Admin';
         case 'user': return currentLanguage === 'id' ? 'User (Hanya Lihat)' : 'User (View Only)';
@@ -1316,7 +1271,7 @@ function getRoleLabel(role) {
 function togglePassword() {
     const passwordInput = document.getElementById('password');
     const toggleBtn = document.querySelector('.toggle-password i');
-
+    
     if (passwordInput.type === 'password') {
         passwordInput.type = 'text';
         toggleBtn.classList.remove('fa-eye');
@@ -1329,97 +1284,51 @@ function togglePassword() {
 }
 
 // Login form handler
-document.addEventListener('DOMContentLoaded', async function () {
+document.addEventListener('DOMContentLoaded', async function() {
+    // Initialize data (Firebase or localStorage)
     await initDataCache();
     applyLanguage();
-    checkSession();
-
-    // Login form
+    
     const loginForm = document.getElementById('login-form');
     if (loginForm) {
-        loginForm.addEventListener('submit', async function (e) {
+        loginForm.addEventListener('submit', async function(e) {
             e.preventDefault();
-            const usernameOrEmail = document.getElementById('username').value.trim();
+            
+            const username = document.getElementById('username').value;
             const password = document.getElementById('password').value;
             const notification = document.getElementById('login-notification');
-
+            
             notification.className = 'login-notification processing';
             notification.textContent = currentLanguage === 'id' ? 'Sedang memproses...' : 'Processing...';
             notification.style.display = 'block';
-
-            const result = await login(usernameOrEmail, password);
-
+            
+            const result = await login(username, password);
+            
             if (result.success) {
                 notification.className = 'login-notification success';
-                notification.textContent = currentLanguage === 'id' ? 'Login berhasil!' : 'Login successful!';
-                setTimeout(() => _showMainApp(result.user), 800);
+                notification.textContent = currentLanguage === 'id' ? 'Login berhasil! Mengalihkan...' : 'Login successful! Redirecting...';
+                
+                setTimeout(() => {
+                    document.getElementById('login-page').classList.add('hidden');
+                    document.getElementById('main-app').classList.remove('hidden');
+                    document.getElementById('user-name').textContent = result.user.nama;
+                    document.getElementById('user-role').textContent = getRoleLabel(result.user.role);
+                    document.getElementById('welcome-name').textContent = result.user.nama;
+                    
+                    applyViewOnlyRestrictions();
+                    initDashboard();
+                }, 800);
             } else {
                 notification.className = 'login-notification error';
                 notification.textContent = result.message;
             }
         });
     }
-
-    // Tombol "Daftar Gereja Baru"
-    const btnRegister = document.getElementById('btn-show-register');
-    if (btnRegister) {
-        btnRegister.addEventListener('click', () => {
-            document.getElementById('login-page').classList.add('hidden');
-            document.getElementById('register-page').classList.remove('hidden');
-        });
-    }
-
-    // Form registrasi gereja
-    const registerForm = document.getElementById('register-form');
-    if (registerForm) {
-        registerForm.addEventListener('submit', async function (e) {
-            e.preventDefault();
-            const notification = document.getElementById('register-notification');
-            notification.className = 'login-notification processing';
-            notification.textContent = 'Mendaftarkan gereja...';
-            notification.style.display = 'block';
-
-            const churchData = {
-                nama: document.getElementById('reg-church-name').value.trim(),
-                alamat: document.getElementById('reg-church-address').value.trim(),
-                kota: document.getElementById('reg-church-city').value.trim(),
-                telepon: document.getElementById('reg-church-phone').value.trim(),
-                email: document.getElementById('reg-church-email').value.trim()
-            };
-            const adminData = {
-                nama: document.getElementById('reg-admin-name').value.trim(),
-                email: document.getElementById('reg-admin-email').value.trim(),
-                password: document.getElementById('reg-admin-password').value,
-                username: document.getElementById('reg-admin-username').value.trim()
-            };
-
-            const result = await window.registerChurch(churchData, adminData);
-
-            if (result.success) {
-                currentUser = result.user;
-                sessionStorage.setItem('currentUser', JSON.stringify(result.user));
-                notification.className = 'login-notification success';
-                notification.textContent = 'Gereja berhasil didaftarkan!';
-                await initDataCache();
-                setTimeout(() => {
-                    document.getElementById('register-page').classList.add('hidden');
-                    _showMainApp(result.user);
-                }, 1000);
-            } else {
-                notification.className = 'login-notification error';
-                notification.textContent = result.error;
-            }
-        });
-    }
-
-    // Tombol kembali dari register ke login
-    const btnBackToLogin = document.getElementById('btn-back-to-login');
-    if (btnBackToLogin) {
-        btnBackToLogin.addEventListener('click', () => {
-            document.getElementById('register-page').classList.add('hidden');
-            document.getElementById('login-page').classList.remove('hidden');
-        });
-    }
+    
+    checkSession();
+    
+    // Load notifications
+    loadNotifications();
 });
 
 // ========================================
@@ -1431,28 +1340,28 @@ function showPage(pageId) {
     document.querySelectorAll('.page').forEach(page => {
         page.classList.remove('active');
     });
-
+    
     // Show selected page
     const targetPage = document.getElementById(`page-${pageId}`);
     if (targetPage) {
         targetPage.classList.add('active');
     }
-
+    
     // Update sidebar active state
     document.querySelectorAll('.sidebar-nav li').forEach(li => {
         li.classList.remove('active');
     });
-
+    
     const activeNav = document.querySelector(`.sidebar-nav li[onclick*="${pageId}"]`);
     if (activeNav) activeNav.classList.add('active');
-
+    
     // Close sidebar on mobile
     if (window.innerWidth <= 992) {
         document.getElementById('sidebar').classList.remove('active');
     }
-
+    
     // Initialize page
-    switch (pageId) {
+    switch(pageId) {
         case 'dashboard': initDashboard(); break;
         case 'members': renderMembersTable(); break;
         case 'families': renderFamiliesGrid(); break;
@@ -1478,67 +1387,53 @@ function toggleSidebar() {
 
 function initDashboard() {
     const data = getData();
-
-    // Update stats — optional chaining agar tidak crash saat data kosong
-    document.getElementById('stat-total-members').textContent =
-        (data.members || []).filter(m => m.status === 'aktif').length;
-    document.getElementById('stat-attendance').textContent =
-        (data.attendance || []).length;
-
-    const totalDonations = (data.donations || []).reduce((sum, d) => sum + (d.jumlah || 0), 0);
+    
+    // Update stats
+    document.getElementById('stat-total-members').textContent = data.members.filter(m => m.status === 'aktif').length;
+    document.getElementById('stat-attendance').textContent = data.attendance.length;
+    
+    const totalDonations = data.donations.reduce((sum, d) => sum + d.jumlah, 0);
     document.getElementById('stat-donations').textContent = formatRupiah(totalDonations);
-
-    document.getElementById('stat-events').textContent =
-        (data.events || []).filter(e => e.status === 'upcoming').length;
-    document.getElementById('stat-groups').textContent =
-        (data.groups || []).length;
-    document.getElementById('stat-volunteers').textContent =
-        (data.volunteers || []).filter(v => v.status === 'aktif').length;
-
-    // Nama gereja dari Firestore
-    const churchId = window.getActiveChurchId ? window.getActiveChurchId() : null;
-    if (churchId) {
-        window.getChurch(churchId).then(church => {
-            if (church) {
-                const el = document.getElementById('church-name-sidebar');
-                if (el) el.textContent = church.nama;
-            }
-        });
-    } else {
-        const el = document.getElementById('church-name-sidebar');
-        if (el && data.churchProfile) el.textContent = data.churchProfile.nama || 'Gereja';
-    }
-
+    
+    document.getElementById('stat-events').textContent = data.events.filter(e => e.status === 'upcoming').length;
+    document.getElementById('stat-groups').textContent = data.groups.length;
+    document.getElementById('stat-volunteers').textContent = data.volunteers.filter(v => v.status === 'aktif').length;
+    
+    // Update church info
+    document.getElementById('church-name-sidebar').textContent = data.churchProfile.nama;
+    
+    // Render activities
     renderActivityList();
+    
+    // Render upcoming events
     renderUpcomingEvents();
+    
+    // Render recent donations
     renderRecentDonations();
+    
+    // Initialize charts
     initCharts();
+    
+    // Render notifications
     renderNotifications();
 }
 
 function renderActivityList() {
     const data = getData();
     const container = document.getElementById('activity-list');
-    if (!container) return;
-
-    const activities = [...(data.activities || [])].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)).slice(0, 6);
-
-    if (activities.length === 0) {
-        container.innerHTML = `<p style="color:var(--text-muted); text-align:center; padding:20px;">Belum ada aktivitas</p>`;
-        return;
-    }
-
+    const activities = [...data.activities].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)).slice(0, 6);
+    
     const icons = {
         member: 'fa-user',
         donation: 'fa-hand-holding-heart',
         event: 'fa-calendar',
         attendance: 'fa-clipboard-check'
     };
-
+    
     container.innerHTML = activities.map(a => `
         <div class="activity-item">
             <div class="activity-icon">
-                <i class="fas ${icons[a.type] || 'fa-bell'}"></i>
+                <i class="fas ${icons[a.type]}"></i>
             </div>
             <div class="activity-content">
                 <p><strong>${a.action}</strong></p>
@@ -1555,7 +1450,7 @@ function renderUpcomingEvents() {
         .filter(e => e.status === 'upcoming' || e.status === 'ongoing')
         .sort((a, b) => new Date(a.start) - new Date(b.start))
         .slice(0, 4);
-
+    
     container.innerHTML = upcoming.map(e => {
         const date = new Date(e.start);
         return `
@@ -1577,7 +1472,7 @@ function renderRecentDonations() {
     const data = getData();
     const container = document.getElementById('recent-donations');
     const recent = [...data.donations].sort((a, b) => new Date(b.tanggal) - new Date(a.tanggal)).slice(0, 4);
-
+    
     container.innerHTML = recent.map(d => {
         const donor = data.members.find(m => m.id === d.donorId);
         return `
@@ -1603,9 +1498,9 @@ function initCharts() {
 function initAttendanceChart() {
     const ctx = document.getElementById('attendanceChart');
     if (!ctx) return;
-
+    
     if (attendanceChart) attendanceChart.destroy();
-
+    
     attendanceChart = new Chart(ctx, {
         type: 'line',
         data: {
@@ -1634,13 +1529,13 @@ function initAttendanceChart() {
 function initMemberChart() {
     const ctx = document.getElementById('memberChart');
     if (!ctx) return;
-
+    
     if (memberChart) memberChart.destroy();
-
+    
     const data = getData();
     const maleCount = data.members.filter(m => m.jk === 'Laki-laki').length;
     const femaleCount = data.members.filter(m => m.jk === 'Perempuan').length;
-
+    
     memberChart = new Chart(ctx, {
         type: 'doughnut',
         data: {
@@ -1669,7 +1564,7 @@ function updateAttendanceChart() {
 
 function initAttendance() {
     const data = getData();
-
+    
     // Populate event select
     const eventSelect = document.getElementById('attendance-event');
     if (eventSelect) {
@@ -1677,18 +1572,18 @@ function initAttendance() {
             data.events.filter(e => e.status === 'upcoming' || e.status === 'ongoing')
                 .map(e => `<option value="${e.id}">${e.nama} - ${formatDate(e.start)}</option>`).join('');
     }
-
+    
     // Populate filter event select
     const filterEventSelect = document.getElementById('attendance-filter-event');
     if (filterEventSelect) {
         filterEventSelect.innerHTML = `<option value="">${getLang('all-events')}</option>` +
             data.events.map(e => `<option value="${e.id}">${e.nama}</option>`).join('');
     }
-
+    
     renderTodayCheckin();
     renderAttendanceTable();
     initAttendanceReportChart();
-
+    
     // Hide check-in form for view-only users
     const checkinForm = document.querySelector('.checkin-form');
     if (checkinForm && isViewOnly()) {
@@ -1699,9 +1594,9 @@ function initAttendance() {
 function showAttendanceTab(tab, clickedBtn) {
     document.querySelectorAll('.attendance-tab-content').forEach(c => c.classList.remove('active'));
     document.querySelectorAll('.attendance-tabs .tab-btn').forEach(b => b.classList.remove('active'));
-
+    
     document.getElementById(`attendance-${tab}`).classList.add('active');
-
+    
     // Find the clicked button and add active class
     if (clickedBtn) {
         clickedBtn.classList.add('active');
@@ -1720,10 +1615,10 @@ function renderTodayCheckin() {
     const data = getData();
     const container = document.getElementById('today-checkin');
     if (!container) return;
-
+    
     const today = new Date().toISOString().split('T')[0];
     const todayAttendance = data.attendance.filter(a => a.tanggal === today);
-
+    
     container.innerHTML = todayAttendance.map(a => {
         const member = data.members.find(m => m.id === a.memberId);
         return `
@@ -1743,22 +1638,22 @@ function renderAttendanceTable() {
     const data = getData();
     const container = document.getElementById('attendance-table-body');
     if (!container) return;
-
+    
     const eventFilter = document.getElementById('attendance-filter-event')?.value || '';
     const dateFilter = document.getElementById('attendance-filter-date')?.value || '';
-
+    
     let filtered = [...data.attendance];
-
+    
     if (eventFilter) {
         filtered = filtered.filter(a => a.eventId === parseInt(eventFilter));
     }
-
+    
     if (dateFilter) {
         filtered = filtered.filter(a => a.tanggal === dateFilter);
     }
-
+    
     const sorted = filtered.sort((a, b) => new Date(b.tanggal) - new Date(a.tanggal));
-
+    
     container.innerHTML = sorted.map(a => {
         const member = data.members.find(m => m.id === a.memberId);
         const event = data.events.find(e => e.id === a.eventId);
@@ -1779,23 +1674,23 @@ function checkInMember() {
         showToast(currentLanguage === 'id' ? 'Anda tidak memiliki izin untuk check-in' : 'You do not have permission to check-in', 'error');
         return;
     }
-
+    
     const eventId = document.getElementById('attendance-event').value;
     const memberName = document.getElementById('checkin-member').value;
-
+    
     if (!eventId || !memberName) {
         showToast(currentLanguage === 'id' ? 'Pilih event dan masukkan nama member' : 'Select event and enter member name', 'error');
         return;
     }
-
+    
     const data = getData();
     const member = data.members.find(m => m.nama.toLowerCase() === memberName.toLowerCase());
-
+    
     if (!member) {
         showToast(currentLanguage === 'id' ? 'Member tidak ditemukan' : 'Member not found', 'error');
         return;
     }
-
+    
     const now = new Date();
     const newAttendance = {
         id: Date.now(),
@@ -1805,15 +1700,15 @@ function checkInMember() {
         waktu: now.toTimeString().slice(0, 5),
         status: 'hadir'
     };
-
+    
     data.attendance.push(newAttendance);
     saveData(data);
-
+    
     document.getElementById('checkin-member').value = '';
     renderTodayCheckin();
     renderAttendanceTable();
     initDashboard();
-
+    
     showToast(`${member.nama} ${currentLanguage === 'id' ? 'berhasil check-in' : 'checked in successfully'}`, 'success');
 }
 
@@ -1824,7 +1719,7 @@ function filterAttendanceData() {
 function initAttendanceReportChart() {
     const ctx = document.getElementById('attendanceReportChart');
     if (!ctx) return;
-
+    
     new Chart(ctx, {
         type: 'bar',
         data: {
@@ -1856,7 +1751,7 @@ function initDonations() {
     renderDonationsTable();
     updateDonationSummary();
     initDonationChart();
-
+    
     // Hide add button for view-only users
     const addButton = document.querySelector('#page-donations .action-buttons .btn-primary');
     if (addButton) {
@@ -1868,17 +1763,17 @@ function updateDonationSummary() {
     const data = getData();
     const typeFilter = document.getElementById('donation-type')?.value || '';
     const monthFilter = document.getElementById('donation-month')?.value || '';
-
+    
     let filtered = data.donations.filter(d => {
         const matchType = !typeFilter || d.tipe === typeFilter;
         const matchMonth = !monthFilter || d.tanggal.startsWith(monthFilter);
         return matchType && matchMonth;
     });
-
+    
     const total = filtered.reduce((sum, d) => sum + d.jumlah, 0);
     const uniqueDonors = new Set(filtered.map(d => d.donorId)).size;
     const average = filtered.length > 0 ? Math.round(total / filtered.length) : 0;
-
+    
     document.getElementById('donation-total').textContent = formatRupiah(total);
     document.getElementById('donation-donors').textContent = uniqueDonors;
     document.getElementById('donation-average').textContent = formatRupiah(average);
@@ -1888,26 +1783,26 @@ function renderDonationsTable() {
     const data = getData();
     const container = document.getElementById('donations-table-body');
     if (!container) return;
-
+    
     const typeFilter = document.getElementById('donation-type')?.value || '';
     const monthFilter = document.getElementById('donation-month')?.value || '';
-
+    
     let filtered = data.donations.filter(d => {
         const matchType = !typeFilter || d.tipe === typeFilter || (typeFilter === 'lainnya' && d.tipe === 'lainnya');
         const matchMonth = !monthFilter || d.tanggal.startsWith(monthFilter);
         return matchType && matchMonth;
     });
-
+    
     container.innerHTML = filtered.map(d => {
         const donor = data.members.find(m => m.id === d.donorId);
         const editButtons = isViewOnly() ? '' : `
             <button class="btn-action btn-edit" onclick="editDonation(${d.id})" title="Edit"><i class="fas fa-edit"></i></button>
             <button class="btn-action btn-delete" onclick="deleteDonation(${d.id})" title="Hapus"><i class="fas fa-trash"></i></button>
         `;
-
+        
         // Display custom type if "lainnya" is selected
         const tipeDisplay = d.tipe === 'lainnya' && d.customType ? d.customType : d.tipe;
-
+        
         return `
             <tr>
                 <td>${formatDate(d.tanggal)}</td>
@@ -1948,10 +1843,10 @@ function editDonation(id) {
         showToast(currentLanguage === 'id' ? 'Anda tidak memiliki izin untuk mengedit data' : 'You do not have permission to edit data', 'error');
         return;
     }
-
+    
     const data = getData();
     const donation = data.donations.find(d => d.id === id);
-
+    
     if (donation) {
         editingDonationId = id;
         document.getElementById('modal-donation-title').textContent = currentLanguage === 'id' ? 'Edit Donasi' : 'Edit Donation';
@@ -1961,7 +1856,7 @@ function editDonation(id) {
         document.getElementById('donation-jumlah').value = donation.jumlah;
         document.getElementById('donation-tanggal').value = donation.tanggal;
         document.getElementById('donation-keterangan').value = donation.keterangan || '';
-
+        
         // Handle custom type
         if (donation.tipe === 'lainnya' && donation.customType) {
             document.getElementById('donation-custom-type-container').style.display = 'block';
@@ -1972,29 +1867,29 @@ function editDonation(id) {
             document.getElementById('donation-custom-type').value = '';
             document.getElementById('donation-custom-type').required = false;
         }
-
+        
         openModal('modal-donation');
     }
 }
 
-async function saveDonation(e) {
+function saveDonation(e) {
     e.preventDefault();
-
+    
     if (isViewOnly()) {
         showToast(currentLanguage === 'id' ? 'Anda tidak memiliki izin untuk menyimpan data' : 'You do not have permission to save data', 'error');
         return;
     }
-
+    
     const data = getData();
     const donationTipe = document.getElementById('donation-tipe').value;
     const customType = donationTipe === 'lainnya' ? document.getElementById('donation-custom-type').value : null;
-
+    
     // Validate custom type if "lainnya" is selected
     if (donationTipe === 'lainnya' && !customType) {
         showToast(currentLanguage === 'id' ? 'Tipe donasi lainnya wajib diisi' : 'Custom donation type is required', 'error');
         return;
     }
-
+    
     const donationData = {
         donorId: parseInt(document.getElementById('donation-donor').value),
         tipe: donationTipe,
@@ -2003,26 +1898,17 @@ async function saveDonation(e) {
         tanggal: document.getElementById('donation-tanggal').value,
         keterangan: document.getElementById('donation-keterangan').value
     };
-
+    
     if (editingDonationId) {
         const index = data.donations.findIndex(d => d.id === editingDonationId);
         if (index !== -1) {
-            const updated = { ...data.donations[index], ...donationData };
-            data.donations[index] = updated;
-            if (isFirebaseReady()) {
-                await window.setDocument(window.DB_COLLECTIONS.DONATIONS, String(editingDonationId), updated);
-            }
+            data.donations[index] = { ...data.donations[index], ...donationData };
             showToast(currentLanguage === 'id' ? 'Donasi berhasil diupdate' : 'Donation updated successfully', 'success');
         }
     } else {
         const newId = Math.max(...data.donations.map(d => d.id), 0) + 1;
-        const newDonation = { id: newId, ...donationData };
-        data.donations.push(newDonation);
-
-        if (isFirebaseReady()) {
-            await window.setDocument(window.DB_COLLECTIONS.DONATIONS, String(newId), newDonation);
-        }
-
+        data.donations.push({ id: newId, ...donationData });
+        
         const donor = data.members.find(m => m.id === donationData.donorId);
         const tipeDisplay = donationTipe === 'lainnya' && customType ? customType : donationTipe;
         data.activities.unshift({
@@ -2032,10 +1918,10 @@ async function saveDonation(e) {
             detail: `${formatRupiah(donationData.jumlah)} ${currentLanguage === 'id' ? 'dari' : 'from'} ${donor ? donor.nama : 'Anonymous'} (${tipeDisplay})`,
             timestamp: new Date().toISOString()
         });
-
+        
         showToast(currentLanguage === 'id' ? 'Donasi berhasil ditambahkan' : 'Donation added successfully', 'success');
     }
-
+    
     saveData(data);
     closeModal('modal-donation');
     renderDonationsTable();
@@ -2047,16 +1933,13 @@ function deleteDonation(id) {
         showToast(currentLanguage === 'id' ? 'Anda tidak memiliki izin untuk menghapus data' : 'You do not have permission to delete data', 'error');
         return;
     }
-
-    showConfirm(currentLanguage === 'id' ? 'Apakah Anda yakin ingin menghapus donasi ini?' : 'Are you sure you want to delete this donation?', async () => {
+    
+    showConfirm(currentLanguage === 'id' ? 'Apakah Anda yakin ingin menghapus donasi ini?' : 'Are you sure you want to delete this donation?', () => {
         const data = getData();
         const index = data.donations.findIndex(d => d.id === id);
-
+        
         if (index !== -1) {
             data.donations.splice(index, 1);
-            if (isFirebaseReady()) {
-                await window.deleteDocument(window.DB_COLLECTIONS.DONATIONS, String(id));
-            }
             saveData(data);
             renderDonationsTable();
             initDashboard();
@@ -2069,7 +1952,7 @@ function populateDonorSelect(selectedId = null) {
     const data = getData();
     const select = document.getElementById('donation-donor');
     select.innerHTML = `<option value="">${getLang('select-donor')}</option>` +
-        data.members.filter(m => m.status === 'aktif').map(m =>
+        data.members.filter(m => m.status === 'aktif').map(m => 
             `<option value="${m.id}" ${m.id == selectedId ? 'selected' : ''}>${m.nama}</option>`
         ).join('');
 }
@@ -2077,7 +1960,7 @@ function populateDonorSelect(selectedId = null) {
 function initDonationChart() {
     const ctx = document.getElementById('donationChart');
     if (!ctx) return;
-
+    
     new Chart(ctx, {
         type: 'line',
         data: {
@@ -2096,15 +1979,15 @@ function initDonationChart() {
             maintainAspectRatio: false,
             plugins: { legend: { display: false } },
             scales: {
-                y: {
-                    beginAtZero: true,
-                    grid: { color: 'rgba(255, 255, 255, 0.05)' },
-                    ticks: {
+                y: { 
+                    beginAtZero: true, 
+                    grid: { color: 'rgba(255, 255, 255, 0.05)' }, 
+                    ticks: { 
                         color: '#666',
-                        callback: function (value) {
+                        callback: function(value) {
                             return formatRupiah(value);
                         }
-                    }
+                    } 
                 },
                 x: { grid: { display: false }, ticks: { color: '#666' } }
             }
@@ -2120,22 +2003,22 @@ function renderEventsGrid() {
     const data = getData();
     const container = document.getElementById('events-grid');
     if (!container) return;
-
+    
     const searchTerm = document.getElementById('search-events')?.value?.toLowerCase() || '';
     const statusFilter = document.getElementById('filter-event-status')?.value || '';
-
+    
     let filtered = data.events.filter(e => {
         const matchSearch = e.nama.toLowerCase().includes(searchTerm);
         const matchStatus = !statusFilter || e.status === statusFilter;
         return matchSearch && matchStatus;
     });
-
+    
     const statusLabels = {
         'upcoming': currentLanguage === 'id' ? 'Mendatang' : 'Upcoming',
         'ongoing': currentLanguage === 'id' ? 'Berlangsung' : 'Ongoing',
         'completed': currentLanguage === 'id' ? 'Selesai' : 'Completed'
     };
-
+    
     container.innerHTML = filtered.map(e => {
         const startDate = new Date(e.start);
         const participantCount = e.participants ? e.participants.length : 0;
@@ -2143,9 +2026,9 @@ function renderEventsGrid() {
             <button class="btn btn-secondary btn-sm" onclick="editEvent(${e.id})"><i class="fas fa-edit"></i> ${getLang('edit') || 'Edit'}</button>
             <button class="btn btn-danger btn-sm" onclick="deleteEvent(${e.id})"><i class="fas fa-trash"></i> ${getLang('delete') || 'Hapus'}</button>
         `;
-
+        
         const eventType = e.tipe === 'lainnya' && e.customType ? e.customType : e.tipe;
-
+        
         return `
             <div class="event-card">
                 <span class="event-status ${e.status}">${statusLabels[e.status] || e.status}</span>
@@ -2169,7 +2052,7 @@ function renderEventsGrid() {
             </div>
         `;
     }).join('') || `<p class="text-center" style="grid-column: 1/-1; color: var(--text-muted);">${getLang('no-data') || 'Tidak ada data'}</p>`;
-
+    
     // Hide add button for view-only users
     const addButton = document.querySelector('#page-events .action-buttons .btn-primary');
     if (addButton) {
@@ -2189,7 +2072,7 @@ function handleEventTypeChange() {
     const eventType = document.getElementById('event-tipe').value;
     const customTypeContainer = document.getElementById('event-custom-type-container');
     const customTypeInput = document.getElementById('event-custom-type');
-
+    
     if (eventType === 'lainnya') {
         customTypeContainer.style.display = 'block';
         customTypeInput.required = true;
@@ -2204,7 +2087,7 @@ function handleDonationTypeChange() {
     const donationType = document.getElementById('donation-tipe').value;
     const customTypeContainer = document.getElementById('donation-custom-type-container');
     const customTypeInput = document.getElementById('donation-custom-type');
-
+    
     if (donationType === 'lainnya') {
         customTypeContainer.style.display = 'block';
         customTypeInput.required = true;
@@ -2219,7 +2102,7 @@ function handleVolunteerAreaChange() {
     const volunteerArea = document.getElementById('volunteer-area').value;
     const customAreaContainer = document.getElementById('volunteer-custom-area-container');
     const customAreaInput = document.getElementById('volunteer-custom-area');
-
+    
     if (volunteerArea === 'lainnya') {
         customAreaContainer.style.display = 'block';
         customAreaInput.required = true;
@@ -2248,10 +2131,10 @@ function editEvent(id) {
         showToast(currentLanguage === 'id' ? 'Anda tidak memiliki izin untuk mengedit data' : 'You do not have permission to edit data', 'error');
         return;
     }
-
+    
     const data = getData();
     const event = data.events.find(e => e.id === id);
-
+    
     if (event) {
         editingEventId = id;
         document.getElementById('modal-event-title').textContent = currentLanguage === 'id' ? 'Edit Event' : 'Edit Event';
@@ -2264,7 +2147,7 @@ function editEvent(id) {
         document.getElementById('event-deskripsi').value = event.deskripsi;
         document.getElementById('event-kapasitas').value = event.kapasitas;
         document.getElementById('event-status').value = event.status || 'upcoming';
-
+        
         // Handle custom type
         if (event.tipe === 'lainnya' && event.customType) {
             document.getElementById('event-custom-type-container').style.display = 'block';
@@ -2273,23 +2156,23 @@ function editEvent(id) {
             document.getElementById('event-custom-type-container').style.display = 'none';
             document.getElementById('event-custom-type').value = '';
         }
-
+        
         openModal('modal-event');
     }
 }
 
-async function saveEvent(e) {
+function saveEvent(e) {
     e.preventDefault();
-
+    
     if (isViewOnly()) {
         showToast(currentLanguage === 'id' ? 'Anda tidak memiliki izin untuk menyimpan data' : 'You do not have permission to save data', 'error');
         return;
     }
-
+    
     const data = getData();
     const eventTipe = document.getElementById('event-tipe').value;
     const customType = eventTipe === 'lainnya' ? document.getElementById('event-custom-type').value : null;
-
+    
     const eventData = {
         nama: document.getElementById('event-nama').value,
         tipe: eventTipe,
@@ -2301,26 +2184,17 @@ async function saveEvent(e) {
         kapasitas: parseInt(document.getElementById('event-kapasitas').value) || 0,
         status: document.getElementById('event-status').value
     };
-
+    
     if (editingEventId) {
         const index = data.events.findIndex(ev => ev.id === editingEventId);
         if (index !== -1) {
-            const updated = { ...data.events[index], ...eventData };
-            data.events[index] = updated;
-            if (isFirebaseReady()) {
-                await window.setDocument(window.DB_COLLECTIONS.EVENTS, String(editingEventId), updated);
-            }
+            data.events[index] = { ...data.events[index], ...eventData };
             showToast(currentLanguage === 'id' ? 'Event berhasil diupdate' : 'Event updated successfully', 'success');
         }
     } else {
         const newId = Math.max(...data.events.map(ev => ev.id), 0) + 1;
-        const newEvent = { id: newId, ...eventData, participants: [] };
-        data.events.push(newEvent);
-
-        if (isFirebaseReady()) {
-            await window.setDocument(window.DB_COLLECTIONS.EVENTS, String(newId), newEvent);
-        }
-
+        data.events.push({ id: newId, ...eventData, participants: [] });
+        
         data.activities.unshift({
             id: Date.now(),
             type: 'event',
@@ -2328,10 +2202,10 @@ async function saveEvent(e) {
             detail: eventData.nama,
             timestamp: new Date().toISOString()
         });
-
+        
         showToast(currentLanguage === 'id' ? 'Event berhasil ditambahkan' : 'Event added successfully', 'success');
     }
-
+    
     saveData(data);
     closeModal('modal-event');
     renderEventsGrid();
@@ -2343,16 +2217,13 @@ function deleteEvent(id) {
         showToast(currentLanguage === 'id' ? 'Anda tidak memiliki izin untuk menghapus data' : 'You do not have permission to delete data', 'error');
         return;
     }
-
-    showConfirm(currentLanguage === 'id' ? 'Apakah Anda yakin ingin menghapus event ini?' : 'Are you sure you want to delete this event?', async () => {
+    
+    showConfirm(currentLanguage === 'id' ? 'Apakah Anda yakin ingin menghapus event ini?' : 'Are you sure you want to delete this event?', () => {
         const data = getData();
         const index = data.events.findIndex(e => e.id === id);
-
+        
         if (index !== -1) {
             data.events.splice(index, 1);
-            if (isFirebaseReady()) {
-                await window.deleteDocument(window.DB_COLLECTIONS.EVENTS, String(id));
-            }
             saveData(data);
             renderEventsGrid();
             initDashboard();
@@ -2365,9 +2236,9 @@ function showEventParticipants(eventId) {
     currentEventId = eventId;
     const data = getData();
     const event = data.events.find(e => e.id === eventId);
-
+    
     if (!event) return;
-
+    
     renderParticipantsTable();
     openModal('modal-participants');
 }
@@ -2377,15 +2248,15 @@ function renderParticipantsTable() {
     const event = data.events.find(e => e.id === currentEventId);
     const container = document.getElementById('participants-table-body');
     if (!container) return;
-
+    
     if (!event || !event.participants) {
         container.innerHTML = `<tr><td colspan="6" class="text-center">${getLang('no-data') || 'Tidak ada data'}</td></tr>`;
         return;
     }
-
+    
     container.innerHTML = event.participants.map((p, i) => {
         let nama, email, telepon;
-
+        
         if (p.isManual || !p.memberId) {
             nama = p.nama || 'Unknown';
             email = p.email || '-';
@@ -2396,9 +2267,9 @@ function renderParticipantsTable() {
             email = member ? member.email : '-';
             telepon = member ? member.telepon : '-';
         }
-
+        
         const deleteButton = isViewOnly() ? '' : `<button class="btn-action btn-delete" onclick="removeParticipant(${i})"><i class="fas fa-trash"></i></button>`;
-
+        
         return `
             <tr>
                 <td>${nama}</td>
@@ -2417,27 +2288,27 @@ function addParticipant() {
         showToast(currentLanguage === 'id' ? 'Anda tidak memiliki izin untuk menambah peserta' : 'You do not have permission to add participants', 'error');
         return;
     }
-
+    
     document.getElementById('form-manual-participant').reset();
     openModal('modal-manual-participant');
 }
 
-async function saveManualParticipant(e) {
+function saveManualParticipant(e) {
     e.preventDefault();
-
+    
     if (isViewOnly()) {
         showToast(currentLanguage === 'id' ? 'Anda tidak memiliki izin untuk menambah peserta' : 'You do not have permission to add participants', 'error');
         return;
     }
-
+    
     const data = getData();
-    const event = data.events.find(ev => ev.id === currentEventId);
-
+    const event = data.events.find(e => e.id === currentEventId);
+    
     if (!event) {
         showToast(currentLanguage === 'id' ? 'Event tidak ditemukan' : 'Event not found', 'error');
         return;
     }
-
+    
     const participantData = {
         nama: document.getElementById('participant-nama').value,
         email: document.getElementById('participant-email').value,
@@ -2446,18 +2317,14 @@ async function saveManualParticipant(e) {
         tanggalDaftar: new Date().toISOString().split('T')[0],
         isManual: true
     };
-
+    
     if (!event.participants) {
         event.participants = [];
     }
-
+    
     event.participants.push(participantData);
-
-    if (isFirebaseReady()) {
-        await window.setDocument(window.DB_COLLECTIONS.EVENTS, String(currentEventId), event);
-    }
     saveData(data);
-
+    
     closeModal('modal-manual-participant');
     renderParticipantsTable();
     renderEventsGrid();
@@ -2469,15 +2336,12 @@ function removeParticipant(index) {
         showToast(currentLanguage === 'id' ? 'Anda tidak memiliki izin untuk menghapus peserta' : 'You do not have permission to remove participants', 'error');
         return;
     }
-
-    showConfirm(currentLanguage === 'id' ? 'Hapus peserta ini?' : 'Remove this participant?', async () => {
+    
+    showConfirm(currentLanguage === 'id' ? 'Hapus peserta ini?' : 'Remove this participant?', () => {
         const data = getData();
-        const event = data.events.find(ev => ev.id === currentEventId);
+        const event = data.events.find(e => e.id === currentEventId);
         if (event && event.participants) {
             event.participants.splice(index, 1);
-            if (isFirebaseReady()) {
-                await window.setDocument(window.DB_COLLECTIONS.EVENTS, String(currentEventId), event);
-            }
             saveData(data);
             renderParticipantsTable();
             renderEventsGrid();
@@ -2493,7 +2357,7 @@ function removeParticipant(index) {
 function initVolunteers() {
     renderVolunteersGrid();
     renderAssignmentsList();
-
+    
     // Hide add button for view-only users
     const addButton = document.querySelector('#page-volunteers .action-buttons .btn-primary');
     if (addButton) {
@@ -2505,9 +2369,9 @@ function renderVolunteersGrid() {
     const data = getData();
     const container = document.getElementById('volunteers-grid');
     if (!container) return;
-
+    
     const searchTerm = document.getElementById('search-volunteers')?.value?.toLowerCase() || '';
-
+    
     let filtered = data.volunteers.filter(v => {
         let nama = '';
         if (v.memberId) {
@@ -2518,7 +2382,7 @@ function renderVolunteersGrid() {
         }
         return nama.includes(searchTerm);
     });
-
+    
     const areaLabels = {
         'guru-sekolah-minggu': currentLanguage === 'id' ? 'Guru Sekolah Minggu' : 'Sunday School Teacher',
         'singer': 'Singer',
@@ -2532,10 +2396,10 @@ function renderVolunteersGrid() {
         'lighting-sound': currentLanguage === 'id' ? 'Lighting & Sound System' : 'Lighting & Sound System',
         'usher': 'Usher'
     };
-
+    
     container.innerHTML = filtered.map(v => {
         let nama, email, telepon;
-
+        
         if (v.memberId) {
             const member = data.members.find(m => m.id === v.memberId);
             nama = member ? member.nama : 'Unknown';
@@ -2546,15 +2410,15 @@ function renderVolunteersGrid() {
             email = v.externalEmail || '-';
             telepon = v.externalTelepon || '-';
         }
-
+        
         const editButtons = isViewOnly() ? '' : `
             <button class="btn btn-secondary btn-sm" onclick="editVolunteer(${v.id})"><i class="fas fa-edit"></i> ${getLang('edit') || 'Edit'}</button>
             <button class="btn btn-danger btn-sm" onclick="deleteVolunteer(${v.id})"><i class="fas fa-trash"></i> ${getLang('delete') || 'Hapus'}</button>
         `;
-
+        
         // Display custom area if "lainnya" is selected
         const areaDisplay = v.area === 'lainnya' && v.customArea ? v.customArea : (areaLabels[v.area] || v.area);
-
+        
         return `
             <div class="volunteer-card">
                 <div class="card-header-section">
@@ -2587,7 +2451,7 @@ function toggleVolunteerSource() {
     const source = document.getElementById('volunteer-source').value;
     const memberSection = document.getElementById('volunteer-member-section');
     const externalSection = document.getElementById('volunteer-external-section');
-
+    
     if (source === 'member') {
         memberSection.style.display = 'block';
         externalSection.style.display = 'none';
@@ -2614,12 +2478,12 @@ function showAddVolunteerModal() {
     document.getElementById('modal-volunteer-title').textContent = getLang('add-volunteer');
     document.getElementById('form-volunteer').reset();
     document.getElementById('volunteer-id').value = '';
-
+    
     document.getElementById('volunteer-member-section').style.display = 'block';
     document.getElementById('volunteer-external-section').style.display = 'none';
-
+    
     document.querySelectorAll('input[name="jadwal"]').forEach(cb => cb.checked = false);
-
+    
     populateVolunteerMemberSelect();
     openModal('modal-volunteer');
 }
@@ -2629,16 +2493,16 @@ function editVolunteer(id) {
         showToast(currentLanguage === 'id' ? 'Anda tidak memiliki izin untuk mengedit data' : 'You do not have permission to edit data', 'error');
         return;
     }
-
+    
     const data = getData();
     const volunteer = data.volunteers.find(v => v.id === id);
-
+    
     if (volunteer) {
         editingVolunteerId = id;
         document.getElementById('modal-volunteer-title').textContent = currentLanguage === 'id' ? 'Edit Relawan' : 'Edit Volunteer';
         document.getElementById('volunteer-id').value = volunteer.id;
         document.getElementById('volunteer-area').value = volunteer.area;
-
+        
         // Handle custom area
         if (volunteer.area === 'lainnya' && volunteer.customArea) {
             document.getElementById('volunteer-custom-area-container').style.display = 'block';
@@ -2649,7 +2513,7 @@ function editVolunteer(id) {
             document.getElementById('volunteer-custom-area').value = '';
             document.getElementById('volunteer-custom-area').required = false;
         }
-
+        
         if (volunteer.memberId) {
             document.getElementById('volunteer-source').value = 'member';
             document.getElementById('volunteer-member-section').style.display = 'block';
@@ -2663,50 +2527,50 @@ function editVolunteer(id) {
             document.getElementById('volunteer-external-email').value = volunteer.externalEmail || '';
             document.getElementById('volunteer-external-telepon').value = volunteer.externalTelepon || '';
         }
-
+        
         document.querySelectorAll('input[name="jadwal"]').forEach(cb => cb.checked = false);
-
+        
         if (volunteer.jadwal && Array.isArray(volunteer.jadwal)) {
             volunteer.jadwal.forEach(schedule => {
                 const checkbox = document.querySelector(`input[name="jadwal"][value="${schedule}"]`);
                 if (checkbox) checkbox.checked = true;
             });
         }
-
+        
         // Load service date and time
         document.getElementById('volunteer-service-date').value = volunteer.serviceDate || '';
         document.getElementById('volunteer-service-time').value = volunteer.serviceTime || '';
-
+        
         openModal('modal-volunteer');
     }
 }
 
-async function saveVolunteer(e) {
+function saveVolunteer(e) {
     e.preventDefault();
-
+    
     if (isViewOnly()) {
         showToast(currentLanguage === 'id' ? 'Anda tidak memiliki izin untuk menyimpan data' : 'You do not have permission to save data', 'error');
         return;
     }
-
+    
     const data = getData();
     const source = document.getElementById('volunteer-source').value;
     const volunteerArea = document.getElementById('volunteer-area').value;
     const customArea = volunteerArea === 'lainnya' ? document.getElementById('volunteer-custom-area').value : null;
-
+    
     // Validate custom area if "lainnya" is selected
     if (volunteerArea === 'lainnya' && !customArea) {
         showToast(currentLanguage === 'id' ? 'Area pelayanan lainnya wajib diisi' : 'Custom service area is required', 'error');
         return;
     }
-
+    
     const scheduleCheckboxes = document.querySelectorAll('input[name="jadwal"]:checked');
     const jadwal = Array.from(scheduleCheckboxes).map(cb => cb.value);
-
+    
     // Get service date and time
     const serviceDate = document.getElementById('volunteer-service-date').value;
     const serviceTime = document.getElementById('volunteer-service-time').value;
-
+    
     let volunteerData = {
         area: volunteerArea,
         customArea: customArea,
@@ -2715,7 +2579,7 @@ async function saveVolunteer(e) {
         serviceTime: serviceTime || null,
         status: 'aktif'
     };
-
+    
     if (source === 'member') {
         volunteerData.memberId = parseInt(document.getElementById('volunteer-member').value);
         volunteerData.externalNama = null;
@@ -2727,27 +2591,19 @@ async function saveVolunteer(e) {
         volunteerData.externalEmail = document.getElementById('volunteer-external-email').value;
         volunteerData.externalTelepon = document.getElementById('volunteer-external-telepon').value;
     }
-
+    
     if (editingVolunteerId) {
         const index = data.volunteers.findIndex(v => v.id === editingVolunteerId);
         if (index !== -1) {
-            const updated = { ...data.volunteers[index], ...volunteerData };
-            data.volunteers[index] = updated;
-            if (isFirebaseReady()) {
-                await window.setDocument(window.DB_COLLECTIONS.VOLUNTEERS, String(editingVolunteerId), updated);
-            }
+            data.volunteers[index] = { ...data.volunteers[index], ...volunteerData };
             showToast(currentLanguage === 'id' ? 'Relawan berhasil diupdate' : 'Volunteer updated successfully', 'success');
         }
     } else {
         const newId = Math.max(...data.volunteers.map(v => v.id), 0) + 1;
-        const newVolunteer = { id: newId, ...volunteerData };
-        data.volunteers.push(newVolunteer);
-        if (isFirebaseReady()) {
-            await window.setDocument(window.DB_COLLECTIONS.VOLUNTEERS, String(newId), newVolunteer);
-        }
+        data.volunteers.push({ id: newId, ...volunteerData });
         showToast(currentLanguage === 'id' ? 'Relawan berhasil ditambahkan' : 'Volunteer added successfully', 'success');
     }
-
+    
     saveData(data);
     closeModal('modal-volunteer');
     renderVolunteersGrid();
@@ -2759,16 +2615,13 @@ function deleteVolunteer(id) {
         showToast(currentLanguage === 'id' ? 'Anda tidak memiliki izin untuk menghapus data' : 'You do not have permission to delete data', 'error');
         return;
     }
-
-    showConfirm(currentLanguage === 'id' ? 'Apakah Anda yakin ingin menghapus relawan ini?' : 'Are you sure you want to delete this volunteer?', async () => {
+    
+    showConfirm(currentLanguage === 'id' ? 'Apakah Anda yakin ingin menghapus relawan ini?' : 'Are you sure you want to delete this volunteer?', () => {
         const data = getData();
         const index = data.volunteers.findIndex(v => v.id === id);
-
+        
         if (index !== -1) {
             data.volunteers.splice(index, 1);
-            if (isFirebaseReady()) {
-                await window.deleteDocument(window.DB_COLLECTIONS.VOLUNTEERS, String(id));
-            }
             saveData(data);
             renderVolunteersGrid();
             initDashboard();
@@ -2781,7 +2634,7 @@ function populateVolunteerMemberSelect(selectedId = null) {
     const data = getData();
     const select = document.getElementById('volunteer-member');
     select.innerHTML = `<option value="">${getLang('select-member')}</option>` +
-        data.members.filter(m => m.status === 'aktif').map(m =>
+        data.members.filter(m => m.status === 'aktif').map(m => 
             `<option value="${m.id}" ${m.id == selectedId ? 'selected' : ''}>${m.nama}</option>`
         ).join('');
 }
@@ -2791,7 +2644,7 @@ function showAssignments(volunteerId) {
     const data = getData();
     const volunteer = data.volunteers.find(v => v.id === volunteerId);
     if (!volunteer) return;
-
+    
     let nama;
     if (volunteer.memberId) {
         const member = data.members.find(m => m.id === volunteer.memberId);
@@ -2799,9 +2652,9 @@ function showAssignments(volunteerId) {
     } else {
         nama = volunteer.externalNama || 'Unknown';
     }
-
+    
     const assignments = data.assignments.filter(a => a.volunteerId === volunteerId);
-
+    
     const areaLabels = {
         'guru-sekolah-minggu': currentLanguage === 'id' ? 'Guru Sekolah Minggu' : 'Sunday School Teacher',
         'singer': 'Singer',
@@ -2815,21 +2668,21 @@ function showAssignments(volunteerId) {
         'lighting-sound': currentLanguage === 'id' ? 'Lighting & Sound System' : 'Lighting & Sound System',
         'usher': 'Usher'
     };
-
+    
     const addButton = isViewOnly() ? '' : `
         <button class="btn btn-primary btn-sm" onclick="showAddAssignmentModal()" style="margin-bottom: 15px;">
             <i class="fas fa-plus"></i> ${getLang('add-assignment')}
         </button>
     `;
-
+    
     // Display custom area if "lainnya" is selected
     const areaDisplay = volunteer.area === 'lainnya' && volunteer.customArea ? volunteer.customArea : (areaLabels[volunteer.area] || volunteer.area);
-
+    
     document.getElementById('detail-title').textContent = `${getLang('assignments') || 'Tugas'}: ${nama}`;
     // Format service date and time for display
     const serviceDateDisplay = volunteer.serviceDate ? formatDate(volunteer.serviceDate) : null;
     const serviceTimeDisplay = volunteer.serviceTime || null;
-
+    
     document.getElementById('detail-content').innerHTML = `
         <div class="detail-section">
             <div class="volunteer-info" style="margin-bottom: 20px; padding: 15px; background: var(--dark-bg); border-radius: var(--radius-sm);">
@@ -2841,8 +2694,8 @@ function showAssignments(volunteerId) {
             ${addButton}
             <h4 style="margin: 20px 0 15px;"><i class="fas fa-tasks" style="color: var(--primary-color);"></i> ${getLang('assignments-list') || 'Daftar Tugas'}</h4>
             ${assignments.length > 0 ? assignments.map((a, index) => {
-        const event = data.events.find(e => e.id === a.eventId);
-        return `
+                const event = data.events.find(e => e.id === a.eventId);
+                return `
                     <div class="assignment-item" style="padding: 15px; background: var(--dark-bg); border-radius: var(--radius-sm); margin-bottom: 10px; border-left: 3px solid var(--primary-color);">
                         <div style="display: flex; justify-content: space-between; align-items: flex-start;">
                             <div>
@@ -2863,7 +2716,7 @@ function showAssignments(volunteerId) {
                         </div>
                     </div>
                 `;
-    }).join('') : `<p style="color: var(--text-muted); text-align: center; padding: 20px;">${currentLanguage === 'id' ? 'Belum ada tugas yang ditugaskan' : 'No assignments yet'}</p>`}
+            }).join('') : `<p style="color: var(--text-muted); text-align: center; padding: 20px;">${currentLanguage === 'id' ? 'Belum ada tugas yang ditugaskan' : 'No assignments yet'}</p>`}
         </div>
     `;
     openModal('modal-detail');
@@ -2879,45 +2732,45 @@ function renderMembersTable() {
     const searchTerm = document.getElementById('search-members')?.value?.toLowerCase() || '';
     const statusFilter = document.getElementById('filter-status')?.value || '';
     const genderFilter = document.getElementById('filter-gender')?.value || '';
-
+    
     let filtered = data.members.filter(m => {
-        const matchSearch = m.nama.toLowerCase().includes(searchTerm) ||
-            m.email.toLowerCase().includes(searchTerm) ||
-            m.telepon.includes(searchTerm);
+        const matchSearch = m.nama.toLowerCase().includes(searchTerm) || 
+                           m.email.toLowerCase().includes(searchTerm) ||
+                           m.telepon.includes(searchTerm);
         const matchStatus = !statusFilter || m.status === statusFilter;
         const matchGender = !genderFilter || m.jk === genderFilter;
         return matchSearch && matchStatus && matchGender;
     });
-
+    
     const isUser = isViewOnly();
-
+    
     container.innerHTML = filtered.map(m => {
         const group = data.groups.find(g => g.id == m.groupId);
-
+        
         // For view-only users, hide sensitive info
         const emailDisplay = isUser ? '***@***.com' : m.email;
         const phoneDisplay = isUser ? '************' : m.telepon;
-
+        
         const editButtons = isUser ? '' : `
             <button class="btn-action btn-edit" onclick="editMember(${m.id})" title="Edit"><i class="fas fa-edit"></i></button>
             <button class="btn-action btn-delete" onclick="deleteMember(${m.id})" title="Hapus"><i class="fas fa-trash"></i></button>
         `;
-
+        
         const adminCols = isUser ? '' : `
             <td>${emailDisplay}</td>
             <td>${phoneDisplay}</td>
         `;
-
+        
         // Status badge with responsive styling
-        const statusBadge = m.status === 'aktif'
+        const statusBadge = m.status === 'aktif' 
             ? `<span class="badge badge-success"><i class="fas fa-check-circle"></i> ${currentLanguage === 'id' ? 'Aktif' : 'Active'}</span>`
             : `<span class="badge badge-inactive"><i class="fas fa-times-circle"></i> ${currentLanguage === 'id' ? 'Nonaktif' : 'Inactive'}</span>`;
-
+        
         // Group display with better styling
-        const groupDisplay = group
-            ? `<span class="group-tag"><i class="fas fa-users"></i> ${group.nama}</span>`
+        const groupDisplay = group 
+            ? `<span class="group-tag"><i class="fas fa-users"></i> ${group.nama}</span>` 
             : '<span class="text-muted">-</span>';
-
+        
         return `
             <tr class="${m.status !== 'aktif' ? 'row-inactive' : ''}">
                 <td><img src="https://ui-avatars.com/api/?name=${encodeURIComponent(m.nama)}&background=ff6b00&color=fff" class="table-avatar" alt="${m.nama}"></td>
@@ -2935,7 +2788,7 @@ function renderMembersTable() {
             </tr>
         `;
     }).join('') || `<tr><td colspan="${isUser ? 6 : 8}" class="text-center">${getLang('no-data') || 'Tidak ada data'}</td></tr>`;
-
+    
     // Update action bar visibility
     const addButton = document.querySelector('#page-members .action-buttons .btn-primary');
     if (addButton) {
@@ -2960,13 +2813,13 @@ function showAddMemberModal() {
     document.getElementById('modal-member-title').textContent = currentLanguage === 'id' ? 'Tambah Member Baru' : 'Add New Member';
     document.getElementById('form-member').reset();
     document.getElementById('member-id').value = '';
-
+    
     // Set default join date to today
     document.getElementById('member-join-date').value = new Date().toISOString().split('T')[0];
-
+    
     // Populate group select with no selection
     populateGroupSelect(null);
-
+    
     openModal('modal-member');
 }
 
@@ -2975,15 +2828,15 @@ function editMember(id) {
         showToast(currentLanguage === 'id' ? 'Anda tidak memiliki izin untuk mengedit data' : 'You do not have permission to edit data', 'error');
         return;
     }
-
+    
     const data = getData();
     const member = data.members.find(m => m.id === id);
-
+    
     if (!member) {
         showToast(currentLanguage === 'id' ? 'Member tidak ditemukan' : 'Member not found', 'error');
         return;
     }
-
+    
     editingMemberId = id;
     document.getElementById('modal-member-title').textContent = currentLanguage === 'id' ? 'Edit Member: ' + member.nama : 'Edit Member: ' + member.nama;
     document.getElementById('member-id').value = member.id;
@@ -2998,30 +2851,30 @@ function editMember(id) {
     document.getElementById('member-kodepos').value = member.kodepos || '';
     document.getElementById('member-status').value = member.status;
     document.getElementById('member-join-date').value = member.joinDate || '';
-
+    
     // Populate group select with member's current group
     populateGroupSelect(member.groupId);
-
+    
     openModal('modal-member');
 }
 
 async function saveMember(e) {
     e.preventDefault();
-
+    
     if (isViewOnly()) {
         showToast(currentLanguage === 'id' ? 'Anda tidak memiliki izin untuk menyimpan data' : 'You do not have permission to save data', 'error');
         return;
     }
-
+    
     showLoading(true);
-
+    
     const data = getData();
-
+    
     // Get groupId and convert to integer or null
     const groupSelect = document.getElementById('member-group');
     const groupIdValue = groupSelect ? groupSelect.value : '';
     const groupId = groupIdValue ? parseInt(groupIdValue) : null;
-
+    
     const memberData = {
         nama: document.getElementById('member-nama').value.trim(),
         email: document.getElementById('member-email').value.trim(),
@@ -3036,30 +2889,30 @@ async function saveMember(e) {
         groupId: groupId,
         joinDate: document.getElementById('member-join-date').value || new Date().toISOString().split('T')[0]
     };
-
+    
     if (editingMemberId) {
         const index = data.members.findIndex(m => m.id === editingMemberId);
         if (index !== -1) {
             const updatedMember = { ...data.members[index], ...memberData };
             data.members[index] = updatedMember;
-
+            
             // Save to Firebase
             if (isFirebaseReady()) {
                 await window.setDocument(window.DB_COLLECTIONS.MEMBERS, String(editingMemberId), updatedMember);
             }
-
+            
             showToast(currentLanguage === 'id' ? 'Member berhasil diupdate' : 'Member updated successfully', 'success');
         }
     } else {
         const newId = Math.max(...data.members.map(m => m.id), 0) + 1;
         const newMember = { id: newId, ...memberData, avatar: null };
         data.members.push(newMember);
-
+        
         // Save to Firebase
         if (isFirebaseReady()) {
             await window.setDocument(window.DB_COLLECTIONS.MEMBERS, String(newId), newMember);
         }
-
+        
         data.activities.unshift({
             id: Date.now(),
             type: 'member',
@@ -3067,10 +2920,10 @@ async function saveMember(e) {
             detail: memberData.nama,
             timestamp: new Date().toISOString()
         });
-
+        
         showToast(currentLanguage === 'id' ? 'Member berhasil ditambahkan' : 'Member added successfully', 'success');
     }
-
+    
     saveData(data);
     closeModal('modal-member');
     renderMembersTable();
@@ -3082,26 +2935,26 @@ function viewMemberDetail(id) {
     const data = getData();
     const member = data.members.find(m => m.id === id);
     if (!member) return;
-
+    
     const isUser = isViewOnly();
     const group = data.groups.find(g => g.id == member.groupId);
     const family = data.families.find(f => f.anggota.includes(id));
-
+    
     // Hide sensitive info for view-only users
     const emailDisplay = isUser ? '***@***.com' : member.email;
     const phoneDisplay = isUser ? '************' : member.telepon;
     const addressDisplay = isUser ? '************' : (member.alamat || '-');
-
+    
     // Status badge with better styling
-    const statusBadge = member.status === 'aktif'
+    const statusBadge = member.status === 'aktif' 
         ? `<span class="badge badge-success" style="font-size: 14px; padding: 8px 16px;"><i class="fas fa-check-circle"></i> ${currentLanguage === 'id' ? 'Aktif' : 'Active'}</span>`
         : `<span class="badge badge-inactive" style="font-size: 14px; padding: 8px 16px;"><i class="fas fa-times-circle"></i> ${currentLanguage === 'id' ? 'Nonaktif' : 'Inactive'}</span>`;
-
+    
     // Group display with better styling
-    const groupDisplay = group
-        ? `<span class="group-tag" style="font-size: 14px; padding: 6px 12px;"><i class="fas fa-users"></i> ${group.nama}</span>`
+    const groupDisplay = group 
+        ? `<span class="group-tag" style="font-size: 14px; padding: 6px 12px;"><i class="fas fa-users"></i> ${group.nama}</span>` 
         : '<span class="text-muted">-</span>';
-
+    
     document.getElementById('detail-title').textContent = currentLanguage === 'id' ? 'Detail Member' : 'Member Detail';
     document.getElementById('detail-content').innerHTML = `
         <div class="detail-section">
@@ -3131,27 +2984,27 @@ async function deleteMember(id) {
         showToast(currentLanguage === 'id' ? 'Anda tidak memiliki izin untuk menghapus data' : 'You do not have permission to delete data', 'error');
         return;
     }
-
+    
     showConfirm(currentLanguage === 'id' ? 'Apakah Anda yakin ingin menghapus member ini?' : 'Are you sure you want to delete this member?', async () => {
         showLoading(true);
-
+        
         const data = getData();
         const index = data.members.findIndex(m => m.id === id);
-
+        
         if (index !== -1) {
             data.members.splice(index, 1);
-
+            
             // Delete from Firebase
             if (isFirebaseReady()) {
                 await window.deleteDocument(window.DB_COLLECTIONS.MEMBERS, String(id));
             }
-
+            
             saveData(data);
             renderMembersTable();
             initDashboard();
             showToast(currentLanguage === 'id' ? 'Member berhasil dihapus' : 'Member deleted successfully', 'success');
         }
-
+        
         showLoading(false);
     });
 }
@@ -3160,17 +3013,17 @@ function populateGroupSelect(selectedId = null) {
     const data = getData();
     const select = document.getElementById('member-group');
     if (!select) return;
-
+    
     // Convert selectedId to number for proper comparison
     const selectedGroupId = selectedId ? parseInt(selectedId) : null;
-
+    
     let optionsHTML = `<option value="">${getLang('none')}</option>`;
-
+    
     data.groups.forEach(g => {
         const isSelected = selectedGroupId && g.id === selectedGroupId ? 'selected' : '';
         optionsHTML += `<option value="${g.id}" ${isSelected}>${g.nama}</option>`;
     });
-
+    
     select.innerHTML = optionsHTML;
 }
 
@@ -3182,12 +3035,12 @@ function renderFamiliesGrid() {
     const data = getData();
     const container = document.getElementById('families-grid');
     const searchTerm = document.getElementById('search-families')?.value?.toLowerCase() || '';
-
-    const filtered = data.families.filter(f =>
-        f.nama.toLowerCase().includes(searchTerm) ||
+    
+    const filtered = data.families.filter(f => 
+        f.nama.toLowerCase().includes(searchTerm) || 
         f.alamat.toLowerCase().includes(searchTerm)
     );
-
+    
     container.innerHTML = filtered.map(f => {
         const kepala = data.members.find(m => m.id === f.kepalaId);
         const anggota = f.anggota.map(id => data.members.find(m => m.id === id)).filter(Boolean);
@@ -3195,7 +3048,7 @@ function renderFamiliesGrid() {
             <button class="btn btn-secondary btn-sm" onclick="editFamily(${f.id})"><i class="fas fa-edit"></i> ${getLang('edit') || 'Edit'}</button>
             <button class="btn btn-danger btn-sm" onclick="deleteFamily(${f.id})"><i class="fas fa-trash"></i> ${getLang('delete') || 'Hapus'}</button>
         `;
-
+        
         return `
             <div class="family-card">
                 <div class="card-header-section">
@@ -3217,7 +3070,7 @@ function renderFamiliesGrid() {
             </div>
         `;
     }).join('') || `<p class="text-center" style="grid-column: 1/-1; color: var(--text-muted);">${getLang('no-data') || 'Tidak ada data'}</p>`;
-
+    
     // Hide add button for view-only users
     const addButton = document.querySelector('#page-families .action-buttons .btn-primary');
     if (addButton) {
@@ -3246,10 +3099,10 @@ function editFamily(id) {
         showToast(currentLanguage === 'id' ? 'Anda tidak memiliki izin untuk mengedit data' : 'You do not have permission to edit data', 'error');
         return;
     }
-
+    
     const data = getData();
     const family = data.families.find(f => f.id === id);
-
+    
     if (family) {
         editingFamilyId = id;
         document.getElementById('modal-family-title').textContent = currentLanguage === 'id' ? 'Edit Keluarga' : 'Edit Family';
@@ -3261,18 +3114,18 @@ function editFamily(id) {
     }
 }
 
-async function saveFamily(e) {
+function saveFamily(e) {
     e.preventDefault();
-
+    
     if (isViewOnly()) {
         showToast(currentLanguage === 'id' ? 'Anda tidak memiliki izin untuk menyimpan data' : 'You do not have permission to save data', 'error');
         return;
     }
-
+    
     const data = getData();
     const kepalaId = parseInt(document.getElementById('family-kepala').value);
     const selectedMembers = Array.from(document.querySelectorAll('#family-members input:checked')).map(cb => parseInt(cb.value));
-
+    
     const familyData = {
         nama: document.getElementById('family-nama').value,
         kepalaId: kepalaId,
@@ -3280,27 +3133,19 @@ async function saveFamily(e) {
         alamat: document.getElementById('family-alamat').value,
         kota: data.churchProfile.kota
     };
-
+    
     if (editingFamilyId) {
         const index = data.families.findIndex(f => f.id === editingFamilyId);
         if (index !== -1) {
-            const updated = { ...data.families[index], ...familyData };
-            data.families[index] = updated;
-            if (isFirebaseReady()) {
-                await window.setDocument(window.DB_COLLECTIONS.FAMILIES, String(editingFamilyId), updated);
-            }
+            data.families[index] = { ...data.families[index], ...familyData };
             showToast(currentLanguage === 'id' ? 'Keluarga berhasil diupdate' : 'Family updated successfully', 'success');
         }
     } else {
         const newId = Math.max(...data.families.map(f => f.id), 0) + 1;
-        const newFamily = { id: newId, ...familyData };
-        data.families.push(newFamily);
-        if (isFirebaseReady()) {
-            await window.setDocument(window.DB_COLLECTIONS.FAMILIES, String(newId), newFamily);
-        }
+        data.families.push({ id: newId, ...familyData });
         showToast(currentLanguage === 'id' ? 'Keluarga berhasil ditambahkan' : 'Family added successfully', 'success');
     }
-
+    
     saveData(data);
     closeModal('modal-family');
     renderFamiliesGrid();
@@ -3311,16 +3156,13 @@ function deleteFamily(id) {
         showToast(currentLanguage === 'id' ? 'Anda tidak memiliki izin untuk menghapus data' : 'You do not have permission to delete data', 'error');
         return;
     }
-
-    showConfirm(currentLanguage === 'id' ? 'Apakah Anda yakin ingin menghapus keluarga ini?' : 'Are you sure you want to delete this family?', async () => {
+    
+    showConfirm(currentLanguage === 'id' ? 'Apakah Anda yakin ingin menghapus keluarga ini?' : 'Are you sure you want to delete this family?', () => {
         const data = getData();
         const index = data.families.findIndex(f => f.id === id);
-
+        
         if (index !== -1) {
             data.families.splice(index, 1);
-            if (isFirebaseReady()) {
-                await window.deleteDocument(window.DB_COLLECTIONS.FAMILIES, String(id));
-            }
             saveData(data);
             renderFamiliesGrid();
             showToast(currentLanguage === 'id' ? 'Keluarga berhasil dihapus' : 'Family deleted successfully', 'success');
@@ -3332,10 +3174,10 @@ function viewFamilyDetail(id) {
     const data = getData();
     const family = data.families.find(f => f.id === id);
     if (!family) return;
-
+    
     const kepala = data.members.find(m => m.id === family.kepalaId);
     const anggota = family.anggota.map(mid => data.members.find(m => m.id === mid)).filter(Boolean);
-
+    
     document.getElementById('detail-title').textContent = currentLanguage === 'id' ? 'Detail Keluarga' : 'Family Detail';
     document.getElementById('detail-content').innerHTML = `
         <div class="detail-section">
@@ -3369,12 +3211,12 @@ function populateFamilyMemberSelects(selectedKepala = null, selectedAnggota = []
     const data = getData();
     const kepalaSelect = document.getElementById('family-kepala');
     const membersContainer = document.getElementById('family-members');
-
+    
     kepalaSelect.innerHTML = `<option value="">${getLang('select')}</option>` +
-        data.members.filter(m => m.status === 'aktif').map(m =>
+        data.members.filter(m => m.status === 'aktif').map(m => 
             `<option value="${m.id}" ${m.id == selectedKepala ? 'selected' : ''}>${m.nama}</option>`
         ).join('');
-
+    
     membersContainer.innerHTML = data.members.filter(m => m.status === 'aktif').map(m => `
         <label class="member-checkbox">
             <input type="checkbox" value="${m.id}" ${selectedAnggota.includes(m.id) ? 'checked' : ''}>
@@ -3393,24 +3235,24 @@ function renderGroupsGrid() {
     const container = document.getElementById('groups-grid');
     const searchTerm = document.getElementById('search-groups')?.value?.toLowerCase() || '';
     const isUser = isViewOnly();
-
-    const filtered = data.groups.filter(g =>
-        g.nama.toLowerCase().includes(searchTerm) ||
+    
+    const filtered = data.groups.filter(g => 
+        g.nama.toLowerCase().includes(searchTerm) || 
         g.deskripsi.toLowerCase().includes(searchTerm)
     );
-
+    
     container.innerHTML = filtered.map(g => {
         const leader = data.members.find(m => m.id === g.leaderId);
-
+        
         // For view-only users, only show phone if group setting allows
         const showPhone = isUser ? g.showPhone !== false : true;
         const phoneDisplay = (showPhone && leader) ? leader.telepon : (isUser ? '************' : (leader ? leader.telepon : '-'));
-
+        
         const editButtons = isUser ? '' : `
             <button class="btn btn-secondary btn-sm" onclick="editGroup(${g.id})"><i class="fas fa-edit"></i> ${getLang('edit') || 'Edit'}</button>
             <button class="btn btn-danger btn-sm" onclick="deleteGroup(${g.id})"><i class="fas fa-trash"></i> ${getLang('delete') || 'Hapus'}</button>
         `;
-
+        
         return `
             <div class="group-card">
                 <div class="card-header-section">
@@ -3433,7 +3275,7 @@ function renderGroupsGrid() {
             </div>
         `;
     }).join('') || `<p class="text-center" style="grid-column: 1/-1; color: var(--text-muted);">${getLang('no-data') || 'Tidak ada data'}</p>`;
-
+    
     // Hide add button for view-only users
     const addButton = document.querySelector('#page-groups .action-buttons .btn-primary');
     if (addButton) {
@@ -3463,10 +3305,10 @@ function editGroup(id) {
         showToast(currentLanguage === 'id' ? 'Anda tidak memiliki izin untuk mengedit data' : 'You do not have permission to edit data', 'error');
         return;
     }
-
+    
     const data = getData();
     const group = data.groups.find(g => g.id === id);
-
+    
     if (group) {
         editingGroupId = id;
         document.getElementById('modal-group-title').textContent = currentLanguage === 'id' ? 'Edit Group' : 'Edit Group';
@@ -3480,14 +3322,14 @@ function editGroup(id) {
     }
 }
 
-async function saveGroup(e) {
+function saveGroup(e) {
     e.preventDefault();
-
+    
     if (isViewOnly()) {
         showToast(currentLanguage === 'id' ? 'Anda tidak memiliki izin untuk menyimpan data' : 'You do not have permission to save data', 'error');
         return;
     }
-
+    
     const data = getData();
     const groupData = {
         nama: document.getElementById('group-nama').value,
@@ -3496,27 +3338,19 @@ async function saveGroup(e) {
         jadwal: document.getElementById('group-jadwal').value,
         showPhone: document.getElementById('group-show-phone').checked
     };
-
+    
     if (editingGroupId) {
         const index = data.groups.findIndex(g => g.id === editingGroupId);
         if (index !== -1) {
-            const updated = { ...data.groups[index], ...groupData };
-            data.groups[index] = updated;
-            if (isFirebaseReady()) {
-                await window.setDocument(window.DB_COLLECTIONS.GROUPS, String(editingGroupId), updated);
-            }
+            data.groups[index] = { ...data.groups[index], ...groupData };
             showToast(currentLanguage === 'id' ? 'Group berhasil diupdate' : 'Group updated successfully', 'success');
         }
     } else {
         const newId = Math.max(...data.groups.map(g => g.id), 0) + 1;
-        const newGroup = { id: newId, ...groupData, anggota: [], createdAt: new Date().toISOString() };
-        data.groups.push(newGroup);
-        if (isFirebaseReady()) {
-            await window.setDocument(window.DB_COLLECTIONS.GROUPS, String(newId), newGroup);
-        }
+        data.groups.push({ id: newId, ...groupData, anggota: [], createdAt: new Date().toISOString() });
         showToast(currentLanguage === 'id' ? 'Group berhasil ditambahkan' : 'Group added successfully', 'success');
     }
-
+    
     saveData(data);
     closeModal('modal-group');
     renderGroupsGrid();
@@ -3528,16 +3362,13 @@ function deleteGroup(id) {
         showToast(currentLanguage === 'id' ? 'Anda tidak memiliki izin untuk menghapus data' : 'You do not have permission to delete data', 'error');
         return;
     }
-
-    showConfirm(currentLanguage === 'id' ? 'Apakah Anda yakin ingin menghapus group ini?' : 'Are you sure you want to delete this group?', async () => {
+    
+    showConfirm(currentLanguage === 'id' ? 'Apakah Anda yakin ingin menghapus group ini?' : 'Are you sure you want to delete this group?', () => {
         const data = getData();
         const index = data.groups.findIndex(g => g.id === id);
-
+        
         if (index !== -1) {
             data.groups.splice(index, 1);
-            if (isFirebaseReady()) {
-                await window.deleteDocument(window.DB_COLLECTIONS.GROUPS, String(id));
-            }
             saveData(data);
             renderGroupsGrid();
             initDashboard();
@@ -3550,24 +3381,24 @@ function manageGroupMembers(groupId) {
     currentGroupId = groupId;
     const data = getData();
     const group = data.groups.find(g => g.id === groupId);
-
+    
     if (!group) return;
-
+    
     // Update modal title
     document.getElementById('modal-group-members-title').textContent = `${currentLanguage === 'id' ? 'Kelola Anggota' : 'Manage Members'}: ${group.nama}`;
-
+    
     // Render current members
     renderGroupMembersList();
-
+    
     // Populate available members dropdown
     populateAvailableMembersSelect();
-
+    
     // Hide add member section for view-only users
     const addMemberSection = document.getElementById('add-member-section');
     if (addMemberSection) {
         addMemberSection.style.display = isViewOnly() ? 'none' : 'block';
     }
-
+    
     openModal('modal-group-members');
 }
 
@@ -3575,25 +3406,25 @@ function renderGroupMembersList() {
     const data = getData();
     const group = data.groups.find(g => g.id === currentGroupId);
     const container = document.getElementById('group-members-list');
-
+    
     if (!group || !group.anggota || group.anggota.length === 0) {
         container.innerHTML = `<p class="text-center" style="padding: 20px; color: var(--text-muted);">${currentLanguage === 'id' ? 'Belum ada anggota dalam group ini' : 'No members in this group yet'}</p>`;
         return;
     }
-
+    
     // Clear container first
     container.innerHTML = '';
-
+    
     // Render each member with proper event handling
     group.anggota.forEach(memberId => {
         const member = data.members.find(m => m.id === memberId);
         if (!member) return;
-
+        
         const isLeader = group.leaderId === memberId;
         const memberItem = document.createElement('div');
         memberItem.className = 'group-member-item';
         memberItem.style.cssText = 'display: flex; align-items: center; gap: 12px; padding: 12px; background: var(--dark-bg); border-radius: var(--radius-sm); margin-bottom: 8px;';
-
+        
         let html = `
             <img src="https://ui-avatars.com/api/?name=${encodeURIComponent(member.nama)}&background=ff6b00&color=fff&size=40" style="border-radius: 50%;" alt="${member.nama}">
             <div style="flex: 1;">
@@ -3601,19 +3432,19 @@ function renderGroupMembersList() {
                 <p style="font-size: 12px; color: var(--text-muted);">${member.email}</p>
             </div>
         `;
-
+        
         if (!isViewOnly()) {
             const deleteBtn = document.createElement('button');
             deleteBtn.className = 'btn-action btn-delete';
             deleteBtn.innerHTML = '<i class="fas fa-trash"></i>';
-            deleteBtn.onclick = function () { removeMemberFromGroup(memberId); };
-
+            deleteBtn.onclick = function() { removeMemberFromGroup(memberId); };
+            
             memberItem.innerHTML = html;
             memberItem.appendChild(deleteBtn);
         } else {
             memberItem.innerHTML = html;
         }
-
+        
         container.appendChild(memberItem);
     });
 }
@@ -3622,46 +3453,43 @@ function populateAvailableMembersSelect() {
     const data = getData();
     const group = data.groups.find(g => g.id === currentGroupId);
     const select = document.getElementById('new-member-select');
-
+    
     if (!group) return;
-
+    
     // Get members not in group
-    const availableMembers = data.members.filter(m =>
+    const availableMembers = data.members.filter(m => 
         m.status === 'aktif' && !group.anggota.includes(m.id)
     );
-
+    
     if (availableMembers.length === 0) {
         select.innerHTML = `<option value="">${currentLanguage === 'id' ? 'Tidak ada member tersedia' : 'No members available'}</option>`;
         return;
     }
-
+    
     select.innerHTML = `<option value="">${getLang('select-member')}</option>` +
         availableMembers.map(m => `<option value="${m.id}">${m.nama}</option>`).join('');
 }
 
-async function addMemberToGroup() {
+function addMemberToGroup() {
     if (isViewOnly()) {
         showToast(currentLanguage === 'id' ? 'Anda tidak memiliki izin untuk menambah anggota' : 'You do not have permission to add members', 'error');
         return;
     }
-
+    
     const select = document.getElementById('new-member-select');
     const memberId = parseInt(select.value);
-
+    
     if (!memberId) {
         showToast(currentLanguage === 'id' ? 'Pilih member terlebih dahulu' : 'Please select a member', 'warning');
         return;
     }
-
+    
     const data = getData();
     const group = data.groups.find(g => g.id === currentGroupId);
-
+    
     if (group) {
         if (!group.anggota.includes(memberId)) {
             group.anggota.push(memberId);
-            if (isFirebaseReady()) {
-                await window.setDocument(window.DB_COLLECTIONS.GROUPS, String(currentGroupId), group);
-            }
             saveData(data);
             renderGroupMembersList();
             populateAvailableMembersSelect();
@@ -3674,34 +3502,31 @@ async function addMemberToGroup() {
     }
 }
 
-async function removeMemberFromGroup(memberId) {
+function removeMemberFromGroup(memberId) {
     if (isViewOnly()) {
         showToast(currentLanguage === 'id' ? 'Anda tidak memiliki izin untuk menghapus anggota' : 'You do not have permission to remove members', 'error');
         return;
     }
-
+    
     if (!confirm(currentLanguage === 'id' ? 'Apakah Anda yakin ingin menghapus anggota ini dari group?' : 'Are you sure you want to remove this member from the group?')) {
         return;
     }
-
+    
     const data = getData();
     const group = data.groups.find(g => g.id === currentGroupId);
-
+    
     if (group) {
         const targetId = parseInt(memberId);
         const index = group.anggota.indexOf(targetId);
-
+        
         if (index > -1) {
             group.anggota.splice(index, 1);
-
+            
             // If removed member was leader, clear leader
             if (group.leaderId === targetId) {
                 group.leaderId = null;
             }
-
-            if (isFirebaseReady()) {
-                await window.setDocument(window.DB_COLLECTIONS.GROUPS, String(currentGroupId), group);
-            }
+            
             saveData(data);
             renderGroupMembersList();
             populateAvailableMembersSelect();
@@ -3718,7 +3543,7 @@ function populateLeaderSelect(selectedId = null) {
     const data = getData();
     const select = document.getElementById('group-leader');
     select.innerHTML = `<option value="">${getLang('select')}</option>` +
-        data.members.filter(m => m.status === 'aktif').map(m =>
+        data.members.filter(m => m.status === 'aktif').map(m => 
             `<option value="${m.id}" ${m.id == selectedId ? 'selected' : ''}>${m.nama}</option>`
         ).join('');
 }
@@ -3726,9 +3551,9 @@ function populateLeaderSelect(selectedId = null) {
 function renderAssignmentsList() {
     const data = getData();
     const container = document.getElementById('assignments-list');
-
+    
     if (!container) return;
-
+    
     const areaLabels = {
         'guru-sekolah-minggu': currentLanguage === 'id' ? 'Guru Sekolah Minggu' : 'Sunday School Teacher',
         'singer': 'Singer',
@@ -3742,11 +3567,11 @@ function renderAssignmentsList() {
         'lighting-sound': currentLanguage === 'id' ? 'Lighting & Sound System' : 'Lighting & Sound System',
         'usher': 'Usher'
     };
-
+    
     container.innerHTML = data.assignments.map(a => {
         const volunteer = data.volunteers.find(v => v.id === a.volunteerId);
         const event = data.events.find(e => e.id === a.eventId);
-
+        
         let volunteerName;
         let volunteerArea;
         if (volunteer) {
@@ -3762,7 +3587,7 @@ function renderAssignmentsList() {
             volunteerName = 'Unknown';
             volunteerArea = '-';
         }
-
+        
         return `
             <div class="assignment-item" style="padding: 15px; background: var(--card-bg); border-radius: var(--radius-sm); margin-bottom: 10px; border: 1px solid var(--border-color);">
                 <div style="display: flex; justify-content: space-between; align-items: flex-start;">
@@ -3793,17 +3618,17 @@ function showAddAssignmentModal() {
         showToast(currentLanguage === 'id' ? 'Anda tidak memiliki izin untuk menambah penugasan' : 'You do not have permission to add assignments', 'error');
         return;
     }
-
+    
     editingAssignmentId = null;
     document.getElementById('form-assignment').reset();
     document.getElementById('assignment-id').value = '';
-
+    
     // Populate volunteer select
     populateAssignmentVolunteerSelect();
-
+    
     // Populate event select
     populateAssignmentEventSelect();
-
+    
     openModal('modal-assignment');
 }
 
@@ -3812,10 +3637,10 @@ function editAssignment(id) {
         showToast(currentLanguage === 'id' ? 'Anda tidak memiliki izin untuk mengedit data' : 'You do not have permission to edit data', 'error');
         return;
     }
-
+    
     const data = getData();
     const assignment = data.assignments.find(a => a.id === id);
-
+    
     if (assignment) {
         editingAssignmentId = id;
         document.getElementById('assignment-id').value = assignment.id;
@@ -3830,14 +3655,14 @@ function editAssignment(id) {
     }
 }
 
-async function saveAssignment(e) {
+function saveAssignment(e) {
     e.preventDefault();
-
+    
     if (isViewOnly()) {
         showToast(currentLanguage === 'id' ? 'Anda tidak memiliki izin untuk menyimpan data' : 'You do not have permission to save data', 'error');
         return;
     }
-
+    
     const data = getData();
     const assignmentData = {
         volunteerId: parseInt(document.getElementById('assignment-volunteer').value),
@@ -3849,27 +3674,19 @@ async function saveAssignment(e) {
         catatan: document.getElementById('assignment-catatan').value,
         status: 'assigned'
     };
-
+    
     if (editingAssignmentId) {
         const index = data.assignments.findIndex(a => a.id === editingAssignmentId);
         if (index !== -1) {
-            const updated = { ...data.assignments[index], ...assignmentData };
-            data.assignments[index] = updated;
-            if (isFirebaseReady()) {
-                await window.setDocument(window.DB_COLLECTIONS.ASSIGNMENTS, String(editingAssignmentId), updated);
-            }
+            data.assignments[index] = { ...data.assignments[index], ...assignmentData };
             showToast(currentLanguage === 'id' ? 'Penugasan berhasil diupdate' : 'Assignment updated successfully', 'success');
         }
     } else {
         const newId = Math.max(...data.assignments.map(a => a.id), 0) + 1;
-        const newAssignment = { id: newId, ...assignmentData };
-        data.assignments.push(newAssignment);
-        if (isFirebaseReady()) {
-            await window.setDocument(window.DB_COLLECTIONS.ASSIGNMENTS, String(newId), newAssignment);
-        }
+        data.assignments.push({ id: newId, ...assignmentData });
         showToast(currentLanguage === 'id' ? 'Penugasan berhasil ditambahkan' : 'Assignment added successfully', 'success');
     }
-
+    
     saveData(data);
     closeModal('modal-assignment');
     renderAssignmentsList();
@@ -3881,16 +3698,13 @@ function deleteAssignment(id) {
         showToast(currentLanguage === 'id' ? 'Anda tidak memiliki izin untuk menghapus data' : 'You do not have permission to delete data', 'error');
         return;
     }
-
-    showConfirm(currentLanguage === 'id' ? 'Apakah Anda yakin ingin menghapus penugasan ini?' : 'Are you sure you want to delete this assignment?', async () => {
+    
+    showConfirm(currentLanguage === 'id' ? 'Apakah Anda yakin ingin menghapus penugasan ini?' : 'Are you sure you want to delete this assignment?', () => {
         const data = getData();
         const index = data.assignments.findIndex(a => a.id === id);
-
+        
         if (index !== -1) {
             data.assignments.splice(index, 1);
-            if (isFirebaseReady()) {
-                await window.deleteDocument(window.DB_COLLECTIONS.ASSIGNMENTS, String(id));
-            }
             saveData(data);
             renderAssignmentsList();
             showToast(currentLanguage === 'id' ? 'Penugasan berhasil dihapus' : 'Assignment deleted successfully', 'success');
@@ -3901,7 +3715,7 @@ function deleteAssignment(id) {
 function populateAssignmentVolunteerSelect(selectedId = null) {
     const data = getData();
     const select = document.getElementById('assignment-volunteer');
-
+    
     const areaLabels = {
         'guru-sekolah-minggu': currentLanguage === 'id' ? 'Guru Sekolah Minggu' : 'Sunday School Teacher',
         'singer': 'Singer',
@@ -3915,7 +3729,7 @@ function populateAssignmentVolunteerSelect(selectedId = null) {
         'lighting-sound': currentLanguage === 'id' ? 'Lighting & Sound System' : 'Lighting & Sound System',
         'usher': 'Usher'
     };
-
+    
     select.innerHTML = `<option value="">${getLang('select-volunteer')}</option>` +
         data.volunteers.filter(v => v.status === 'aktif').map(v => {
             let nama;
@@ -3934,9 +3748,9 @@ function populateAssignmentVolunteerSelect(selectedId = null) {
 function populateAssignmentEventSelect(selectedId = null) {
     const data = getData();
     const select = document.getElementById('assignment-event');
-
+    
     select.innerHTML = `<option value="">${getLang('select-event')}</option>` +
-        data.events.filter(e => e.status === 'upcoming' || e.status === 'ongoing').map(e =>
+        data.events.filter(e => e.status === 'upcoming' || e.status === 'ongoing').map(e => 
             `<option value="${e.id}" ${e.id == selectedId ? 'selected' : ''}>${e.nama} - ${formatDate(e.start)}</option>`
         ).join('');
 }
@@ -3953,9 +3767,9 @@ function initCommunication() {
 function showVolunteersTab(tab, clickedBtn) {
     document.querySelectorAll('.volunteers-tab-content').forEach(c => c.classList.remove('active'));
     document.querySelectorAll('.volunteers-tabs .tab-btn').forEach(b => b.classList.remove('active'));
-
+    
     document.getElementById(`volunteers-${tab}`).classList.add('active');
-
+    
     if (clickedBtn) {
         clickedBtn.classList.add('active');
     } else {
@@ -3971,9 +3785,9 @@ function showVolunteersTab(tab, clickedBtn) {
 function showCommunicationTab(tab, clickedBtn) {
     document.querySelectorAll('.communication-tab-content').forEach(c => c.classList.remove('active'));
     document.querySelectorAll('.communication-tabs .tab-btn').forEach(b => b.classList.remove('active'));
-
+    
     document.getElementById(`communication-${tab}`).classList.add('active');
-
+    
     if (clickedBtn) {
         clickedBtn.classList.add('active');
     } else {
@@ -3989,7 +3803,7 @@ function showCommunicationTab(tab, clickedBtn) {
 function renderContactsList() {
     const data = getData();
     const container = document.getElementById('contacts-list');
-
+    
     container.innerHTML = data.members.filter(m => m.status === 'aktif').map(m => `
         <div class="contact-item" onclick="openChat(${m.id})">
             <img src="https://ui-avatars.com/api/?name=${encodeURIComponent(m.nama)}&background=ff6b00&color=fff&size=40" alt="">
@@ -4005,9 +3819,9 @@ function openChat(memberId) {
     currentChatId = memberId;
     const data = getData();
     const member = data.members.find(m => m.id === memberId);
-
+    
     if (!member) return;
-
+    
     document.getElementById('chat-header').innerHTML = `
         <img src="https://ui-avatars.com/api/?name=${encodeURIComponent(member.nama)}&background=ff6b00&color=fff&size=40" alt="">
         <div>
@@ -4015,7 +3829,7 @@ function openChat(memberId) {
             <p class="status online">Online</p>
         </div>
     `;
-
+    
     document.getElementById('chat-input').style.display = 'flex';
     renderChatMessages();
 }
@@ -4023,14 +3837,14 @@ function openChat(memberId) {
 function renderChatMessages() {
     const data = getData();
     const container = document.getElementById('chat-messages');
-
+    
     if (!currentChatId) return;
-
-    const messages = data.messages.filter(m =>
+    
+    const messages = data.messages.filter(m => 
         (m.senderId === currentUser.id && m.receiverId === currentChatId) ||
         (m.senderId === currentChatId && m.receiverId === currentUser.id)
     ).sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
-
+    
     container.innerHTML = messages.map(m => {
         const isMe = m.senderId === currentUser.id;
         return `
@@ -4040,16 +3854,16 @@ function renderChatMessages() {
             </div>
         `;
     }).join('') || `<p class="text-center" style="padding: 20px; color: var(--text-muted);">${currentLanguage === 'id' ? 'Mulai percakapan' : 'Start a conversation'}</p>`;
-
+    
     container.scrollTop = container.scrollHeight;
 }
 
 function sendMessage() {
     const input = document.getElementById('message-text');
     const content = input.value.trim();
-
+    
     if (!content || !currentChatId) return;
-
+    
     const data = getData();
     data.messages.push({
         id: Date.now(),
@@ -4059,7 +3873,7 @@ function sendMessage() {
         timestamp: new Date().toISOString(),
         read: false
     });
-
+    
     saveData(data);
     input.value = '';
     renderChatMessages();
@@ -4068,12 +3882,12 @@ function sendMessage() {
 function renderAnnouncementsList() {
     const data = getData();
     const container = document.getElementById('announcements-list');
-
+    
     const sorted = [...data.announcements].sort((a, b) => new Date(b.tanggal) - new Date(a.tanggal));
-
+    
     container.innerHTML = sorted.map(a => {
         const deleteButton = isViewOnly() ? '' : `<button class="btn-action btn-delete" onclick="deleteAnnouncement(${a.id})"><i class="fas fa-trash"></i></button>`;
-
+        
         return `
             <div class="announcement-item ${a.important ? 'important' : ''}">
                 <div class="announcement-header">
@@ -4088,7 +3902,7 @@ function renderAnnouncementsList() {
             </div>
         `;
     }).join('') || `<p class="text-center" style="padding: 20px; color: var(--text-muted);">${getLang('no-data') || 'Tidak ada data'}</p>`;
-
+    
     // Hide add button for view-only users
     const addButton = document.querySelector('#communication-announcements .action-buttons .btn-primary');
     if (addButton) {
@@ -4105,18 +3919,17 @@ function showAddAnnouncementModal() {
     openModal('modal-announcement');
 }
 
-async function saveAnnouncement(e) {
+function saveAnnouncement(e) {
     e.preventDefault();
-
+    
     if (isViewOnly()) {
         showToast(currentLanguage === 'id' ? 'Anda tidak memiliki izin untuk menyimpan data' : 'You do not have permission to save data', 'error');
         return;
     }
-
+    
     const data = getData();
-    const newId = Date.now();
     const newAnnouncement = {
-        id: newId,
+        id: Date.now(),
         judul: document.getElementById('announcement-judul').value,
         konten: document.getElementById('announcement-konten').value,
         tanggal: new Date().toISOString().split('T')[0],
@@ -4124,13 +3937,10 @@ async function saveAnnouncement(e) {
         important: document.getElementById('announcement-important').checked,
         authorId: currentUser.id
     };
-
+    
     data.announcements.push(newAnnouncement);
-    if (isFirebaseReady()) {
-        await window.setDocument(window.DB_COLLECTIONS.ANNOUNCEMENTS, String(newId), newAnnouncement);
-    }
     saveData(data);
-
+    
     closeModal('modal-announcement');
     renderAnnouncementsList();
     showToast(currentLanguage === 'id' ? 'Pengumuman berhasil dipublikasikan' : 'Announcement published successfully', 'success');
@@ -4141,16 +3951,13 @@ function deleteAnnouncement(id) {
         showToast(currentLanguage === 'id' ? 'Anda tidak memiliki izin untuk menghapus data' : 'You do not have permission to delete data', 'error');
         return;
     }
-
-    showConfirm(currentLanguage === 'id' ? 'Apakah Anda yakin ingin menghapus pengumuman ini?' : 'Are you sure you want to delete this announcement?', async () => {
+    
+    showConfirm(currentLanguage === 'id' ? 'Apakah Anda yakin ingin menghapus pengumuman ini?' : 'Are you sure you want to delete this announcement?', () => {
         const data = getData();
         const index = data.announcements.findIndex(a => a.id === id);
-
+        
         if (index !== -1) {
             data.announcements.splice(index, 1);
-            if (isFirebaseReady()) {
-                await window.deleteDocument(window.DB_COLLECTIONS.ANNOUNCEMENTS, String(id));
-            }
             saveData(data);
             renderAnnouncementsList();
             showToast(currentLanguage === 'id' ? 'Pengumuman berhasil dihapus' : 'Announcement deleted successfully', 'success');
@@ -4163,15 +3970,15 @@ function sendBroadcast() {
         showToast(currentLanguage === 'id' ? 'Anda tidak memiliki izin untuk mengirim broadcast' : 'You do not have permission to send broadcast', 'error');
         return;
     }
-
+    
     const subject = document.getElementById('broadcast-subject').value;
     const message = document.getElementById('broadcast-message').value;
-
+    
     if (!subject || !message) {
         showToast(currentLanguage === 'id' ? 'Isi subjek dan pesan' : 'Fill in subject and message', 'error');
         return;
     }
-
+    
     showToast(currentLanguage === 'id' ? 'Broadcast berhasil dikirim!' : 'Broadcast sent successfully!', 'success');
     document.getElementById('broadcast-subject').value = '';
     document.getElementById('broadcast-message').value = '';
@@ -4189,13 +3996,13 @@ function refreshContacts() {
 function searchContacts(query) {
     const data = getData();
     const container = document.getElementById('contacts-list');
-
-    const filtered = data.members.filter(m =>
-        m.status === 'aktif' &&
-        (m.nama.toLowerCase().includes(query.toLowerCase()) ||
-            m.email.toLowerCase().includes(query.toLowerCase()))
+    
+    const filtered = data.members.filter(m => 
+        m.status === 'aktif' && 
+        (m.nama.toLowerCase().includes(query.toLowerCase()) || 
+         m.email.toLowerCase().includes(query.toLowerCase()))
     );
-
+    
     container.innerHTML = filtered.map(m => `
         <div class="contact-item" onclick="openChat(${m.id})">
             <img src="https://ui-avatars.com/api/?name=${encodeURIComponent(m.nama)}&background=ff6b00&color=fff&size=40" alt="">
@@ -4220,10 +4027,10 @@ function generateReport(type) {
     const preview = document.getElementById('report-preview');
     const content = document.getElementById('preview-content');
     const title = document.getElementById('preview-title');
-
+    
     let reportHTML = '';
-
-    switch (type) {
+    
+    switch(type) {
         case 'members':
             title.textContent = currentLanguage === 'id' ? 'Laporan Jemaat' : 'Members Report';
             reportHTML = generateMembersReport(data);
@@ -4241,7 +4048,7 @@ function generateReport(type) {
             reportHTML = generateSystemReport(data);
             break;
     }
-
+    
     content.innerHTML = reportHTML;
     preview.classList.remove('hidden');
 }
@@ -4251,10 +4058,10 @@ function generateMembersReport(data) {
     const inactiveMembers = data.members.filter(m => m.status === 'tidak-aktif').length;
     const maleMembers = data.members.filter(m => m.jk === 'Laki-laki').length;
     const femaleMembers = data.members.filter(m => m.jk === 'Perempuan').length;
-
+    
     // Hide personal data for view-only users
     const isUser = isViewOnly();
-
+    
     return `
         <div class="report-section">
             <h3>${currentLanguage === 'id' ? 'Ringkasan Jemaat' : 'Members Summary'}</h3>
@@ -4286,7 +4093,7 @@ function generateAttendanceReport(data) {
     const totalAttendance = data.attendance.length;
     const uniqueEvents = new Set(data.attendance.map(a => a.eventId)).size;
     const averagePerEvent = uniqueEvents > 0 ? Math.round(totalAttendance / uniqueEvents) : 0;
-
+    
     return `
         <div class="report-section">
             <h3>${currentLanguage === 'id' ? 'Ringkasan Kehadiran' : 'Attendance Summary'}</h3>
@@ -4304,10 +4111,10 @@ function generateAttendanceReport(data) {
                 </thead>
                 <tbody>
                     ${data.attendance.map(a => {
-        const member = data.members.find(m => m.id === a.memberId);
-        const event = data.events.find(e => e.id === a.eventId);
-        return `<tr><td>${a.tanggal}</td><td>${event ? event.nama : '-'}</td><td>${member ? member.nama : '-'}</td><td>${a.waktu}</td></tr>`;
-    }).join('')}
+                        const member = data.members.find(m => m.id === a.memberId);
+                        const event = data.events.find(e => e.id === a.eventId);
+                        return `<tr><td>${a.tanggal}</td><td>${event ? event.nama : '-'}</td><td>${member ? member.nama : '-'}</td><td>${a.waktu}</td></tr>`;
+                    }).join('')}
                 </tbody>
             </table>
         </div>
@@ -4318,12 +4125,12 @@ function generateDonationsReport(data) {
     const total = data.donations.reduce((sum, d) => sum + d.jumlah, 0);
     const uniqueDonors = new Set(data.donations.map(d => d.donorId)).size;
     const average = data.donations.length > 0 ? Math.round(total / data.donations.length) : 0;
-
+    
     const byType = {};
     data.donations.forEach(d => {
         byType[d.tipe] = (byType[d.tipe] || 0) + d.jumlah;
     });
-
+    
     return `
         <div class="report-section">
             <h3>${currentLanguage === 'id' ? 'Ringkasan Donasi' : 'Donations Summary'}</h3>
@@ -4347,9 +4154,9 @@ function generateDonationsReport(data) {
                 </thead>
                 <tbody>
                     ${data.donations.map(d => {
-        const donor = data.members.find(m => m.id === d.donorId);
-        return `<tr><td>${d.tanggal}</td><td>${donor ? donor.nama : 'Anonymous'}</td><td>${d.tipe}</td><td>${formatRupiah(d.jumlah)}</td></tr>`;
-    }).join('')}
+                        const donor = data.members.find(m => m.id === d.donorId);
+                        return `<tr><td>${d.tanggal}</td><td>${donor ? donor.nama : 'Anonymous'}</td><td>${d.tipe}</td><td>${formatRupiah(d.jumlah)}</td></tr>`;
+                    }).join('')}
                 </tbody>
             </table>
         </div>
@@ -4395,8 +4202,8 @@ function exportData(type, format) {
     const data = getData();
     let exportData = [];
     let filename = '';
-
-    switch (type) {
+    
+    switch(type) {
         case 'members':
             exportData = data.members.map(m => ({
                 'Nama': m.nama,
@@ -4436,8 +4243,8 @@ function exportData(type, format) {
             filename = 'donations';
             break;
     }
-
-    switch (format) {
+    
+    switch(format) {
         case 'csv':
             exportToCSV(exportData, filename);
             break;
@@ -4454,7 +4261,7 @@ function exportData(type, format) {
             exportToTXT(exportData, filename);
             break;
     }
-
+    
     // Close export menu
     document.querySelectorAll('.export-menu').forEach(m => m.classList.remove('show'));
 }
@@ -4463,14 +4270,14 @@ function saveReportAs(format) {
     const content = document.getElementById('preview-content').innerText;
     const title = document.getElementById('preview-title').textContent;
     const data = getData();
-
+    
     // Determine report type from title
     let reportType = '';
     if (title.includes('Jemaat') || title.includes('Members')) reportType = 'members';
     else if (title.includes('Kehadiran') || title.includes('Attendance')) reportType = 'attendance';
     else if (title.includes('Donasi') || title.includes('Donations')) reportType = 'donations';
-
-    switch (format) {
+    
+    switch(format) {
         case 'pdf':
             exportTextToPDF(content, title);
             break;
@@ -4492,8 +4299,8 @@ function saveReportAs(format) {
 function exportReportCSV(reportType, data) {
     let exportData = [];
     let filename = '';
-
-    switch (reportType) {
+    
+    switch(reportType) {
         case 'members':
             exportData = data.members.map(m => ({
                 'Nama': m.nama,
@@ -4537,15 +4344,15 @@ function exportReportCSV(reportType, data) {
             showToast(currentLanguage === 'id' ? 'Tipe report tidak dikenali' : 'Unknown report type', 'warning');
             return;
     }
-
+    
     exportToCSV(exportData, filename);
 }
 
 function exportReportXLS(reportType, data) {
     let exportData = [];
     let filename = '';
-
-    switch (reportType) {
+    
+    switch(reportType) {
         case 'members':
             exportData = data.members.map(m => ({
                 'Nama': m.nama,
@@ -4589,7 +4396,7 @@ function exportReportXLS(reportType, data) {
             showToast(currentLanguage === 'id' ? 'Tipe report tidak dikenali' : 'Unknown report type', 'warning');
             return;
     }
-
+    
     exportToXLS(exportData, filename);
 }
 
@@ -4598,13 +4405,13 @@ function exportToCSV(data, filename) {
         showToast(currentLanguage === 'id' ? 'Tidak ada data untuk diexport' : 'No data to export', 'warning');
         return;
     }
-
+    
     const headers = Object.keys(data[0]);
     const csvContent = [
         headers.join(','),
         ...data.map(row => headers.map(h => `"${(row[h] || '').toString().replace(/"/g, '""')}"`).join(','))
     ].join('\n');
-
+    
     downloadFile('\uFEFF' + csvContent, `${filename}.csv`, 'text/csv;charset=utf-8;');
     showToast(currentLanguage === 'id' ? 'CSV berhasil diunduh' : 'CSV downloaded successfully', 'success');
 }
@@ -4614,7 +4421,7 @@ function exportToXLS(data, filename) {
         showToast(currentLanguage === 'id' ? 'Tidak ada data untuk diexport' : 'No data to export', 'warning');
         return;
     }
-
+    
     const ws = XLSX.utils.json_to_sheet(data);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Data');
@@ -4625,10 +4432,10 @@ function exportToXLS(data, filename) {
 function exportToPDF(data, filename) {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
-
+    
     doc.setFontSize(16);
     doc.text(filename.toUpperCase(), 14, 20);
-
+    
     let y = 35;
     data.forEach((row, i) => {
         if (y > 270) {
@@ -4641,7 +4448,7 @@ function exportToPDF(data, filename) {
         });
         y += Object.keys(row).length * 5 + 5;
     });
-
+    
     doc.save(`${filename}.pdf`);
     showToast(currentLanguage === 'id' ? 'PDF berhasil diunduh' : 'PDF downloaded successfully', 'success');
 }
@@ -4649,14 +4456,14 @@ function exportToPDF(data, filename) {
 function exportTextToPDF(text, filename) {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
-
+    
     doc.setFontSize(16);
     doc.text(filename, 14, 20);
-
+    
     doc.setFontSize(10);
     const lines = doc.splitTextToSize(text, 180);
     doc.text(lines, 14, 35);
-
+    
     doc.save(`${filename}.pdf`);
     showToast(currentLanguage === 'id' ? 'PDF berhasil diunduh' : 'PDF downloaded successfully', 'success');
 }
@@ -4670,14 +4477,14 @@ function exportToDOCX(data, filename) {
         <h1>${filename}</h1>
         <table border="1">
     `;
-
+    
     if (data.length > 0) {
         html += '<tr>' + Object.keys(data[0]).map(h => `<th>${h}</th>`).join('') + '</tr>';
         html += data.map(row => '<tr>' + Object.values(row).map(v => `<td>${v}</td>`).join('') + '</tr>').join('');
     }
-
+    
     html += '</table></body></html>';
-
+    
     const blob = new Blob(['\ufeff', html], { type: 'application/msword' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -4686,7 +4493,7 @@ function exportToDOCX(data, filename) {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-
+    
     showToast(currentLanguage === 'id' ? 'Word berhasil diunduh' : 'Word downloaded successfully', 'success');
 }
 
@@ -4696,7 +4503,7 @@ function exportTextToDOCX(text, filename) {
         <head><meta charset='utf-8'><title>${filename}</title></head>
         <body><h1>${filename}</h1><pre>${text}</pre></body></html>
     `;
-
+    
     const blob = new Blob(['\ufeff', html], { type: 'application/msword' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -4705,7 +4512,7 @@ function exportTextToDOCX(text, filename) {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-
+    
     showToast(currentLanguage === 'id' ? 'Word berhasil diunduh' : 'Word downloaded successfully', 'success');
 }
 
@@ -4714,13 +4521,13 @@ function exportToTXT(data, filename) {
         showToast(currentLanguage === 'id' ? 'Tidak ada data untuk diexport' : 'No data to export', 'warning');
         return;
     }
-
+    
     const headers = Object.keys(data[0]);
     const lines = [
         headers.join('\t'),
         ...data.map(row => headers.map(h => row[h] || '').join('\t'))
     ];
-
+    
     downloadFile(lines.join('\n'), `${filename}.txt`, 'text/plain');
     showToast(currentLanguage === 'id' ? 'TXT berhasil diunduh' : 'TXT downloaded successfully', 'success');
 }
@@ -4745,27 +4552,27 @@ function renderUsersGrid() {
     const data = getData();
     const container = document.getElementById('users-grid');
     if (!container) return;
-
+    
     const searchTerm = document.getElementById('search-users')?.value?.toLowerCase() || '';
-
-    const filtered = data.users.filter(u =>
-        u.nama.toLowerCase().includes(searchTerm) ||
+    
+    const filtered = data.users.filter(u => 
+        u.nama.toLowerCase().includes(searchTerm) || 
         u.username.toLowerCase().includes(searchTerm) ||
         u.email.toLowerCase().includes(searchTerm)
     );
-
+    
     const roleLabels = {
         'superadmin': currentLanguage === 'id' ? 'Super Admin' : 'Super Admin',
         'admin': currentLanguage === 'id' ? 'Admin' : 'Admin',
         'user': currentLanguage === 'id' ? 'User (View Only)' : 'User (View Only)'
     };
-
+    
     const roleColors = {
         'superadmin': 'danger',
         'admin': 'warning',
         'user': 'info'
     };
-
+    
     container.innerHTML = filtered.map(u => `
         <div class="user-card">
             <div class="card-header-section">
@@ -4795,7 +4602,7 @@ function searchUsers() {
 function showAddUserModal() {
     editingUserId = null;
     document.getElementById('modal-user-title').textContent = currentLanguage === 'id' ? 'Tambah User Baru' : 'Add New User';
-
+    
     // Reset all form fields
     document.getElementById('user-id').value = '';
     document.getElementById('user-nama').value = '';
@@ -4803,31 +4610,31 @@ function showAddUserModal() {
     document.getElementById('user-email').value = '';
     document.getElementById('user-password').value = '';
     document.getElementById('user-role').value = 'admin';
-
+    
     // Show password required indicator
     const passwordRequired = document.getElementById('password-required');
     if (passwordRequired) {
         passwordRequired.style.display = 'inline';
     }
-
+    
     // Make password required for new user
     document.getElementById('user-password').required = true;
-
+    
     // Add placeholder hint
     document.getElementById('user-password').placeholder = currentLanguage === 'id' ? 'Masukkan password (min 4 karakter)' : 'Enter password (min 4 characters)';
-
+    
     openModal('modal-user');
 }
 
 function editUser(id) {
     const data = getData();
     const user = data.users.find(u => u.id === id);
-
+    
     if (!user) {
         showToast(currentLanguage === 'id' ? 'User tidak ditemukan' : 'User not found', 'error');
         return;
     }
-
+    
     editingUserId = id;
     document.getElementById('modal-user-title').textContent = currentLanguage === 'id' ? 'Edit User: ' + user.nama : 'Edit User: ' + user.nama;
     document.getElementById('user-id').value = user.id;
@@ -4835,39 +4642,39 @@ function editUser(id) {
     document.getElementById('user-username').value = user.username;
     document.getElementById('user-email').value = user.email;
     document.getElementById('user-role').value = user.role;
-
+    
     // Hide password required indicator for edit
     const passwordRequired = document.getElementById('password-required');
     if (passwordRequired) {
         passwordRequired.style.display = 'none';
     }
-
+    
     // Password not required for edit
     document.getElementById('user-password').required = false;
     document.getElementById('user-password').value = '';
     document.getElementById('user-password').placeholder = currentLanguage === 'id' ? 'Kosongkan jika tidak ingin mengubah' : 'Leave blank to keep current password';
-
+    
     openModal('modal-user');
 }
 
-async function saveUser(e) {
+function saveUser(e) {
     e.preventDefault();
-
+    
     // Get form values
     const nama = document.getElementById('user-nama').value.trim();
     const username = document.getElementById('user-username').value.trim();
     const email = document.getElementById('user-email').value.trim();
     const role = document.getElementById('user-role').value;
     const password = document.getElementById('user-password').value;
-
+    
     // Validation
     if (!nama || !username || !email || !role) {
         showToast(currentLanguage === 'id' ? 'Semua field wajib diisi' : 'All fields are required', 'error');
         return;
     }
-
+    
     const data = getData();
-
+    
     // Check for duplicate username (only for new users)
     if (!editingUserId) {
         const existingUser = data.users.find(u => u.username.toLowerCase() === username.toLowerCase());
@@ -4875,21 +4682,21 @@ async function saveUser(e) {
             showToast(currentLanguage === 'id' ? 'Username sudah digunakan' : 'Username already exists', 'error');
             return;
         }
-
+        
         // Check for duplicate email
         const existingEmail = data.users.find(u => u.email.toLowerCase() === email.toLowerCase());
         if (existingEmail) {
             showToast(currentLanguage === 'id' ? 'Email sudah digunakan' : 'Email already exists', 'error');
             return;
         }
-
+        
         // Password required for new user
-        if (!password || password.length < 6) {
-            showToast(currentLanguage === 'id' ? 'Password minimal 6 karakter' : 'Password must be at least 6 characters', 'error');
+        if (!password || password.length < 4) {
+            showToast(currentLanguage === 'id' ? 'Password minimal 4 karakter' : 'Password must be at least 4 characters', 'error');
             return;
         }
     }
-
+    
     const userData = {
         nama: nama,
         username: username,
@@ -4897,7 +4704,7 @@ async function saveUser(e) {
         role: role,
         status: 'aktif'
     };
-
+    
     if (editingUserId) {
         // Edit existing user
         const index = data.users.findIndex(u => u.id === editingUserId);
@@ -4910,7 +4717,7 @@ async function saveUser(e) {
                     return;
                 }
             }
-
+            
             // Check if email changed and already exists
             if (email.toLowerCase() !== data.users[index].email.toLowerCase()) {
                 const existingEmail = data.users.find(u => u.email.toLowerCase() === email.toLowerCase() && u.id !== editingUserId);
@@ -4919,84 +4726,38 @@ async function saveUser(e) {
                     return;
                 }
             }
-
+            
             // Update password only if provided
-            if (password && password.length >= 6) {
+            if (password && password.length >= 4) {
                 userData.password = password;
-            } else if (password && password.length < 6) {
-                showToast(currentLanguage === 'id' ? 'Password minimal 6 karakter' : 'Password must be at least 6 characters', 'error');
+            } else if (password && password.length < 4) {
+                showToast(currentLanguage === 'id' ? 'Password minimal 4 karakter' : 'Password must be at least 4 characters', 'error');
                 return;
             } else {
                 userData.password = data.users[index].password;
             }
-
-            const updatedUser = { ...data.users[index], ...userData };
-            data.users[index] = updatedUser;
-
-            // Sync to Firestore users/{uid} if uid exists
-            if (isFirebaseReady() && updatedUser.uid) {
-                await window.setUserProfile(updatedUser.uid, {
-                    nama: updatedUser.nama,
-                    username: updatedUser.username,
-                    role: updatedUser.role,
-                    status: updatedUser.status
-                });
-            }
-
+            
+            data.users[index] = { ...data.users[index], ...userData };
             saveData(data);
             closeModal('modal-user');
             renderUsersGrid();
             showToast(currentLanguage === 'id' ? 'User berhasil diupdate' : 'User updated successfully', 'success');
         }
     } else {
-        // Add new user via Firebase Auth + Firestore
-        if (isFirebaseReady() && isAuthReady()) {
-            showLoading(true);
-            try {
-                const newProfile = await window.createChurchUser({
-                    nama,
-                    username,
-                    email,
-                    password,
-                    role
-                });
-                if (newProfile) {
-                    // Also mirror into local dataCache so UI refreshes
-                    const localUser = {
-                        id: Date.now(),
-                        uid: newProfile.uid,
-                        nama: newProfile.nama,
-                        username: newProfile.username,
-                        email: newProfile.email,
-                        role: newProfile.role,
-                        status: newProfile.status,
-                        avatar: null,
-                        lastLogin: null
-                    };
-                    data.users.push(localUser);
-                    saveData(data);
-                    closeModal('modal-user');
-                    renderUsersGrid();
-                    showToast(currentLanguage === 'id' ? 'User berhasil ditambahkan' : 'User added successfully', 'success');
-                } else {
-                    showToast(currentLanguage === 'id' ? 'Gagal membuat user. Email mungkin sudah terdaftar.' : 'Failed to create user. Email may already be in use.', 'error');
-                }
-            } catch (err) {
-                showToast(currentLanguage === 'id' ? 'Gagal membuat user: ' + err.message : 'Failed to create user: ' + err.message, 'error');
-            } finally {
-                showLoading(false);
-            }
-        } else {
-            // Offline fallback
-            userData.password = password;
-            const newId = Math.max(...data.users.map(u => u.id), 0) + 1;
-            const newUser = { id: newId, ...userData, avatar: null, lastLogin: null };
-            data.users.push(newUser);
-            saveData(data);
-            closeModal('modal-user');
-            renderUsersGrid();
-            showToast(currentLanguage === 'id' ? 'User berhasil ditambahkan' : 'User added successfully', 'success');
-        }
+        // Add new user
+        userData.password = password;
+        const newId = Math.max(...data.users.map(u => u.id), 0) + 1;
+        const newUser = { 
+            id: newId, 
+            ...userData, 
+            avatar: null,
+            lastLogin: null
+        };
+        data.users.push(newUser);
+        saveData(data);
+        closeModal('modal-user');
+        renderUsersGrid();
+        showToast(currentLanguage === 'id' ? 'User berhasil ditambahkan' : 'User added successfully', 'success');
     }
 }
 
@@ -5005,24 +4766,13 @@ function deleteUser(id) {
         showToast(currentLanguage === 'id' ? 'Super Admin tidak dapat dihapus' : 'Super Admin cannot be deleted', 'error');
         return;
     }
-
-    showConfirm(currentLanguage === 'id' ? 'Apakah Anda yakin ingin menghapus user ini?' : 'Are you sure you want to delete this user?', async () => {
+    
+    showConfirm(currentLanguage === 'id' ? 'Apakah Anda yakin ingin menghapus user ini?' : 'Are you sure you want to delete this user?', () => {
         const data = getData();
-        const userToDelete = data.users.find(u => u.id === id);
         const index = data.users.findIndex(u => u.id === id);
-
+        
         if (index !== -1) {
             data.users.splice(index, 1);
-
-            // Delete from Firestore users/{uid} if uid is known
-            if (isFirebaseReady() && userToDelete && userToDelete.uid) {
-                try {
-                    await window.firebaseDeleteDoc(window.firebaseDoc(window.db, 'users', userToDelete.uid));
-                } catch (err) {
-                    console.warn('[APP] Could not delete user from Firestore:', err);
-                }
-            }
-
             saveData(data);
             renderUsersGrid();
             showToast(currentLanguage === 'id' ? 'User berhasil dihapus' : 'User deleted successfully', 'success');
@@ -5034,8 +4784,62 @@ function deleteUser(id) {
 // NOTIFICATIONS
 // ========================================
 
-// toggleNotifications, renderNotifications, markNotificationRead, markAllRead
-// — versi Firestore ada di bawah (baris ~5152)
+function toggleNotifications() {
+    const dropdown = document.getElementById('notif-dropdown');
+    dropdown.classList.toggle('show');
+}
+
+function renderNotifications() {
+    const data = getData();
+    const container = document.getElementById('notif-list');
+    const badge = document.getElementById('notif-count');
+    
+    const unread = data.notifications.filter(n => !n.read);
+    badge.textContent = unread.length;
+    badge.style.display = unread.length > 0 ? 'flex' : 'none';
+    
+    const sorted = [...data.notifications].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+    
+    container.innerHTML = sorted.map(n => `
+        <div class="notif-item ${n.read ? 'read' : 'unread'}" onclick="markNotificationRead(${n.id})">
+            <div class="notif-icon"><i class="fas fa-${getNotifIcon(n.type)}"></i></div>
+            <div class="notif-content">
+                <h4>${n.title}</h4>
+                <p>${n.message}</p>
+                <span>${timeAgo(n.timestamp)}</span>
+            </div>
+        </div>
+    `).join('') || `<p class="text-center" style="padding: 20px; color: var(--text-muted);">${currentLanguage === 'id' ? 'Tidak ada notifikasi' : 'No notifications'}</p>`;
+}
+
+function getNotifIcon(type) {
+    const icons = {
+        member: 'user',
+        donation: 'hand-holding-heart',
+        event: 'calendar',
+        attendance: 'clipboard-check',
+        announcement: 'bullhorn',
+        system: 'cog'
+    };
+    return icons[type] || 'bell';
+}
+
+function markNotificationRead(id) {
+    const data = getData();
+    const notif = data.notifications.find(n => n.id === id);
+    if (notif) {
+        notif.read = true;
+        saveData(data);
+        renderNotifications();
+    }
+}
+
+function markAllRead() {
+    const data = getData();
+    data.notifications.forEach(n => n.read = true);
+    saveData(data);
+    renderNotifications();
+}
 
 // ========================================
 // MODAL SYSTEM
@@ -5058,17 +4862,17 @@ function closeModal(modalId) {
 }
 
 // Close modal when clicking outside
-window.onclick = function (event) {
+window.onclick = function(event) {
     if (event.target.classList.contains('modal')) {
         event.target.style.display = 'none';
         document.body.style.overflow = '';
     }
-
+    
     // Close export menus when clicking outside
     if (!event.target.closest('.export-dropdown')) {
         document.querySelectorAll('.export-menu').forEach(m => m.classList.remove('show'));
     }
-
+    
     // Close notification dropdown
     if (!event.target.closest('.notifications')) {
         const notifDropdown = document.getElementById('notif-dropdown');
@@ -5084,18 +4888,18 @@ function showConfirm(message, onConfirm) {
     const modal = document.getElementById('modal-confirm');
     const messageEl = document.getElementById('confirm-message');
     const yesBtn = document.getElementById('confirm-yes');
-
+    
     messageEl.textContent = message;
-
+    
     // Remove old listeners
     const newYesBtn = yesBtn.cloneNode(true);
     yesBtn.parentNode.replaceChild(newYesBtn, yesBtn);
-
-    newYesBtn.onclick = function () {
+    
+    newYesBtn.onclick = function() {
         closeModal('modal-confirm');
         onConfirm();
     };
-
+    
     openModal('modal-confirm');
 }
 
@@ -5107,27 +4911,27 @@ function showToast(message, type = 'info') {
     const toast = document.getElementById('toast');
     const icon = document.getElementById('toast-icon');
     const msg = document.getElementById('toast-message');
-
+    
     const icons = {
         success: 'fa-check-circle',
         error: 'fa-times-circle',
         warning: 'fa-exclamation-triangle',
         info: 'fa-info-circle'
     };
-
+    
     const colors = {
         success: '#4caf50',
         error: '#f44336',
         warning: '#ff9800',
         info: '#2196f3'
     };
-
+    
     icon.className = `fas ${icons[type]}`;
     icon.style.color = colors[type];
     msg.textContent = message;
-
+    
     toast.classList.add('show');
-
+    
     setTimeout(() => {
         toast.classList.remove('show');
     }, 3000);
@@ -5137,96 +4941,13 @@ function showToast(message, type = 'info') {
 // NOTIFICATION SYSTEM
 // ========================================
 
-// ========================================
-// BIRTHDAY NOTIFICATIONS
-// ========================================
-
-async function checkBirthdayNotifications() {
-    try {
-        const data = getData();
-        if (!data || !data.members) return;
-
-        const today = new Date();
-        const todayMonth = today.getMonth() + 1; // 1-12
-        const todayDay   = today.getDate();
-
-        // Window: today + next 7 days
-        const upcoming = [];
-        for (let offset = 0; offset <= 7; offset++) {
-            const d = new Date(today);
-            d.setDate(today.getDate() + offset);
-            upcoming.push({ month: d.getMonth() + 1, day: d.getDate(), offset });
-        }
-
-        const activeMembers = data.members.filter(m => m.status === 'aktif' && m.tglLahir);
-
-        for (const member of activeMembers) {
-            const bday = new Date(member.tglLahir);
-            if (isNaN(bday.getTime())) continue;
-
-            const bdayMonth = bday.getMonth() + 1;
-            const bdayDay   = bday.getDate();
-
-            const match = upcoming.find(u => u.month === bdayMonth && u.day === bdayDay);
-            if (!match) continue;
-
-            const age = today.getFullYear() - bday.getFullYear();
-
-            // Deduplicate: skip if a birthday notif for this member+date already exists today
-            const notifKey = `birthday-${member.id}-${today.getFullYear()}-${bdayMonth}-${bdayDay}`;
-            const alreadySent = localStorage.getItem(notifKey);
-            if (alreadySent) continue;
-
-            let title, message, type;
-            if (match.offset === 0) {
-                title   = `🎂 Ulang Tahun Hari Ini!`;
-                message = `${member.nama} berulang tahun hari ini (${age} tahun). Jangan lupa ucapkan selamat!`;
-                type    = 'birthday';
-            } else {
-                title   = `🎁 Ulang Tahun ${match.offset} Hari Lagi`;
-                message = `${member.nama} akan berulang tahun pada ${formatDate(member.tglLahir)} (${age} tahun).`;
-                type    = 'birthday';
-            }
-
-            // Save to Firestore / local
-            if (isFirebaseReady() && window.addNotification) {
-                await window.addNotification({
-                    title,
-                    message,
-                    type,
-                    memberId: member.id,
-                    timestamp: new Date().toISOString(),
-                    read: false
-                });
-            } else {
-                // Local-only push
-                notifications.unshift({
-                    id: notifKey,
-                    title,
-                    message,
-                    type,
-                    timestamp: new Date().toISOString(),
-                    read: false
-                });
-            }
-
-            // Mark as sent for today to avoid duplicates on re-login
-            localStorage.setItem(notifKey, '1');
-        }
-
-        await loadNotifications();
-    } catch (err) {
-        console.error('[APP] checkBirthdayNotifications:', err);
-    }
-}
-
 let notifications = [];
 let unreadCount = 0;
 
 // Load notifications from Firebase
 async function loadNotifications() {
     console.log('[APP] loadNotifications START');
-
+    
     try {
         if (isFirebaseReady() && window.getNotifications) {
             notifications = await window.getNotifications();
@@ -5250,7 +4971,7 @@ async function loadNotifications() {
 // Add new notification
 async function addNotification(title, message, type = 'info', userId = null) {
     console.log('[APP] addNotification START:', title);
-
+    
     const notification = {
         title,
         message,
@@ -5259,7 +4980,7 @@ async function addNotification(title, message, type = 'info', userId = null) {
         timestamp: new Date().toISOString(),
         read: false
     };
-
+    
     try {
         if (isFirebaseReady() && window.addNotification) {
             await window.addNotification(notification);
@@ -5268,13 +4989,13 @@ async function addNotification(title, message, type = 'info', userId = null) {
             notifications.unshift(notification);
             localStorage.setItem('cmsNotifications', JSON.stringify(notifications));
         }
-
+        
         // Reload notifications
         await loadNotifications();
-
+        
         // Show toast
         showToast(message, type);
-
+        
         return true;
     } catch (error) {
         console.error('[APP] Error adding notification:', error);
@@ -5285,7 +5006,7 @@ async function addNotification(title, message, type = 'info', userId = null) {
 // Mark notification as read
 async function markNotificationRead(notificationId) {
     console.log('[APP] markNotificationRead:', notificationId);
-
+    
     try {
         if (isFirebaseReady() && window.markNotificationRead) {
             await window.markNotificationRead(notificationId);
@@ -5297,7 +5018,7 @@ async function markNotificationRead(notificationId) {
                 localStorage.setItem('cmsNotifications', JSON.stringify(notifications));
             }
         }
-
+        
         await loadNotifications();
         return true;
     } catch (error) {
@@ -5309,7 +5030,7 @@ async function markNotificationRead(notificationId) {
 // Mark all notifications as read
 async function markAllNotificationsRead() {
     console.log('[APP] markAllNotificationsRead');
-
+    
     try {
         for (const notif of notifications) {
             if (!notif.read) {
@@ -5326,7 +5047,7 @@ async function markAllNotificationsRead() {
 // Delete notification
 async function deleteNotification(notificationId) {
     console.log('[APP] deleteNotification:', notificationId);
-
+    
     try {
         if (isFirebaseReady() && window.deleteNotification) {
             await window.deleteNotification(notificationId);
@@ -5335,7 +5056,7 @@ async function deleteNotification(notificationId) {
             notifications = notifications.filter(n => (n.id || n.timestamp) !== notificationId);
             localStorage.setItem('cmsNotifications', JSON.stringify(notifications));
         }
-
+        
         await loadNotifications();
         return true;
     } catch (error) {
@@ -5357,7 +5078,7 @@ function updateNotificationBadge() {
 function renderNotifications() {
     const dropdown = document.getElementById('notif-dropdown');
     if (!dropdown) return;
-
+    
     if (notifications.length === 0) {
         dropdown.innerHTML = `
             <div class="notif-header">
@@ -5370,15 +5091,14 @@ function renderNotifications() {
         `;
         return;
     }
-
+    
     const notifHTML = notifications.slice(0, 10).map(n => {
         const isRead = n.read ? 'read' : 'unread';
-        const icon = n.type === 'success' ? 'fa-check-circle' :
-            n.type === 'error' ? 'fa-times-circle' :
-                n.type === 'warning' ? 'fa-exclamation-triangle' :
-                    n.type === 'birthday' ? 'fa-birthday-cake' : 'fa-info-circle';
+        const icon = n.type === 'success' ? 'fa-check-circle' : 
+                     n.type === 'error' ? 'fa-times-circle' : 
+                     n.type === 'warning' ? 'fa-exclamation-triangle' : 'fa-info-circle';
         const time = formatTimeAgo(n.timestamp);
-
+        
         return `
             <div class="notif-item ${isRead}" onclick="handleNotificationClick('${n.id || n.timestamp}')">
                 <div class="notif-icon"><i class="fas ${icon}"></i></div>
@@ -5393,7 +5113,7 @@ function renderNotifications() {
             </div>
         `;
     }).join('');
-
+    
     dropdown.innerHTML = `
         <div class="notif-header">
             <span>${getLang('notifications') || 'Notifikasi'}</span>
@@ -5424,7 +5144,7 @@ function formatTimeAgo(timestamp) {
     const now = new Date();
     const past = new Date(timestamp);
     const diff = Math.floor((now - past) / 1000);
-
+    
     if (diff < 60) return currentLanguage === 'id' ? 'Baru saja' : 'Just now';
     if (diff < 3600) return `${Math.floor(diff / 60)} ${currentLanguage === 'id' ? 'menit' : 'min'} ${currentLanguage === 'id' ? 'lalu' : 'ago'}`;
     if (diff < 86400) return `${Math.floor(diff / 3600)} ${currentLanguage === 'id' ? 'jam' : 'hr'} ${currentLanguage === 'id' ? 'lalu' : 'ago'}`;
@@ -5470,10 +5190,10 @@ function formatDate(dateString) {
     if (!dateString) return '-';
     const date = new Date(dateString);
     if (isNaN(date.getTime())) return dateString;
-    return date.toLocaleDateString(currentLanguage === 'id' ? 'id-ID' : 'en-US', {
-        day: 'numeric',
-        month: 'short',
-        year: 'numeric'
+    return date.toLocaleDateString(currentLanguage === 'id' ? 'id-ID' : 'en-US', { 
+        day: 'numeric', 
+        month: 'short', 
+        year: 'numeric' 
     });
 }
 
@@ -5485,9 +5205,9 @@ function formatTime(dateString) {
         if (dateString.includes(':')) return dateString;
         return '-';
     }
-    return date.toLocaleTimeString(currentLanguage === 'id' ? 'id-ID' : 'en-US', {
-        hour: '2-digit',
-        minute: '2-digit'
+    return date.toLocaleTimeString(currentLanguage === 'id' ? 'id-ID' : 'en-US', { 
+        hour: '2-digit', 
+        minute: '2-digit' 
     });
 }
 
@@ -5507,7 +5227,7 @@ function timeAgo(timestamp) {
     const date = new Date(timestamp);
     const now = new Date();
     const seconds = Math.floor((now - date) / 1000);
-
+    
     const intervals = {
         tahun: 31536000,
         bulan: 2592000,
@@ -5517,7 +5237,7 @@ function timeAgo(timestamp) {
         menit: 60,
         detik: 1
     };
-
+    
     const enIntervals = {
         year: 31536000,
         month: 2592000,
@@ -5527,12 +5247,12 @@ function timeAgo(timestamp) {
         minute: 60,
         second: 1
     };
-
+    
     const labels = currentLanguage === 'id' ? intervals : enIntervals;
-    const labelNames = currentLanguage === 'id'
+    const labelNames = currentLanguage === 'id' 
         ? ['tahun', 'bulan', 'minggu', 'hari', 'jam', 'menit', 'detik']
         : ['year', 'month', 'week', 'day', 'hour', 'minute', 'second'];
-
+    
     for (let i = 0; i < labelNames.length; i++) {
         const interval = labels[labelNames[i]];
         const count = Math.floor(seconds / interval);
@@ -5544,7 +5264,7 @@ function timeAgo(timestamp) {
             }
         }
     }
-
+    
     return currentLanguage === 'id' ? 'Baru saja' : 'Just now';
 }
 
@@ -5566,22 +5286,22 @@ function initFinance() {
     renderApprovalTab();
     populateKategoriSelects();
     populateDonaturSelect();
-
+    
     // Set default dates
     const today = new Date().toISOString().split('T')[0];
     const thisMonth = new Date().toISOString().slice(0, 7);
-
+    
     document.getElementById('laporan-date').value = today;
     document.getElementById('laporan-month').value = thisMonth;
     document.getElementById('filter-pemasukan-month').value = thisMonth;
     document.getElementById('filter-pengeluaran-month').value = thisMonth;
-
+    
     // Hide approval tab for non-superadmin
     const approvalTab = document.getElementById('tab-approval');
     if (approvalTab) {
         approvalTab.style.display = isSuperAdmin() ? 'inline-block' : 'none';
     }
-
+    
     // Hide add buttons for view-only users
     const addButtons = document.querySelectorAll('.finance-add-btn');
     addButtons.forEach(btn => {
@@ -5594,11 +5314,11 @@ function showFinanceTab(tabName, clickedBtn) {
     // Update tab buttons
     document.querySelectorAll('.finance-tab').forEach(btn => btn.classList.remove('active'));
     if (clickedBtn) clickedBtn.classList.add('active');
-
+    
     // Update tab content
     document.querySelectorAll('.finance-tab-content').forEach(content => content.classList.remove('active'));
     document.getElementById('finance-' + tabName).classList.add('active');
-
+    
     // Refresh content based on tab
     if (tabName === 'dashboard') {
         updateFinanceSummary();
@@ -5620,18 +5340,18 @@ function updateFinanceSummary() {
     const pemasukan = data.pemasukan || [];
     const pengeluaran = data.pengeluaran || [];
     const donatur = data.donatur || [];
-
+    
     // Calculate totals (only approved items)
     const totalPemasukan = pemasukan
         .filter(p => p.status === 'approved')
         .reduce((sum, p) => sum + p.jumlah, 0);
-
+    
     const totalPengeluaran = pengeluaran
         .filter(p => p.status === 'approved')
         .reduce((sum, p) => sum + p.jumlah, 0);
-
+    
     const saldo = (data.finance?.saldoAwal || 0) + totalPemasukan - totalPengeluaran;
-
+    
     // Update display
     document.getElementById('finance-saldo').textContent = formatRupiah(saldo);
     document.getElementById('finance-total-pemasukan').textContent = formatRupiah(totalPemasukan);
@@ -5650,28 +5370,28 @@ function initFinanceCharts() {
 function updateFinanceChart() {
     const ctx = document.getElementById('financeChart');
     if (!ctx) return;
-
+    
     const data = getData();
     const period = document.getElementById('finance-chart-period')?.value || 'month';
-
+    
     let labels, pemasukanData, pengeluaranData;
-
+    
     if (period === 'month') {
         // Daily data for current month
         const currentMonth = new Date().toISOString().slice(0, 7);
         const daysInMonth = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate();
-
-        labels = Array.from({ length: daysInMonth }, (_, i) => `${i + 1}`);
+        
+        labels = Array.from({length: daysInMonth}, (_, i) => `${i + 1}`);
         pemasukanData = new Array(daysInMonth).fill(0);
         pengeluaranData = new Array(daysInMonth).fill(0);
-
+        
         (data.pemasukan || [])
             .filter(p => p.status === 'approved' && p.tanggal.startsWith(currentMonth))
             .forEach(p => {
                 const day = parseInt(p.tanggal.split('-')[2]) - 1;
                 pemasukanData[day] += p.jumlah;
             });
-
+        
         (data.pengeluaran || [])
             .filter(p => p.status === 'approved' && p.tanggal.startsWith(currentMonth))
             .forEach(p => {
@@ -5684,14 +5404,14 @@ function updateFinanceChart() {
         labels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
         pemasukanData = new Array(12).fill(0);
         pengeluaranData = new Array(12).fill(0);
-
+        
         (data.pemasukan || [])
             .filter(p => p.status === 'approved' && p.tanggal.startsWith(String(currentYear)))
             .forEach(p => {
                 const month = parseInt(p.tanggal.split('-')[1]) - 1;
                 pemasukanData[month] += p.jumlah;
             });
-
+        
         (data.pengeluaran || [])
             .filter(p => p.status === 'approved' && p.tanggal.startsWith(String(currentYear)))
             .forEach(p => {
@@ -5699,9 +5419,9 @@ function updateFinanceChart() {
                 pengeluaranData[month] += p.jumlah;
             });
     }
-
+    
     if (financeChart) financeChart.destroy();
-
+    
     financeChart = new Chart(ctx, {
         type: 'line',
         data: {
@@ -5737,7 +5457,7 @@ function updateFinanceChart() {
                 y: {
                     beginAtZero: true,
                     ticks: {
-                        callback: function (value) {
+                        callback: function(value) {
                             return formatRupiah(value);
                         }
                     }
@@ -5751,13 +5471,13 @@ function updateFinanceChart() {
 function updateIncomeCategoryChart() {
     const ctx = document.getElementById('incomeCategoryChart');
     if (!ctx) return;
-
+    
     const data = getData();
     const kategoriPemasukan = (data.financeCategories || []).filter(k => k.tipe === 'pemasukan');
-
+    
     const categoryTotals = {};
     kategoriPemasukan.forEach(k => categoryTotals[k.nama] = 0);
-
+    
     (data.pemasukan || [])
         .filter(p => p.status === 'approved')
         .forEach(p => {
@@ -5766,9 +5486,9 @@ function updateIncomeCategoryChart() {
                 categoryTotals[kategori.nama] = (categoryTotals[kategori.nama] || 0) + p.jumlah;
             }
         });
-
+    
     if (incomeCategoryChart) incomeCategoryChart.destroy();
-
+    
     incomeCategoryChart = new Chart(ctx, {
         type: 'doughnut',
         data: {
@@ -5794,13 +5514,13 @@ function updateIncomeCategoryChart() {
 function updateExpenseCategoryChart() {
     const ctx = document.getElementById('expenseCategoryChart');
     if (!ctx) return;
-
+    
     const data = getData();
     const kategoriPengeluaran = (data.financeCategories || []).filter(k => k.tipe === 'pengeluaran');
-
+    
     const categoryTotals = {};
     kategoriPengeluaran.forEach(k => categoryTotals[k.nama] = 0);
-
+    
     (data.pengeluaran || [])
         .filter(p => p.status === 'approved')
         .forEach(p => {
@@ -5809,9 +5529,9 @@ function updateExpenseCategoryChart() {
                 categoryTotals[kategori.nama] = (categoryTotals[kategori.nama] || 0) + p.jumlah;
             }
         });
-
+    
     if (expenseCategoryChart) expenseCategoryChart.destroy();
-
+    
     expenseCategoryChart = new Chart(ctx, {
         type: 'doughnut',
         data: {
@@ -5840,7 +5560,7 @@ function populateKategoriSelects() {
     const pengeluaranSelect = document.getElementById('pengeluaran-kategori');
     const filterPemasukanSelect = document.getElementById('filter-pemasukan-kategori');
     const filterPengeluaranSelect = document.getElementById('filter-pengeluaran-kategori');
-
+    
     if (pemasukanSelect) {
         pemasukanSelect.innerHTML = '<option value="">' + getLang('select-category') + '</option>';
         (data.financeCategories || [])
@@ -5851,7 +5571,7 @@ function populateKategoriSelects() {
         // Add Other/Lainnya option
         pemasukanSelect.innerHTML += `<option value="other">${getLang('other')}</option>`;
     }
-
+    
     if (pengeluaranSelect) {
         pengeluaranSelect.innerHTML = '<option value="">' + getLang('select-category') + '</option>';
         (data.financeCategories || [])
@@ -5862,7 +5582,7 @@ function populateKategoriSelects() {
         // Add Other/Lainnya option
         pengeluaranSelect.innerHTML += `<option value="other">${getLang('other')}</option>`;
     }
-
+    
     if (filterPemasukanSelect) {
         filterPemasukanSelect.innerHTML = '<option value="">' + getLang('all-categories') + '</option>';
         (data.financeCategories || [])
@@ -5871,7 +5591,7 @@ function populateKategoriSelects() {
                 filterPemasukanSelect.innerHTML += `<option value="${k.id}">${k.nama}</option>`;
             });
     }
-
+    
     if (filterPengeluaranSelect) {
         filterPengeluaranSelect.innerHTML = '<option value="">' + getLang('all-categories') + '</option>';
         (data.financeCategories || [])
@@ -5887,7 +5607,7 @@ function handleFinanceCategoryChange(select, inputId) {
     const groupId = inputId + '-group';
     const group = document.getElementById(groupId);
     const input = document.getElementById(inputId);
-
+    
     if (select.value === 'other') {
         group.classList.remove('hidden');
         if (input) input.required = true;
@@ -5904,7 +5624,7 @@ function handleFinanceCategoryChange(select, inputId) {
 function populateDonaturSelect() {
     const data = getData();
     const donaturSelect = document.getElementById('pemasukan-donatur');
-
+    
     if (donaturSelect) {
         donaturSelect.innerHTML = '<option value="">' + getLang('select-donor') + '</option>';
         (data.donatur || []).forEach(d => {
@@ -5918,33 +5638,33 @@ function renderPemasukan() {
     const data = getData();
     const tbody = document.getElementById('pemasukan-tbody');
     if (!tbody) return;
-
+    
     const searchTerm = document.getElementById('search-pemasukan')?.value?.toLowerCase() || '';
     const kategoriFilter = document.getElementById('filter-pemasukan-kategori')?.value || '';
     const monthFilter = document.getElementById('filter-pemasukan-month')?.value || '';
-
+    
     let filtered = (data.pemasukan || []).filter(p => {
         const kategori = data.financeCategories?.find(k => k.id === p.kategoriId);
         const donatur = data.donatur?.find(d => d.id === p.donaturId);
-
-        const matchesSearch = !searchTerm ||
+        
+        const matchesSearch = !searchTerm || 
             p.keterangan?.toLowerCase().includes(searchTerm) ||
             kategori?.nama.toLowerCase().includes(searchTerm) ||
             donatur?.nama.toLowerCase().includes(searchTerm);
-
+        
         const matchesKategori = !kategoriFilter || p.kategoriId == kategoriFilter;
         const matchesMonth = !monthFilter || p.tanggal.startsWith(monthFilter);
-
+        
         return matchesSearch && matchesKategori && matchesMonth;
     });
-
+    
     // Sort by date descending
     filtered.sort((a, b) => new Date(b.tanggal) - new Date(a.tanggal));
-
+    
     tbody.innerHTML = filtered.map(p => {
         const kategori = data.financeCategories?.find(k => k.id === p.kategoriId);
         const donatur = data.donatur?.find(d => d.id === p.donaturId);
-
+        
         let statusBadge = '';
         if (p.status === 'approved') {
             statusBadge = '<span class="badge badge-success">' + getLang('approved') + '</span>';
@@ -5953,9 +5673,9 @@ function renderPemasukan() {
         } else {
             statusBadge = '<span class="badge badge-warning">' + getLang('pending') + '</span>';
         }
-
+        
         const canEdit = !isViewOnly() && (isSuperAdmin() || p.status !== 'approved');
-
+        
         return `
             <tr>
                 <td>${formatDate(p.tanggal)}</td>
@@ -5973,7 +5693,7 @@ function renderPemasukan() {
             </tr>
         `;
     }).join('');
-
+    
     if (filtered.length === 0) {
         tbody.innerHTML = `<tr><td colspan="7" class="text-center">${getLang('none')}</td></tr>`;
     }
@@ -5984,30 +5704,30 @@ function renderPengeluaran() {
     const data = getData();
     const tbody = document.getElementById('pengeluaran-tbody');
     if (!tbody) return;
-
+    
     const searchTerm = document.getElementById('search-pengeluaran')?.value?.toLowerCase() || '';
     const kategoriFilter = document.getElementById('filter-pengeluaran-kategori')?.value || '';
     const monthFilter = document.getElementById('filter-pengeluaran-month')?.value || '';
-
+    
     let filtered = (data.pengeluaran || []).filter(p => {
         const kategori = data.financeCategories?.find(k => k.id === p.kategoriId);
-
-        const matchesSearch = !searchTerm ||
+        
+        const matchesSearch = !searchTerm || 
             p.keterangan?.toLowerCase().includes(searchTerm) ||
             kategori?.nama.toLowerCase().includes(searchTerm);
-
+        
         const matchesKategori = !kategoriFilter || p.kategoriId == kategoriFilter;
         const matchesMonth = !monthFilter || p.tanggal.startsWith(monthFilter);
-
+        
         return matchesSearch && matchesKategori && matchesMonth;
     });
-
+    
     // Sort by date descending
     filtered.sort((a, b) => new Date(b.tanggal) - new Date(a.tanggal));
-
+    
     tbody.innerHTML = filtered.map(p => {
         const kategori = data.financeCategories?.find(k => k.id === p.kategoriId);
-
+        
         let statusBadge = '';
         if (p.status === 'approved') {
             statusBadge = '<span class="badge badge-success">' + getLang('approved') + '</span>';
@@ -6016,9 +5736,9 @@ function renderPengeluaran() {
         } else {
             statusBadge = '<span class="badge badge-warning">' + getLang('pending') + '</span>';
         }
-
+        
         const canEdit = !isViewOnly() && (isSuperAdmin() || p.status !== 'approved');
-
+        
         return `
             <tr>
                 <td>${formatDate(p.tanggal)}</td>
@@ -6035,7 +5755,7 @@ function renderPengeluaran() {
             </tr>
         `;
     }).join('');
-
+    
     if (filtered.length === 0) {
         tbody.innerHTML = `<tr><td colspan="6" class="text-center">${getLang('none')}</td></tr>`;
     }
@@ -6046,20 +5766,20 @@ function renderKategori() {
     const data = getData();
     const grid = document.getElementById('kategori-grid');
     if (!grid) return;
-
+    
     const searchTerm = document.getElementById('search-kategori')?.value?.toLowerCase() || '';
-
+    
     let filtered = (data.financeCategories || []).filter(k => {
         return !searchTerm || k.nama.toLowerCase().includes(searchTerm) || k.deskripsi?.toLowerCase().includes(searchTerm);
     });
-
+    
     const canEditKategori = !isViewOnly();
-
+    
     grid.innerHTML = filtered.map(k => {
-        const tipeBadge = k.tipe === 'pemasukan'
+        const tipeBadge = k.tipe === 'pemasukan' 
             ? '<span class="badge badge-success">' + getLang('income') + '</span>'
             : '<span class="badge badge-danger">' + getLang('expense') + '</span>';
-
+        
         return `
             <div class="kategori-card">
                 <div class="kategori-header">
@@ -6076,7 +5796,7 @@ function renderKategori() {
             </div>
         `;
     }).join('');
-
+    
     if (filtered.length === 0) {
         grid.innerHTML = `<div class="text-center">${getLang('none')}</div>`;
     }
@@ -6087,18 +5807,18 @@ function renderApprovalTab() {
     const data = getData();
     const pendingList = document.getElementById('pending-approval-list');
     const historyList = document.getElementById('approval-history-list');
-
+    
     if (!pendingList || !historyList) return;
-
+    
     // Pending items
     const pendingPemasukan = (data.pemasukan || []).filter(p => p.status === 'pending');
     const pendingPengeluaran = (data.pengeluaran || []).filter(p => p.status === 'pending');
-
+    
     const pendingItems = [
         ...pendingPemasukan.map(p => ({ ...p, tipe: 'pemasukan' })),
         ...pendingPengeluaran.map(p => ({ ...p, tipe: 'pengeluaran' }))
     ].sort((a, b) => new Date(b.tanggal) - new Date(a.tanggal));
-
+    
     pendingList.innerHTML = pendingItems.map(item => {
         const kategori = data.financeCategories?.find(k => k.id === item.kategoriId);
         return `
@@ -6117,24 +5837,24 @@ function renderApprovalTab() {
             </div>
         `;
     }).join('');
-
+    
     if (pendingItems.length === 0) {
         pendingList.innerHTML = `<div class="text-center">${getLang('none')}</div>`;
     }
-
+    
     // History
     const historyItems = (data.approvalHistory || [])
         .slice()
         .reverse()
         .slice(0, 20);
-
+    
     historyList.innerHTML = historyItems.map(h => {
         const user = data.users?.find(u => u.id === h.by);
-        const item = h.tipe === 'pemasukan'
+        const item = h.tipe === 'pemasukan' 
             ? data.pemasukan?.find(p => p.id === h.itemId)
             : data.pengeluaran?.find(p => p.id === h.itemId);
         const kategori = item ? data.financeCategories?.find(k => k.id === item.kategoriId) : null;
-
+        
         return `
             <div class="approval-item history">
                 <div class="approval-info">
@@ -6151,7 +5871,7 @@ function renderApprovalTab() {
             </div>
         `;
     }).join('');
-
+    
     if (historyItems.length === 0) {
         historyList.innerHTML = `<div class="text-center">${getLang('none')}</div>`;
     }
@@ -6195,17 +5915,17 @@ function editPemasukan(id) {
         showToast('Anda hanya dapat melihat data. Hubungi admin untuk mengubah data.', 'error');
         return;
     }
-
+    
     const data = getData();
     const p = data.pemasukan?.find(item => item.id === id);
     if (!p) return;
-
+    
     // Check if can edit (superadmin can edit anything, admin can only edit pending)
     if (!isSuperAdmin() && p.status === 'approved') {
         showToast('Data yang sudah di-approve tidak dapat diubah', 'error');
         return;
     }
-
+    
     document.getElementById('pemasukan-id').value = p.id;
     document.getElementById('pemasukan-kategori').value = p.kategoriId;
     document.getElementById('pemasukan-jumlah').value = p.jumlah;
@@ -6222,17 +5942,17 @@ function editPengeluaran(id) {
         showToast('Anda hanya dapat melihat data. Hubungi admin untuk mengubah data.', 'error');
         return;
     }
-
+    
     const data = getData();
     const p = data.pengeluaran?.find(item => item.id === id);
     if (!p) return;
-
+    
     // Check if can edit (superadmin can edit anything, admin can only edit pending)
     if (!isSuperAdmin() && p.status === 'approved') {
         showToast('Data yang sudah di-approve tidak dapat diubah', 'error');
         return;
     }
-
+    
     document.getElementById('pengeluaran-id').value = p.id;
     document.getElementById('pengeluaran-kategori').value = p.kategoriId;
     document.getElementById('pengeluaran-jumlah').value = p.jumlah;
@@ -6248,11 +5968,11 @@ function editKategori(id) {
         showToast('Anda hanya dapat melihat data. Hubungi admin untuk mengubah data.', 'error');
         return;
     }
-
+    
     const data = getData();
     const k = data.financeCategories?.find(item => item.id === id);
     if (!k) return;
-
+    
     document.getElementById('kategori-id').value = k.id;
     document.getElementById('kategori-nama').value = k.nama;
     document.getElementById('kategori-tipe').value = k.tipe;
@@ -6262,13 +5982,13 @@ function editKategori(id) {
 }
 
 // Save Functions
-async function savePemasukan() {
+function savePemasukan() {
     // Check permission - only admin and superadmin can edit
     if (isViewOnly()) {
         showToast('Anda hanya dapat melihat data. Hubungi admin untuk mengubah data.', 'error');
         return;
     }
-
+    
     const data = getData();
     const id = document.getElementById('pemasukan-id').value;
     let kategoriId = document.getElementById('pemasukan-kategori').value;
@@ -6276,7 +5996,7 @@ async function savePemasukan() {
     const tanggal = document.getElementById('pemasukan-tanggal').value;
     const donaturId = document.getElementById('pemasukan-donatur').value || null;
     const keterangan = document.getElementById('pemasukan-keterangan').value;
-
+    
     // Handle custom category (Other/Lainnya)
     if (kategoriId === 'other') {
         const customKategori = document.getElementById('pemasukan-kategori-lainnya').value.trim();
@@ -6286,26 +6006,27 @@ async function savePemasukan() {
         }
         // Create new category
         const newKategoriId = data.financeCategories.length > 0 ? Math.max(...data.financeCategories.map(k => k.id)) + 1 : 1;
-        const newKategori = { id: newKategoriId, nama: customKategori, tipe: 'pemasukan', deskripsi: 'Kategori manual' };
-        data.financeCategories.push(newKategori);
-        if (isFirebaseReady()) {
-            await window.setDocument(window.DB_COLLECTIONS.FINANCE_CATEGORIES, String(newKategoriId), newKategori);
-        }
+        data.financeCategories.push({
+            id: newKategoriId,
+            nama: customKategori,
+            tipe: 'pemasukan',
+            deskripsi: 'Kategori manual'
+        });
         kategoriId = newKategoriId;
     } else {
         kategoriId = parseInt(kategoriId);
     }
-
+    
     if (!kategoriId || !jumlah || !tanggal) {
         showToast('Mohon lengkapi data yang diperlukan', 'error');
         return;
     }
-
+    
     if (id) {
         // Update
         const index = data.pemasukan.findIndex(p => p.id == id);
         if (index !== -1) {
-            const updated = {
+            data.pemasukan[index] = {
                 ...data.pemasukan[index],
                 kategoriId,
                 jumlah,
@@ -6313,15 +6034,11 @@ async function savePemasukan() {
                 donaturId: donaturId ? parseInt(donaturId) : null,
                 keterangan
             };
-            data.pemasukan[index] = updated;
-            if (isFirebaseReady()) {
-                await window.setDocument(window.DB_COLLECTIONS.PEMASUKAN, String(id), updated);
-            }
         }
     } else {
         // Create new
         const newId = data.pemasukan.length > 0 ? Math.max(...data.pemasukan.map(p => p.id)) + 1 : 1;
-        const newItem = {
+        data.pemasukan.push({
             id: newId,
             kategoriId,
             jumlah,
@@ -6331,13 +6048,9 @@ async function savePemasukan() {
             status: 'pending',
             approvedBy: null,
             approvedAt: null
-        };
-        data.pemasukan.push(newItem);
-        if (isFirebaseReady()) {
-            await window.setDocument(window.DB_COLLECTIONS.PEMASUKAN, String(newId), newItem);
-        }
+        });
     }
-
+    
     saveData(data);
     closeModal('modal-pemasukan');
     renderPemasukan();
@@ -6346,20 +6059,20 @@ async function savePemasukan() {
     showToast('Pemasukan berhasil disimpan', 'success');
 }
 
-async function savePengeluaran() {
+function savePengeluaran() {
     // Check permission - only admin and superadmin can edit
     if (isViewOnly()) {
         showToast('Anda hanya dapat melihat data. Hubungi admin untuk mengubah data.', 'error');
         return;
     }
-
+    
     const data = getData();
     const id = document.getElementById('pengeluaran-id').value;
     let kategoriId = document.getElementById('pengeluaran-kategori').value;
     const jumlah = parseInt(document.getElementById('pengeluaran-jumlah').value);
     const tanggal = document.getElementById('pengeluaran-tanggal').value;
     const keterangan = document.getElementById('pengeluaran-keterangan').value;
-
+    
     // Handle custom category (Other/Lainnya)
     if (kategoriId === 'other') {
         const customKategori = document.getElementById('pengeluaran-kategori-lainnya').value.trim();
@@ -6369,35 +6082,38 @@ async function savePengeluaran() {
         }
         // Create new category
         const newKategoriId = data.financeCategories.length > 0 ? Math.max(...data.financeCategories.map(k => k.id)) + 1 : 1;
-        const newKategori = { id: newKategoriId, nama: customKategori, tipe: 'pengeluaran', deskripsi: 'Kategori manual' };
-        data.financeCategories.push(newKategori);
-        if (isFirebaseReady()) {
-            await window.setDocument(window.DB_COLLECTIONS.FINANCE_CATEGORIES, String(newKategoriId), newKategori);
-        }
+        data.financeCategories.push({
+            id: newKategoriId,
+            nama: customKategori,
+            tipe: 'pengeluaran',
+            deskripsi: 'Kategori manual'
+        });
         kategoriId = newKategoriId;
     } else {
         kategoriId = parseInt(kategoriId);
     }
-
+    
     if (!kategoriId || !jumlah || !tanggal) {
         showToast('Mohon lengkapi data yang diperlukan', 'error');
         return;
     }
-
+    
     if (id) {
         // Update
         const index = data.pengeluaran.findIndex(p => p.id == id);
         if (index !== -1) {
-            const updated = { ...data.pengeluaran[index], kategoriId, jumlah, tanggal, keterangan };
-            data.pengeluaran[index] = updated;
-            if (isFirebaseReady()) {
-                await window.setDocument(window.DB_COLLECTIONS.PENGELUARAN, String(id), updated);
-            }
+            data.pengeluaran[index] = {
+                ...data.pengeluaran[index],
+                kategoriId,
+                jumlah,
+                tanggal,
+                keterangan
+            };
         }
     } else {
         // Create new
         const newId = data.pengeluaran.length > 0 ? Math.max(...data.pengeluaran.map(p => p.id)) + 1 : 1;
-        const newItem = {
+        data.pengeluaran.push({
             id: newId,
             kategoriId,
             jumlah,
@@ -6406,13 +6122,9 @@ async function savePengeluaran() {
             status: 'pending',
             approvedBy: null,
             approvedAt: null
-        };
-        data.pengeluaran.push(newItem);
-        if (isFirebaseReady()) {
-            await window.setDocument(window.DB_COLLECTIONS.PENGELUARAN, String(newId), newItem);
-        }
+        });
     }
-
+    
     saveData(data);
     closeModal('modal-pengeluaran');
     renderPengeluaran();
@@ -6421,44 +6133,46 @@ async function savePengeluaran() {
     showToast('Pengeluaran berhasil disimpan', 'success');
 }
 
-async function saveKategori() {
+function saveKategori() {
     // Check permission - only admin and superadmin can edit
     if (isViewOnly()) {
         showToast('Anda hanya dapat melihat data. Hubungi admin untuk mengubah data.', 'error');
         return;
     }
-
+    
     const data = getData();
     const id = document.getElementById('kategori-id').value;
     const nama = document.getElementById('kategori-nama').value.trim();
     const tipe = document.getElementById('kategori-tipe').value;
     const deskripsi = document.getElementById('kategori-deskripsi').value.trim();
-
+    
     if (!nama || !tipe) {
         showToast('Mohon lengkapi data yang diperlukan', 'error');
         return;
     }
-
+    
     if (id) {
         // Update
         const index = data.financeCategories.findIndex(k => k.id == id);
         if (index !== -1) {
-            const updated = { ...data.financeCategories[index], nama, tipe, deskripsi };
-            data.financeCategories[index] = updated;
-            if (isFirebaseReady()) {
-                await window.setDocument(window.DB_COLLECTIONS.FINANCE_CATEGORIES, String(id), updated);
-            }
+            data.financeCategories[index] = {
+                ...data.financeCategories[index],
+                nama,
+                tipe,
+                deskripsi
+            };
         }
     } else {
         // Create new
         const newId = data.financeCategories.length > 0 ? Math.max(...data.financeCategories.map(k => k.id)) + 1 : 1;
-        const newKategori = { id: newId, nama, tipe, deskripsi };
-        data.financeCategories.push(newKategori);
-        if (isFirebaseReady()) {
-            await window.setDocument(window.DB_COLLECTIONS.FINANCE_CATEGORIES, String(newId), newKategori);
-        }
+        data.financeCategories.push({
+            id: newId,
+            nama,
+            tipe,
+            deskripsi
+        });
     }
-
+    
     saveData(data);
     closeModal('modal-kategori');
     renderKategori();
@@ -6473,13 +6187,10 @@ function deletePemasukan(id) {
         showToast('Anda hanya dapat melihat data. Hubungi admin untuk mengubah data.', 'error');
         return;
     }
-
-    showConfirm('Apakah Anda yakin ingin menghapus pemasukan ini?', async () => {
+    
+    showConfirm('Apakah Anda yakin ingin menghapus pemasukan ini?', () => {
         const data = getData();
         data.pemasukan = data.pemasukan.filter(p => p.id !== id);
-        if (isFirebaseReady()) {
-            await window.deleteDocument(window.DB_COLLECTIONS.PEMASUKAN, String(id));
-        }
         saveData(data);
         renderPemasukan();
         updateFinanceSummary();
@@ -6493,13 +6204,10 @@ function deletePengeluaran(id) {
         showToast('Anda hanya dapat melihat data. Hubungi admin untuk mengubah data.', 'error');
         return;
     }
-
-    showConfirm('Apakah Anda yakin ingin menghapus pengeluaran ini?', async () => {
+    
+    showConfirm('Apakah Anda yakin ingin menghapus pengeluaran ini?', () => {
         const data = getData();
         data.pengeluaran = data.pengeluaran.filter(p => p.id !== id);
-        if (isFirebaseReady()) {
-            await window.deleteDocument(window.DB_COLLECTIONS.PENGELUARAN, String(id));
-        }
         saveData(data);
         renderPengeluaran();
         updateFinanceSummary();
@@ -6513,13 +6221,10 @@ function deleteKategori(id) {
         showToast('Anda hanya dapat melihat data. Hubungi admin untuk mengubah data.', 'error');
         return;
     }
-
-    showConfirm('Apakah Anda yakin ingin menghapus kategori ini?', async () => {
+    
+    showConfirm('Apakah Anda yakin ingin menghapus kategori ini?', () => {
         const data = getData();
         data.financeCategories = data.financeCategories.filter(k => k.id !== id);
-        if (isFirebaseReady()) {
-            await window.deleteDocument(window.DB_COLLECTIONS.FINANCE_CATEGORIES, String(id));
-        }
         saveData(data);
         renderKategori();
         populateKategoriSelects();
@@ -6533,10 +6238,10 @@ function approveItem(tipe, id) {
         showToast('Hanya Super Admin yang dapat melakukan approval', 'error');
         return;
     }
-
+    
     const data = getData();
     const now = new Date().toISOString();
-
+    
     if (tipe === 'pemasukan') {
         const index = data.pemasukan.findIndex(p => p.id === id);
         if (index !== -1) {
@@ -6552,7 +6257,7 @@ function approveItem(tipe, id) {
             data.pengeluaran[index].approvedAt = now;
         }
     }
-
+    
     // Add to history
     if (!data.approvalHistory) data.approvalHistory = [];
     data.approvalHistory.push({
@@ -6563,7 +6268,7 @@ function approveItem(tipe, id) {
         by: currentUser.id,
         timestamp: now
     });
-
+    
     saveData(data);
     renderApprovalTab();
     renderPemasukan();
@@ -6577,10 +6282,10 @@ function rejectItem(tipe, id) {
         showToast('Hanya Super Admin yang dapat melakukan approval', 'error');
         return;
     }
-
+    
     const data = getData();
     const now = new Date().toISOString();
-
+    
     if (tipe === 'pemasukan') {
         const index = data.pemasukan.findIndex(p => p.id === id);
         if (index !== -1) {
@@ -6596,7 +6301,7 @@ function rejectItem(tipe, id) {
             data.pengeluaran[index].approvedAt = now;
         }
     }
-
+    
     // Add to history
     if (!data.approvalHistory) data.approvalHistory = [];
     data.approvalHistory.push({
@@ -6607,7 +6312,7 @@ function rejectItem(tipe, id) {
         by: currentUser.id,
         timestamp: now
     });
-
+    
     saveData(data);
     renderApprovalTab();
     renderPemasukan();
@@ -6619,15 +6324,15 @@ function rejectItem(tipe, id) {
 function updateLaporanView() {
     const type = document.getElementById('laporan-type').value;
     const content = document.getElementById('laporan-content');
-
+    
     // Show/hide appropriate filters
     document.getElementById('laporan-date-filter').style.display = type === 'harian' ? 'block' : 'none';
     document.getElementById('laporan-month-filter').style.display = type === 'bulanan' ? 'block' : 'none';
     document.getElementById('laporan-year-filter').style.display = type === 'tahunan' ? 'block' : 'none';
-
+    
     const data = getData();
     let pemasukanFiltered, pengeluaranFiltered, title;
-
+    
     if (type === 'harian') {
         const date = document.getElementById('laporan-date').value;
         pemasukanFiltered = (data.pemasukan || []).filter(p => p.status === 'approved' && p.tanggal === date);
@@ -6644,11 +6349,11 @@ function updateLaporanView() {
         pengeluaranFiltered = (data.pengeluaran || []).filter(p => p.status === 'approved' && p.tanggal.startsWith(year));
         title = `Laporan Tahunan - ${year}`;
     }
-
+    
     const totalPemasukan = pemasukanFiltered.reduce((sum, p) => sum + p.jumlah, 0);
     const totalPengeluaran = pengeluaranFiltered.reduce((sum, p) => sum + p.jumlah, 0);
     const saldo = totalPemasukan - totalPengeluaran;
-
+    
     content.innerHTML = `
         <div class="laporan-header">
             <h3>${title}</h3>
@@ -6676,9 +6381,9 @@ function updateLaporanView() {
                     </thead>
                     <tbody>
                         ${pemasukanFiltered.map(p => {
-        const kategori = data.financeCategories?.find(k => k.id === p.kategoriId);
-        return `<tr><td>${formatDate(p.tanggal)}</td><td>${kategori?.nama || '-'}</td><td>${formatRupiah(p.jumlah)}</td></tr>`;
-    }).join('') || `<tr><td colspan="3" class="text-center">${getLang('none')}</td></tr>`}
+                            const kategori = data.financeCategories?.find(k => k.id === p.kategoriId);
+                            return `<tr><td>${formatDate(p.tanggal)}</td><td>${kategori?.nama || '-'}</td><td>${formatRupiah(p.jumlah)}</td></tr>`;
+                        }).join('') || `<tr><td colspan="3" class="text-center">${getLang('none')}</td></tr>`}
                     </tbody>
                 </table>
             </div>
@@ -6690,9 +6395,9 @@ function updateLaporanView() {
                     </thead>
                     <tbody>
                         ${pengeluaranFiltered.map(p => {
-        const kategori = data.financeCategories?.find(k => k.id === p.kategoriId);
-        return `<tr><td>${formatDate(p.tanggal)}</td><td>${kategori?.nama || '-'}</td><td>${formatRupiah(p.jumlah)}</td></tr>`;
-    }).join('') || `<tr><td colspan="3" class="text-center">${getLang('none')}</td></tr>`}
+                            const kategori = data.financeCategories?.find(k => k.id === p.kategoriId);
+                            return `<tr><td>${formatDate(p.tanggal)}</td><td>${kategori?.nama || '-'}</td><td>${formatRupiah(p.jumlah)}</td></tr>`;
+                        }).join('') || `<tr><td colspan="3" class="text-center">${getLang('none')}</td></tr>`}
                     </tbody>
                 </table>
             </div>
@@ -6704,7 +6409,7 @@ function updateLaporanView() {
 function exportFinanceData(type) {
     const data = getData();
     let items, filename, headers;
-
+    
     if (type === 'pemasukan') {
         items = data.pemasukan || [];
         filename = 'pemasukan';
@@ -6714,21 +6419,21 @@ function exportFinanceData(type) {
         filename = 'pengeluaran';
         headers = ['Tanggal', 'Kategori', 'Keterangan', 'Jumlah', 'Status'];
     }
-
+    
     // Apply current filters
     const kategoriFilter = document.getElementById(`filter-${type}-kategori`)?.value || '';
     const monthFilter = document.getElementById(`filter-${type}-month`)?.value || '';
-
+    
     items = items.filter(p => {
         const matchesKategori = !kategoriFilter || p.kategoriId == kategoriFilter;
         const matchesMonth = !monthFilter || p.tanggal.startsWith(monthFilter);
         return matchesKategori && matchesMonth;
     });
-
+    
     exportToCSV(items, filename, headers, (item) => {
         const kategori = data.financeCategories?.find(k => k.id === item.kategoriId);
         const donatur = data.donatur?.find(d => d.id === item.donaturId);
-
+        
         if (type === 'pemasukan') {
             return [item.tanggal, kategori?.nama || '-', item.keterangan || '-', donatur?.nama || '-', item.jumlah, item.status];
         } else {
@@ -6740,9 +6445,9 @@ function exportFinanceData(type) {
 function exportLaporan() {
     const type = document.getElementById('laporan-type').value;
     const data = getData();
-
+    
     let pemasukanFiltered, pengeluaranFiltered, title;
-
+    
     if (type === 'harian') {
         const date = document.getElementById('laporan-date').value;
         pemasukanFiltered = (data.pemasukan || []).filter(p => p.status === 'approved' && p.tanggal === date);
@@ -6759,7 +6464,7 @@ function exportLaporan() {
         pengeluaranFiltered = (data.pengeluaran || []).filter(p => p.status === 'approved' && p.tanggal.startsWith(year));
         title = `Laporan_Tahunan_${year}`;
     }
-
+    
     // Create combined data for export
     const exportData = [
         ['LAPORAN KEUANGAN'],
@@ -6783,23 +6488,23 @@ function exportLaporan() {
         [],
         ['SALDO', '', '', pemasukanFiltered.reduce((sum, p) => sum + p.jumlah, 0) - pengeluaranFiltered.reduce((sum, p) => sum + p.jumlah, 0)]
     ];
-
+    
     // Export to Excel
     const ws = XLSX.utils.aoa_to_sheet(exportData);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Laporan');
     XLSX.writeFile(wb, `${title}.xlsx`);
-
+    
     showToast('Laporan berhasil diexport', 'success');
 }
 
 // Initialize on page load
-document.addEventListener('DOMContentLoaded', function () {
+document.addEventListener('DOMContentLoaded', function() {
     // Apply language on load
     applyLanguage();
-
+    
     // Add keyboard shortcuts
-    document.addEventListener('keydown', function (e) {
+    document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape') {
             // Close all modals
             document.querySelectorAll('.modal').forEach(m => {
@@ -6811,317 +6516,3 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 });
-
-// ================================
-// DEATH MANAGEMENT — Firestore version (full CRUD)
-// ================================
-
-let editingDeathId = null;
-
-// toggle form
-function toggleDeathForm() {
-    const form = document.getElementById("death-form-container");
-    const isHidden = form.style.display === "none" || form.style.display === "";
-    form.style.display = isHidden ? "block" : "none";
-    if (isHidden && !editingDeathId) {
-        clearDeathForm();
-    }
-}
-
-// save data ke Firestore (add or update)
-async function saveDeathData() {
-    const nama    = document.getElementById('death-nama').value.trim();
-    const tglWafat = document.getElementById('death-wafat').value;
-
-    if (!nama || !tglWafat) {
-        showToast('Nama dan tanggal wafat wajib diisi', 'error');
-        return;
-    }
-
-    const deathData = {
-        nama,
-        tglLahir:        document.getElementById('death-lahir').value,
-        tglWafat,
-        riwayatPenyakit: document.getElementById('death-riwayat').value,
-        penyebab:        document.getElementById('death-penyebab').value,
-        tempat:          document.getElementById('death-tempat').value,
-        waktu:           document.getElementById('death-waktu').value
-    };
-
-    if (editingDeathId) {
-        // Update existing
-        const ok = await window.updateDocument('deaths', editingDeathId, deathData);
-        if (ok) {
-            showToast('Data kematian berhasil diupdate', 'success');
-            editingDeathId = null;
-            document.getElementById('death-form-title') && (document.getElementById('death-form-title').textContent = 'Tambah Data');
-            document.getElementById('btn-cancel-death') && (document.getElementById('btn-cancel-death').style.display = 'none');
-        } else {
-            showToast('Gagal mengupdate data', 'error');
-            return;
-        }
-    } else {
-        // Create new
-        const result = await window.addDocument('deaths', deathData);
-        if (result) {
-            showToast('Data kematian berhasil disimpan', 'success');
-        } else {
-            showToast('Gagal menyimpan data, coba lagi', 'error');
-            return;
-        }
-    }
-
-    clearDeathForm();
-    document.getElementById("death-form-container").style.display = "none";
-    renderDeathList();
-}
-
-// edit — load data ke form
-async function editDeathData(id) {
-    try {
-        const d = await window.getDocumentById('deaths', id);
-        if (!d) { showToast('Data tidak ditemukan', 'error'); return; }
-
-        document.getElementById('death-nama').value    = d.nama    || '';
-        document.getElementById('death-lahir').value   = d.tglLahir || '';
-        document.getElementById('death-wafat').value   = d.tglWafat || '';
-        document.getElementById('death-riwayat').value = d.riwayatPenyakit || '';
-        document.getElementById('death-penyebab').value = d.penyebab || '';
-        document.getElementById('death-tempat').value  = d.tempat  || '';
-        document.getElementById('death-waktu').value   = d.waktu   || '';
-
-        editingDeathId = id;
-        if (document.getElementById('death-form-title')) {
-            document.getElementById('death-form-title').textContent = 'Edit Data';
-        }
-        if (document.getElementById('btn-cancel-death')) {
-            document.getElementById('btn-cancel-death').style.display = 'inline-block';
-        }
-
-        document.getElementById("death-form-container").style.display = "block";
-        document.getElementById("death-form-container").scrollIntoView({ behavior: 'smooth' });
-    } catch (e) {
-        showToast('Gagal memuat data', 'error');
-    }
-}
-
-// cancel edit
-function cancelDeathEdit() {
-    editingDeathId = null;
-    clearDeathForm();
-    document.getElementById("death-form-container").style.display = "none";
-    if (document.getElementById('death-form-title')) {
-        document.getElementById('death-form-title').textContent = 'Tambah Data';
-    }
-    if (document.getElementById('btn-cancel-death')) {
-        document.getElementById('btn-cancel-death').style.display = 'none';
-    }
-}
-
-// delete
-async function deleteDeathData(id) {
-    showConfirm('Apakah Anda yakin ingin menghapus data kematian ini?', async () => {
-        const ok = await window.deleteDocument('deaths', id);
-        if (ok) {
-            showToast('Data kematian berhasil dihapus', 'success');
-            renderDeathList();
-        } else {
-            showToast('Gagal menghapus data', 'error');
-        }
-    });
-}
-
-// clear form
-function clearDeathForm() {
-    ['death-nama','death-lahir','death-wafat',
-     'death-riwayat','death-penyebab','death-tempat','death-waktu']
-        .forEach(id => {
-            const el = document.getElementById(id);
-            if (el) el.value = "";
-        });
-}
-
-// render list dari Firestore
-async function renderDeathList() {
-    const container = document.getElementById("death-list");
-    if (!container) return;
-
-    container.innerHTML = "<p style='color:#888'>Memuat data...</p>";
-
-    const deaths = await window.getAllDocuments('deaths');
-
-    if (!deaths || deaths.length === 0) {
-        container.innerHTML = "<p style='color:#888; text-align:center; padding:20px;'>Belum ada data kematian</p>";
-        return;
-    }
-
-    // Urutkan terbaru dulu
-    deaths.sort((a, b) => new Date(b.tglWafat) - new Date(a.tglWafat));
-
-    const canEditDelete = canEdit();
-
-    container.innerHTML = deaths.map(d => `
-        <div class="card" style="padding:15px; margin-bottom:10px; border-left: 4px solid #6c757d;">
-            <div style="display:flex; justify-content:space-between; align-items:flex-start;">
-                <div style="flex:1;">
-                    <h3 style="margin:0 0 8px; font-size:16px;">${d.nama}</h3>
-                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:4px 16px; font-size:13px; color:#555;">
-                        <p style="margin:2px 0;"><strong>Lahir:</strong> ${d.tglLahir ? formatDate(d.tglLahir) : '-'}</p>
-                        <p style="margin:2px 0;"><strong>Wafat:</strong> ${formatDate(d.tglWafat)}</p>
-                        ${d.penyebab ? `<p style="margin:2px 0;"><strong>Penyebab:</strong> ${d.penyebab}</p>` : ''}
-                        ${d.tempat ? `<p style="margin:2px 0;"><strong>Tempat:</strong> ${d.tempat}</p>` : ''}
-                        ${d.waktu ? `<p style="margin:2px 0;"><strong>Waktu:</strong> ${d.waktu}</p>` : ''}
-                        ${d.riwayatPenyakit ? `<p style="margin:2px 0; grid-column:1/-1;"><strong>Riwayat:</strong> ${d.riwayatPenyakit}</p>` : ''}
-                    </div>
-                </div>
-                ${canEditDelete ? `
-                <div style="display:flex; gap:6px; margin-left:12px;">
-                    <button class="btn-action btn-edit" onclick="editDeathData('${d.id}')" title="Edit" style="padding:6px 10px; font-size:12px; background:#f59e0b; color:white; border:none; border-radius:4px; cursor:pointer;"><i class="fas fa-edit"></i></button>
-                    <button class="btn-action btn-delete" onclick="deleteDeathData('${d.id}')" title="Hapus" style="padding:6px 10px; font-size:12px; background:#ef4444; color:white; border:none; border-radius:4px; cursor:pointer;"><i class="fas fa-trash"></i></button>
-                </div>
-                ` : ''}
-            </div>
-        </div>
-    `).join('');
-}
-
-
-// ============================================================
-// NAVIGATION & UI
-// ============================================================
-// showPage dengan hook deaths — menggantikan override yang dihapus di atas
-window.showPage = function(page) {
-    showPage(page);
-    if (page === 'deaths') renderDeathList();
-};
-window.toggleSidebar = toggleSidebar;
-window.togglePassword = togglePassword;
-window.toggleNotifications = toggleNotifications;
-window.setLanguage = setLanguage;
-window.closeModal = closeModal;
-window.logout = logout;
-
-// ============================================================
-// QUICK ACTIONS (header)
-// ============================================================
-window.quickAddMember = quickAddMember;
-window.quickAddEvent = quickAddEvent;
-window.quickCheckIn = quickCheckIn;
-
-// ============================================================
-// MEMBERS
-// ============================================================
-window.showAddMemberModal = showAddMemberModal;
-window.filterMembers = filterMembers;
-window.searchMembers = searchMembers;
-window.toggleExportMenu = toggleExportMenu;
-window.exportData = exportData;
-
-// ============================================================
-// FAMILIES
-// ============================================================
-window.showAddFamilyModal = showAddFamilyModal;
-window.searchFamilies = searchFamilies;
-
-// ============================================================
-// GROUPS
-// ============================================================
-window.showAddGroupModal = showAddGroupModal;
-window.searchGroups = searchGroups;
-window.addMemberToGroup = addMemberToGroup;
-
-// ============================================================
-// EVENTS
-// ============================================================
-window.showAddEventModal = showAddEventModal;
-window.filterEvents = filterEvents;
-window.searchEvents = searchEvents;
-window.handleEventTypeChange = handleEventTypeChange;
-window.addParticipant = addParticipant;
-
-// ============================================================
-// ATTENDANCE
-// ============================================================
-window.showAttendanceTab = showAttendanceTab;
-window.checkInMember = checkInMember;
-window.filterAttendanceData = filterAttendanceData;
-window.updateAttendanceChart = updateAttendanceChart;
-
-// ============================================================
-// DONATIONS
-// ============================================================
-window.showAddDonationModal = showAddDonationModal;
-window.filterDonations = filterDonations;
-window.handleDonationTypeChange = handleDonationTypeChange;
-
-// ============================================================
-// FINANCE
-// ============================================================
-window.showFinanceTab = showFinanceTab;
-window.showAddPemasukanModal = showAddPemasukanModal;
-window.showAddPengeluaranModal = showAddPengeluaranModal;
-window.showAddKategoriModal = showAddKategoriModal;
-window.savePemasukan = savePemasukan;
-window.savePengeluaran = savePengeluaran;
-window.saveKategori = saveKategori;
-window.filterPemasukan = filterPemasukan;
-window.filterPengeluaran = filterPengeluaran;
-window.searchPemasukan = searchPemasukan;
-window.searchPengeluaran = searchPengeluaran;
-window.searchKategori = searchKategori;
-window.handleFinanceCategoryChange = handleFinanceCategoryChange;
-window.exportFinanceData = exportFinanceData;
-window.updateFinanceChart = updateFinanceChart;
-
-// ============================================================
-// VOLUNTEERS
-// ============================================================
-window.showVolunteersTab = showVolunteersTab;
-window.showAddVolunteerModal = showAddVolunteerModal;
-window.showAddAssignmentModal = showAddAssignmentModal;
-window.searchVolunteers = searchVolunteers;
-window.handleVolunteerAreaChange = handleVolunteerAreaChange;
-window.toggleVolunteerSource = toggleVolunteerSource;
-
-// ============================================================
-// COMMUNICATION
-// ============================================================
-window.showCommunicationTab = showCommunicationTab;
-window.showAddAnnouncementModal = showAddAnnouncementModal;
-window.sendBroadcast = sendBroadcast;
-window.saveBroadcastDraft = saveBroadcastDraft;
-window.sendMessage = sendMessage;
-window.searchContacts = searchContacts;
-window.refreshContacts = refreshContacts;
-
-// ============================================================
-// REPORTS
-// ============================================================
-window.generateReport = generateReport;
-window.saveReportAs = saveReportAs;
-window.printReport = printReport;
-window.closeReportPreview = closeReportPreview;
-window.exportLaporan = exportLaporan;
-window.updateLaporanView = updateLaporanView;
-
-// ============================================================
-// USERS
-// ============================================================
-window.showAddUserModal = showAddUserModal;
-window.searchUsers = searchUsers;
-
-// ============================================================
-// DEATHS
-// ============================================================
-window.toggleDeathForm = toggleDeathForm;
-window.saveDeathData = saveDeathData;
-window.editDeathData = editDeathData;
-window.deleteDeathData = deleteDeathData;
-window.cancelDeathEdit = cancelDeathEdit;
-
-// ============================================================
-// DATA MANAGEMENT
-// ============================================================
-window.backupData = backupData;
-window.restoreData = restoreData;
-window.clearAllData = clearAllData;

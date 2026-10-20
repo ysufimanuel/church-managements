@@ -1,35 +1,6 @@
 /**
  * Church Management System V6 - Firebase Integration
- * MULTI-TENANT: Setiap gereja punya data terisolasi penuh
- *
- * STRUKTUR FIRESTORE:
- *
- * churches/                          ← koleksi semua gereja
- *   {churchId}/
- *     nama, email, alamat, dll       ← profil gereja
- *     subscription: { status, plan, expiresAt }
- *
- * users/                             ← semua user (Firebase Auth UID sebagai doc ID)
- *   {uid}/
- *     churchId, role, nama, email    ← profil user + link ke gereja
- *
- * churches/{churchId}/members/       ← data jemaat gereja ini saja
- * churches/{churchId}/families/
- * churches/{churchId}/groups/
- * churches/{churchId}/events/
- * churches/{churchId}/attendance/
- * churches/{churchId}/donations/
- * churches/{churchId}/donors/
- * churches/{churchId}/volunteers/
- * churches/{churchId}/assignments/
- * churches/{churchId}/announcements/
- * churches/{churchId}/pemasukan/
- * churches/{churchId}/pengeluaran/
- * churches/{churchId}/financeCategories/
- * churches/{churchId}/financeConfig/
- * churches/{churchId}/approvalHistory/
- * churches/{churchId}/notifications/
- * churches/{churchId}/deaths/
+ * Firestore Database Operations with Error Handling
  */
 
 console.log('[FIREBASE] Script loading...');
@@ -48,299 +19,370 @@ const firebaseConfig = {
     measurementId: "G-XWR9DH5Q0G"
 };
 
+// Import Firebase modules
 try {
+    console.log('[FIREBASE] Importing modules...');
+    
+    // Dynamic import for Firebase modules
     const { initializeApp } = await import("https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js");
-    const {
-        getFirestore, collection, addDoc, getDocs, doc, setDoc,
-        updateDoc, deleteDoc, getDoc, query, where, orderBy,
-        onSnapshot, writeBatch
+    const { 
+        getFirestore, collection, addDoc, getDocs, doc, setDoc, 
+        updateDoc, deleteDoc, getDoc, query, where, orderBy, 
+        onSnapshot, writeBatch 
     } = await import("https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js");
-    const {
-        getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword,
-        onAuthStateChanged, signOut, sendPasswordResetEmail
+    const { 
+        getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, 
+        onAuthStateChanged, signOut 
     } = await import("https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js");
-
-    const app  = initializeApp(firebaseConfig);
-    const db   = getFirestore(app);
+    
+    console.log('[FIREBASE] Modules imported successfully');
+    
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    console.log('[FIREBASE] App initialized:', app.name);
+    
+    const db = getFirestore(app);
+    console.log('[FIREBASE] Firestore initialized');
+    
     const auth = getAuth(app);
-
+    console.log('[FIREBASE] Auth initialized');
+    
+    // Expose to global scope
     window.firebaseApp = app;
-    window.db   = db;
+    window.db = db;
     window.auth = auth;
-    window.firebaseCollection         = collection;
-    window.firebaseAddDoc             = addDoc;
-    window.firebaseGetDocs            = getDocs;
-    window.firebaseDoc                = doc;
-    window.firebaseSetDoc             = setDoc;
-    window.firebaseUpdateDoc          = updateDoc;
-    window.firebaseDeleteDoc          = deleteDoc;
-    window.firebaseGetDoc             = getDoc;
-    window.firebaseQuery              = query;
-    window.firebaseWhere              = where;
-    window.firebaseOrderBy            = orderBy;
-    window.firebaseOnSnapshot         = onSnapshot;
-    window.firebaseWriteBatch         = writeBatch;
-    window.firebaseSignIn             = signInWithEmailAndPassword;
-    window.firebaseCreateUser         = createUserWithEmailAndPassword;
+    window.firebaseCollection = collection;
+    window.firebaseAddDoc = addDoc;
+    window.firebaseGetDocs = getDocs;
+    window.firebaseDoc = doc;
+    window.firebaseSetDoc = setDoc;
+    window.firebaseUpdateDoc = updateDoc;
+    window.firebaseDeleteDoc = deleteDoc;
+    window.firebaseGetDoc = getDoc;
+    window.firebaseQuery = query;
+    window.firebaseWhere = where;
+    window.firebaseOrderBy = orderBy;
+    window.firebaseOnSnapshot = onSnapshot;
+    window.firebaseWriteBatch = writeBatch;
+    window.firebaseSignIn = signInWithEmailAndPassword;
+    window.firebaseCreateUser = createUserWithEmailAndPassword;
     window.firebaseOnAuthStateChanged = onAuthStateChanged;
-    window.firebaseSignOut            = signOut;
-    window.firebaseSendPasswordResetEmail = sendPasswordResetEmail;
-
-    console.log('[FIREBASE] Initialized — multi-tenant mode');
+    window.firebaseSignOut = signOut;
+    
+    console.log('[FIREBASE] All modules exposed to window');
+    
 } catch (error) {
-    console.error('[FIREBASE] Init error:', error);
+    console.error('[FIREBASE] Initialization error:', error);
     window.firebaseInitError = error.message;
 }
 
 // ========================================
-// ACTIVE CHURCH STATE
-// churchId diset setelah login, dipakai semua operasi data
+// FIREBASE DATA OPERATIONS
 // ========================================
 
-let _activeChurchId = null;
+const DB_COLLECTIONS = {
+    MEMBERS: 'members',
+    FAMILIES: 'families',
+    GROUPS: 'groups',
+    EVENTS: 'events',
+    ATTENDANCE: 'attendance',
+    DONATIONS: 'donations',
+    DONORS: 'donors',
+    VOLUNTEERS: 'volunteers',
+    ASSIGNMENTS: 'assignments',
+    USERS: 'users',
+    ANNOUNCEMENTS: 'announcements',
+    PEMASUKAN: 'pemasukan',
+    PENGELUARAN: 'pengeluaran',
+    FINANCE_CATEGORIES: 'financeCategories',
+    FINANCE_CONFIG: 'financeConfig',
+    APPROVAL_HISTORY: 'approvalHistory',
+    SETTINGS: 'settings',
+    NOTIFICATIONS: 'notifications'
+};
 
-function setActiveChurch(churchId) {
-    _activeChurchId = churchId;
-    console.log('[FIREBASE] Active church:', churchId);
-}
-
-function getActiveChurchId() {
-    return _activeChurchId;
-}
-
-// ========================================
-// PATH HELPERS
-// ========================================
-
-function churchCol(colName) {
-    if (!_activeChurchId) throw new Error('churchId belum di-set');
-    return window.firebaseCollection(window.db, 'churches', _activeChurchId, colName);
-}
-
-function churchDocRef(colName, docId) {
-    if (!_activeChurchId) throw new Error('churchId belum di-set');
-    return window.firebaseDoc(window.db, 'churches', _activeChurchId, colName, docId);
-}
-
-// ========================================
-// READY CHECKS
-// ========================================
-
+// Check if Firebase is initialized
 function isFirebaseReady() {
-    return typeof window.db !== 'undefined' && window.db !== null;
-}
-
-function isAuthReady() {
-    return typeof window.auth !== 'undefined' && window.auth !== null;
+    const ready = typeof window.db !== 'undefined' && window.db !== null;
+    console.log('[FIREBASE] isReady:', ready);
+    return ready;
 }
 
 // ========================================
-// GENERIC CRUD — SCOPED KE GEREJA AKTIF
+// GENERIC CRUD OPERATIONS WITH ERROR HANDLING
 // ========================================
 
+// Get all documents from a collection
 async function getAllDocuments(collectionName) {
-    if (!isFirebaseReady()) return [];
+    console.log(`[FIREBASE] getAllDocuments START: ${collectionName}`);
+    
+    if (!isFirebaseReady()) {
+        console.error('[FIREBASE] Not initialized');
+        return [];
+    }
+    
     try {
-        const snap = await window.firebaseGetDocs(churchCol(collectionName));
-        return snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    } catch (e) {
-        console.error(`[FIREBASE] getAllDocuments(${collectionName}):`, e);
+        const colRef = window.firebaseCollection(window.db, collectionName);
+        console.log(`[FIREBASE] Querying collection: ${collectionName}`);
+        
+        const snapshot = await window.firebaseGetDocs(colRef);
+        console.log(`[FIREBASE] Got ${snapshot.docs.length} documents from ${collectionName}`);
+        
+        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    } catch (error) {
+        console.error(`[FIREBASE] Error getting ${collectionName}:`, error);
+        console.error('[FIREBASE] Error code:', error.code);
+        console.error('[FIREBASE] Error message:', error.message);
         return [];
     }
 }
 
+// Get document by ID
 async function getDocumentById(collectionName, docId) {
+    console.log(`[FIREBASE] getDocumentById START: ${collectionName}/${docId}`);
+    
     if (!isFirebaseReady()) return null;
+    
     try {
-        const snap = await window.firebaseGetDoc(churchDocRef(collectionName, docId));
-        return snap.exists() ? { id: snap.id, ...snap.data() } : null;
-    } catch (e) {
-        console.error(`[FIREBASE] getDocumentById(${collectionName}/${docId}):`, e);
+        const docRef = window.firebaseDoc(window.db, collectionName, docId);
+        const snapshot = await window.firebaseGetDoc(docRef);
+        
+        if (snapshot.exists()) {
+            console.log(`[FIREBASE] Document found: ${collectionName}/${docId}`);
+            return { id: snapshot.id, ...snapshot.data() };
+        }
+        console.log(`[FIREBASE] Document not found: ${collectionName}/${docId}`);
+        return null;
+    } catch (error) {
+        console.error(`[FIREBASE] Error getting ${collectionName}/${docId}:`, error);
         return null;
     }
 }
 
+// Add new document with auto ID
 async function addDocument(collectionName, data) {
+    console.log(`[FIREBASE] addDocument START: ${collectionName}`);
+    
     if (!isFirebaseReady()) return null;
+    
     try {
-        const d = { ...data, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
-        const ref = await window.firebaseAddDoc(churchCol(collectionName), d);
-        return { id: ref.id, ...d };
-    } catch (e) {
-        console.error(`[FIREBASE] addDocument(${collectionName}):`, e);
+        const colRef = window.firebaseCollection(window.db, collectionName);
+        const docData = {
+            ...data,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+        };
+        
+        const docRef = await window.firebaseAddDoc(colRef, docData);
+        console.log(`[FIREBASE] Document added: ${collectionName}/${docRef.id}`);
+        return { id: docRef.id, ...docData };
+    } catch (error) {
+        console.error(`[FIREBASE] Error adding to ${collectionName}:`, error);
+        console.error('[FIREBASE] Error code:', error.code);
+        console.error('[FIREBASE] Error message:', error.message);
         return null;
     }
 }
 
+// Set document with specific ID
 async function setDocument(collectionName, docId, data) {
-    if (!isFirebaseReady()) return false;
+    console.log(`[FIREBASE] setDocument START: ${collectionName}/${docId}`);
+    
+    if (!isFirebaseReady()) {
+        console.error('[FIREBASE] Not ready, cannot set document');
+        return false;
+    }
+    
     try {
-        await window.firebaseSetDoc(
-            churchDocRef(collectionName, docId),
-            { ...data, updatedAt: new Date().toISOString() },
-            { merge: true }
-        );
+        const docRef = window.firebaseDoc(window.db, collectionName, docId);
+        const docData = {
+            ...data,
+            updatedAt: new Date().toISOString()
+        };
+        
+        await window.firebaseSetDoc(docRef, docData, { merge: true });
+        console.log(`[FIREBASE] Document set: ${collectionName}/${docId}`);
         return true;
-    } catch (e) {
-        console.error(`[FIREBASE] setDocument(${collectionName}/${docId}):`, e);
+    } catch (error) {
+        console.error(`[FIREBASE] Error setting ${collectionName}/${docId}:`, error);
+        console.error('[FIREBASE] Error code:', error.code);
+        console.error('[FIREBASE] Error message:', error.message);
         return false;
     }
 }
 
+// Update document
 async function updateDocument(collectionName, docId, data) {
+    console.log(`[FIREBASE] updateDocument START: ${collectionName}/${docId}`);
+    
     if (!isFirebaseReady()) return false;
+    
     try {
-        await window.firebaseUpdateDoc(
-            churchDocRef(collectionName, docId),
-            { ...data, updatedAt: new Date().toISOString() }
-        );
+        const docRef = window.firebaseDoc(window.db, collectionName, docId);
+        const docData = {
+            ...data,
+            updatedAt: new Date().toISOString()
+        };
+        
+        await window.firebaseUpdateDoc(docRef, docData);
+        console.log(`[FIREBASE] Document updated: ${collectionName}/${docId}`);
         return true;
-    } catch (e) {
-        console.error(`[FIREBASE] updateDocument(${collectionName}/${docId}):`, e);
+    } catch (error) {
+        console.error(`[FIREBASE] Error updating ${collectionName}/${docId}:`, error);
         return false;
     }
 }
 
+// Delete document
 async function deleteDocument(collectionName, docId) {
+    console.log(`[FIREBASE] deleteDocument START: ${collectionName}/${docId}`);
+    
     if (!isFirebaseReady()) return false;
+    
     try {
-        await window.firebaseDeleteDoc(churchDocRef(collectionName, docId));
+        const docRef = window.firebaseDoc(window.db, collectionName, docId);
+        await window.firebaseDeleteDoc(docRef);
+        console.log(`[FIREBASE] Document deleted: ${collectionName}/${docId}`);
         return true;
-    } catch (e) {
-        console.error(`[FIREBASE] deleteDocument(${collectionName}/${docId}):`, e);
+    } catch (error) {
+        console.error(`[FIREBASE] Error deleting ${collectionName}/${docId}:`, error);
         return false;
     }
 }
 
+// Query documents
 async function queryDocuments(collectionName, field, operator, value) {
+    console.log(`[FIREBASE] queryDocuments START: ${collectionName} ${field} ${operator} ${value}`);
+    
     if (!isFirebaseReady()) return [];
+    
     try {
-        const q = window.firebaseQuery(
-            churchCol(collectionName),
-            window.firebaseWhere(field, operator, value)
-        );
-        const snap = await window.firebaseGetDocs(q);
-        return snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    } catch (e) {
-        console.error(`[FIREBASE] queryDocuments(${collectionName}):`, e);
+        const colRef = window.firebaseCollection(window.db, collectionName);
+        const q = window.firebaseQuery(colRef, window.firebaseWhere(field, operator, value));
+        const snapshot = await window.firebaseGetDocs(q);
+        
+        console.log(`[FIREBASE] Query returned ${snapshot.docs.length} documents`);
+        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    } catch (error) {
+        console.error(`[FIREBASE] Error querying ${collectionName}:`, error);
         return [];
     }
 }
+
+// ========================================
+// REAL-TIME LISTENERS
+// ========================================
 
 function onCollectionSnapshot(collectionName, callback) {
+    console.log(`[FIREBASE] onCollectionSnapshot START: ${collectionName}`);
+    
     if (!isFirebaseReady()) return () => {};
+    
     try {
-        return window.firebaseOnSnapshot(churchCol(collectionName), snap => {
-            callback(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+        const colRef = window.firebaseCollection(window.db, collectionName);
+        return window.firebaseOnSnapshot(colRef, (snapshot) => {
+            const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            console.log(`[FIREBASE] Snapshot update for ${collectionName}: ${data.length} items`);
+            callback(data);
+        }, (error) => {
+            console.error(`[FIREBASE] Snapshot error for ${collectionName}:`, error);
         });
-    } catch (e) {
-        console.error(`[FIREBASE] onCollectionSnapshot(${collectionName}):`, e);
+    } catch (error) {
+        console.error(`[FIREBASE] Error setting up snapshot for ${collectionName}:`, error);
         return () => {};
     }
 }
 
+// ========================================
+// BATCH OPERATIONS
+// ========================================
+
 async function batchWrite(operations) {
+    console.log(`[FIREBASE] batchWrite START: ${operations.length} operations`);
+    
     if (!isFirebaseReady()) return false;
+    
     try {
         const batch = window.firebaseWriteBatch(window.db);
+        
         operations.forEach(op => {
-            const ref = churchDocRef(op.collection, op.docId);
-            if (op.type === 'set')    batch.set(ref, op.data, { merge: true });
-            if (op.type === 'update') batch.update(ref, op.data);
-            if (op.type === 'delete') batch.delete(ref);
-        });
-        await batch.commit();
-        return true;
-    } catch (e) {
-        console.error('[FIREBASE] batchWrite:', e);
-        return false;
-    }
-}
-
-// ========================================
-// CHURCH DOCUMENT OPERATIONS (top-level)
-// ========================================
-
-async function createChurch(churchData) {
-    if (!isFirebaseReady()) return null;
-    try {
-        const ref = await window.firebaseAddDoc(
-            window.firebaseCollection(window.db, 'churches'),
-            {
-                ...churchData,
-                subscription: {
-                    status: 'trial',
-                    plan: 'free',
-                    trialEndsAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-                    expiresAt: null
-                },
-                createdAt: new Date().toISOString(),
-                updatedAt: new Date().toISOString()
+            const docRef = window.firebaseDoc(window.db, op.collection, op.docId);
+            if (op.type === 'set') {
+                batch.set(docRef, op.data, { merge: true });
+            } else if (op.type === 'update') {
+                batch.update(docRef, op.data);
+            } else if (op.type === 'delete') {
+                batch.delete(docRef);
             }
-        );
-        console.log('[FIREBASE] Church created:', ref.id);
-        return ref.id;
-    } catch (e) {
-        console.error('[FIREBASE] createChurch:', e);
-        return null;
-    }
-}
-
-async function getChurch(churchId) {
-    if (!isFirebaseReady()) return null;
-    try {
-        const snap = await window.firebaseGetDoc(
-            window.firebaseDoc(window.db, 'churches', churchId)
-        );
-        return snap.exists() ? { id: snap.id, ...snap.data() } : null;
-    } catch (e) {
-        console.error('[FIREBASE] getChurch:', e);
-        return null;
-    }
-}
-
-async function updateChurch(churchId, data) {
-    if (!isFirebaseReady()) return false;
-    try {
-        await window.firebaseUpdateDoc(
-            window.firebaseDoc(window.db, 'churches', churchId),
-            { ...data, updatedAt: new Date().toISOString() }
-        );
+        });
+        
+        await batch.commit();
+        console.log('[FIREBASE] Batch write completed');
         return true;
-    } catch (e) {
-        console.error('[FIREBASE] updateChurch:', e);
+    } catch (error) {
+        console.error('[FIREBASE] Batch write error:', error);
         return false;
     }
 }
 
 // ========================================
-// USER PROFILE (top-level users/{uid})
+// INITIALIZATION FUNCTIONS
 // ========================================
 
-async function getUserProfile(uid) {
-    if (!isFirebaseReady()) return null;
-    try {
-        const snap = await window.firebaseGetDoc(
-            window.firebaseDoc(window.db, 'users', uid)
-        );
-        return snap.exists() ? { id: snap.id, ...snap.data() } : null;
-    } catch (e) {
-        console.error('[FIREBASE] getUserProfile:', e);
-        return null;
+async function initializeFirestoreData() {
+    console.log('[FIREBASE] initializeFirestoreData START');
+    
+    if (!isFirebaseReady()) {
+        console.error('[FIREBASE] Not ready, skipping initialization');
+        return false;
     }
-}
-
-async function setUserProfile(uid, data) {
-    if (!isFirebaseReady()) return false;
+    
     try {
-        await window.firebaseSetDoc(
-            window.firebaseDoc(window.db, 'users', uid),
-            { ...data, updatedAt: new Date().toISOString() },
-            { merge: true }
-        );
+        // Check if users collection exists
+        console.log('[FIREBASE] Checking users collection...');
+        const users = await getAllDocuments(DB_COLLECTIONS.USERS);
+        console.log(`[FIREBASE] Found ${users.length} users`);
+        
+        if (users.length === 0) {
+            console.log('[FIREBASE] Creating default users...');
+            
+            // Create default users
+            await setDocument(DB_COLLECTIONS.USERS, 'admin', {
+                id: 'admin',
+                username: 'admin',
+                nama: 'Administrator',
+                email: 'admin@church.com',
+                role: 'admin',
+                password: 'admin123',
+                createdAt: new Date().toISOString()
+            });
+            
+            await setDocument(DB_COLLECTIONS.USERS, 'superadmin', {
+                id: 'superadmin',
+                username: 'superadmin',
+                nama: 'Super Admin',
+                email: 'superadmin@church.com',
+                role: 'superadmin',
+                password: 'super123',
+                createdAt: new Date().toISOString()
+            });
+            
+            await setDocument(DB_COLLECTIONS.USERS, 'user', {
+                id: 'user',
+                username: 'user',
+                nama: 'User View',
+                email: 'user@church.com',
+                role: 'user',
+                password: 'user123',
+                createdAt: new Date().toISOString()
+            });
+            
+            console.log('[FIREBASE] Default users created');
+        }
+        
         return true;
-    } catch (e) {
-        console.error('[FIREBASE] setUserProfile:', e);
+    } catch (error) {
+        console.error('[FIREBASE] Error initializing data:', error);
         return false;
     }
 }
@@ -349,256 +391,201 @@ async function setUserProfile(uid, data) {
 // AUTHENTICATION
 // ========================================
 
-async function loginWithFirebase(usernameOrEmail, password) {
-    if (!isAuthReady()) return null;
+async function loginWithFirebase(username, password) {
+    console.log(`[FIREBASE] loginWithFirebase START: ${username}`);
+    
+    if (!isFirebaseReady()) {
+        console.error('[FIREBASE] Not ready for login');
+        return null;
+    }
+    
     try {
-        let email = usernameOrEmail;
-
-        // Resolusi username → email
-        if (!usernameOrEmail.includes('@')) {
-            const q = window.firebaseQuery(
-                window.firebaseCollection(window.db, 'users'),
-                window.firebaseWhere('username', '==', usernameOrEmail)
-            );
-            const snap = await window.firebaseGetDocs(q);
-            if (snap.empty) return null;
-            email = snap.docs[0].data().email;
+        // Query users collection
+        console.log('[FIREBASE] Querying user...');
+        const users = await queryDocuments(DB_COLLECTIONS.USERS, 'username', '==', username);
+        console.log(`[FIREBASE] Found ${users.length} matching users`);
+        
+        if (users.length === 0) {
+            console.log('[FIREBASE] User not found');
+            return null;
         }
-
-        const credential = await window.firebaseSignIn(window.auth, email, password);
-        const profile = await getUserProfile(credential.user.uid);
-        if (!profile) return null;
-
-        // Set gereja aktif untuk sesi ini
-        setActiveChurch(profile.churchId);
-        await setUserProfile(credential.user.uid, { lastLogin: new Date().toISOString() });
-
-        const { password: _p, ...safe } = profile;
-        return safe;
-    } catch (e) {
-        console.error('[FIREBASE] loginWithFirebase:', e.code);
+        
+        const user = users[0];
+        
+        // Check password (in production, use Firebase Auth)
+        if (user.password === password) {
+            console.log('[FIREBASE] Login successful');
+            // Remove password from returned object
+            const { password, ...userWithoutPassword } = user;
+            return userWithoutPassword;
+        }
+        
+        console.log('[FIREBASE] Password mismatch');
+        return null;
+    } catch (error) {
+        console.error('[FIREBASE] Login error:', error);
         return null;
     }
 }
 
-async function registerChurch(churchData, adminData) {
-    if (!isAuthReady() || !isFirebaseReady()) {
-        return { success: false, error: 'Firebase tidak siap' };
-    }
-    try {
-        // 1. Buat akun Firebase Auth
-        const credential = await window.firebaseCreateUser(
-            window.auth, adminData.email, adminData.password
-        );
-        const uid = credential.user.uid;
-
-        // 2. Buat church document
-        const churchId = await createChurch({
-            ...churchData,
-            superadminUid: uid
-        });
-        if (!churchId) throw new Error('Gagal membuat data gereja');
-
-        // 3. Simpan profil user
-        const profile = {
-            uid,
-            email: adminData.email,
-            nama: adminData.nama,
-            username: adminData.username || adminData.email.split('@')[0],
-            role: 'superadmin',
-            churchId,
-            status: 'aktif',
-            createdAt: new Date().toISOString(),
-            lastLogin: new Date().toISOString()
-        };
-        await setUserProfile(uid, profile);
-
-        // 4. Set gereja aktif
-        setActiveChurch(churchId);
-
-        return { success: true, churchId, user: profile };
-    } catch (e) {
-        console.error('[FIREBASE] registerChurch:', e.code, e.message);
-        let error = 'Registrasi gagal';
-        if (e.code === 'auth/email-already-in-use') error = 'Email sudah terdaftar';
-        if (e.code === 'auth/weak-password')        error = 'Password minimal 6 karakter';
-        return { success: false, error };
-    }
-}
-
-async function createChurchUser(userData) {
-    if (!isAuthReady() || !_activeChurchId) return null;
-    try {
-        const credential = await window.firebaseCreateUser(
-            window.auth, userData.email, userData.password
-        );
-        const profile = {
-            uid: credential.user.uid,
-            email: userData.email,
-            nama: userData.nama,
-            username: userData.username || userData.email.split('@')[0],
-            role: userData.role || 'user',
-            churchId: _activeChurchId,
-            status: 'aktif',
-            createdAt: new Date().toISOString(),
-            lastLogin: null
-        };
-        await setUserProfile(credential.user.uid, profile);
-        return profile;
-    } catch (e) {
-        console.error('[FIREBASE] createChurchUser:', e.code);
-        return null;
-    }
-}
-
-async function logoutFromFirebase() {
-    if (!isAuthReady()) return false;
-    try {
-        await window.firebaseSignOut(window.auth);
-        _activeChurchId = null;
-        return true;
-    } catch (e) {
-        console.error('[FIREBASE] logout:', e);
-        return false;
-    }
-}
-
-async function sendPasswordReset(email) {
-    if (!isAuthReady()) return false;
-    try {
-        await window.firebaseSendPasswordResetEmail(window.auth, email);
-        return true;
-    } catch (e) {
-        console.error('[FIREBASE] sendPasswordReset:', e);
-        return false;
-    }
-}
-
 // ========================================
-// INIT & MIGRATION
-// ========================================
-
-async function initializeFirestoreData() {
-    console.log('[FIREBASE] initializeFirestoreData: multi-tenant, no default users');
-    return true;
-}
-
-async function migrateFromLocalStorage() {
-    if (!isFirebaseReady() || !_activeChurchId) return false;
-    try {
-        const raw = localStorage.getItem('cmsV2Data');
-        if (!raw) return true;
-        const data = JSON.parse(raw);
-
-        const keys = [
-            'members','families','groups','events','attendance',
-            'donations','donors','volunteers','assignments',
-            'pemasukan','pengeluaran','announcements'
-        ];
-
-        for (const key of keys) {
-            if (data[key]?.length) {
-                for (const item of data[key]) {
-                    const id = item.id ? String(item.id) : Date.now().toString();
-                    const { password: _p, ...clean } = item;
-                    await setDocument(key, id, clean);
-                }
-            }
-        }
-        if (data.finance)           await setDocument('financeConfig', 'config', data.finance);
-        if (data.financeCategories) {
-            for (const c of data.financeCategories) {
-                await setDocument('financeCategories', String(c.id), c);
-            }
-        }
-
-        localStorage.removeItem('cmsV2Data');
-        console.log('[FIREBASE] Migration complete');
-        return true;
-    } catch (e) {
-        console.error('[FIREBASE] migrateFromLocalStorage:', e);
-        return false;
-    }
-}
-
-// ========================================
-// NOTIFICATIONS
+// NOTIFICATION FUNCTIONS
 // ========================================
 
 async function getNotifications(userId = null) {
+    console.log(`[FIREBASE] getNotifications START: ${userId || 'all'}`);
+    
     if (!isFirebaseReady()) return [];
+    
     try {
-        const notifs = userId
-            ? await queryDocuments('notifications', 'userId', '==', userId)
-            : await getAllDocuments('notifications');
-        return notifs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-    } catch (e) { return []; }
+        let notifications;
+        if (userId) {
+            notifications = await queryDocuments(DB_COLLECTIONS.NOTIFICATIONS, 'userId', '==', userId);
+        } else {
+            notifications = await getAllDocuments(DB_COLLECTIONS.NOTIFICATIONS);
+        }
+        
+        // Sort by timestamp descending
+        notifications.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+        console.log(`[FIREBASE] Got ${notifications.length} notifications`);
+        return notifications;
+    } catch (error) {
+        console.error('[FIREBASE] Error getting notifications:', error);
+        return [];
+    }
 }
 
-async function addNotification(data) {
-    return addDocument('notifications', { ...data, timestamp: new Date().toISOString(), read: false });
+async function addNotification(notificationData) {
+    console.log('[FIREBASE] addNotification START');
+    
+    if (!isFirebaseReady()) return null;
+    
+    try {
+        const data = {
+            ...notificationData,
+            timestamp: new Date().toISOString(),
+            read: false
+        };
+        
+        const result = await addDocument(DB_COLLECTIONS.NOTIFICATIONS, data);
+        console.log('[FIREBASE] Notification added:', result?.id);
+        return result;
+    } catch (error) {
+        console.error('[FIREBASE] Error adding notification:', error);
+        return null;
+    }
 }
 
-async function markNotificationRead(id) {
-    return updateDocument('notifications', id, { read: true });
+async function markNotificationRead(notificationId) {
+    console.log(`[FIREBASE] markNotificationRead START: ${notificationId}`);
+    
+    if (!isFirebaseReady()) return false;
+    
+    try {
+        await updateDocument(DB_COLLECTIONS.NOTIFICATIONS, notificationId, { read: true });
+        console.log('[FIREBASE] Notification marked as read');
+        return true;
+    } catch (error) {
+        console.error('[FIREBASE] Error marking notification read:', error);
+        return false;
+    }
 }
 
-async function deleteNotification(id) {
-    return deleteDocument('notifications', id);
+async function deleteNotification(notificationId) {
+    console.log(`[FIREBASE] deleteNotification START: ${notificationId}`);
+    
+    if (!isFirebaseReady()) return false;
+    
+    try {
+        await deleteDocument(DB_COLLECTIONS.NOTIFICATIONS, notificationId);
+        console.log('[FIREBASE] Notification deleted');
+        return true;
+    } catch (error) {
+        console.error('[FIREBASE] Error deleting notification:', error);
+        return false;
+    }
 }
 
 // ========================================
-// DB_COLLECTIONS (kompatibilitas app.js)
+// DATA MIGRATION
 // ========================================
 
-const DB_COLLECTIONS = {
-    MEMBERS: 'members', FAMILIES: 'families', GROUPS: 'groups',
-    EVENTS: 'events', ATTENDANCE: 'attendance', DONATIONS: 'donations',
-    DONORS: 'donors', VOLUNTEERS: 'volunteers', ASSIGNMENTS: 'assignments',
-    USERS: 'users', ANNOUNCEMENTS: 'announcements',
-    PEMASUKAN: 'pemasukan', PENGELUARAN: 'pengeluaran',
-    FINANCE_CATEGORIES: 'financeCategories', FINANCE_CONFIG: 'financeConfig',
-    APPROVAL_HISTORY: 'approvalHistory', SETTINGS: 'settings',
-    NOTIFICATIONS: 'notifications', DEATHS: 'deaths'
-};
+async function migrateFromLocalStorage() {
+    console.log('[FIREBASE] migrateFromLocalStorage START');
+    
+    if (!isFirebaseReady()) {
+        console.log('[FIREBASE] Not ready, skipping migration');
+        return false;
+    }
+    
+    try {
+        const localData = localStorage.getItem('churchData');
+        if (!localData) {
+            console.log('[FIREBASE] No local data to migrate');
+            return true;
+        }
+        
+        const data = JSON.parse(localData);
+        console.log('[FIREBASE] Migrating data from localStorage...');
+        
+        // Migrate each collection
+        const collections = [
+            { key: 'members', collection: DB_COLLECTIONS.MEMBERS },
+            { key: 'families', collection: DB_COLLECTIONS.FAMILIES },
+            { key: 'groups', collection: DB_COLLECTIONS.GROUPS },
+            { key: 'events', collection: DB_COLLECTIONS.EVENTS },
+            { key: 'attendance', collection: DB_COLLECTIONS.ATTENDANCE },
+            { key: 'donations', collection: DB_COLLECTIONS.DONATIONS },
+            { key: 'donors', collection: DB_COLLECTIONS.DONORS },
+            { key: 'volunteers', collection: DB_COLLECTIONS.VOLUNTEERS },
+            { key: 'assignments', collection: DB_COLLECTIONS.ASSIGNMENTS },
+            { key: 'pemasukan', collection: DB_COLLECTIONS.PEMASUKAN },
+            { key: 'pengeluaran', collection: DB_COLLECTIONS.PENGELUARAN },
+            { key: 'announcements', collection: DB_COLLECTIONS.ANNOUNCEMENTS }
+        ];
+        
+        for (const { key, collection } of collections) {
+            if (data[key] && data[key].length > 0) {
+                console.log(`[FIREBASE] Migrating ${data[key].length} ${key}...`);
+                for (const item of data[key]) {
+                    const id = item.id ? String(item.id) : Date.now().toString();
+                    await setDocument(collection, id, item);
+                }
+            }
+        }
+        
+        console.log('[FIREBASE] Migration completed');
+        localStorage.removeItem('churchData');
+        return true;
+    } catch (error) {
+        console.error('[FIREBASE] Migration error:', error);
+        return false;
+    }
+}
 
 // ========================================
-// EXPORT
+// EXPORT TO GLOBAL
 // ========================================
 
-window.DB_COLLECTIONS          = DB_COLLECTIONS;
-window.isFirebaseReady         = isFirebaseReady;
-window.isAuthReady             = isAuthReady;
-window.setActiveChurch         = setActiveChurch;
-window.getActiveChurchId       = getActiveChurchId;
-window.getAllDocuments          = getAllDocuments;
-window.getDocumentById         = getDocumentById;
-window.addDocument             = addDocument;
-window.setDocument             = setDocument;
-window.updateDocument          = updateDocument;
-window.deleteDocument          = deleteDocument;
-window.queryDocuments          = queryDocuments;
-window.onCollectionSnapshot    = onCollectionSnapshot;
-window.batchWrite              = batchWrite;
-window.createChurch            = createChurch;
-window.getChurch               = getChurch;
-window.updateChurch            = updateChurch;
-window.getUserProfile          = getUserProfile;
-window.setUserProfile          = setUserProfile;
-window.loginWithFirebase       = loginWithFirebase;
-window.registerChurch          = registerChurch;
-window.createChurchUser        = createChurchUser;
-window.logoutFromFirebase      = logoutFromFirebase;
-window.sendPasswordReset       = sendPasswordReset;
-window.initializeFirestoreData = initializeFirestoreData;
-window.migrateFromLocalStorage = migrateFromLocalStorage;
-window.getNotifications        = getNotifications;
-window.addNotification         = addNotification;
-window.markNotificationRead    = markNotificationRead;
-window.deleteNotification      = deleteNotification;
-
-console.log('[FIREBASE] Multi-tenant firebase.js loaded');
-
-
-// Pasang ke objek window di bagian paling bawah file firebase.js
+window.DB_COLLECTIONS = DB_COLLECTIONS;
 window.isFirebaseReady = isFirebaseReady;
+window.getAllDocuments = getAllDocuments;
+window.getDocumentById = getDocumentById;
+window.addDocument = addDocument;
+window.setDocument = setDocument;
+window.updateDocument = updateDocument;
+window.deleteDocument = deleteDocument;
+window.queryDocuments = queryDocuments;
+window.onCollectionSnapshot = onCollectionSnapshot;
+window.batchWrite = batchWrite;
+window.initializeFirestoreData = initializeFirestoreData;
+window.loginWithFirebase = loginWithFirebase;
+window.migrateFromLocalStorage = migrateFromLocalStorage;
+
+// Notification exports
+window.getNotifications = getNotifications;
+window.addNotification = addNotification;
+window.markNotificationRead = markNotificationRead;
+window.deleteNotification = deleteNotification;
+
+console.log('[FIREBASE] Script loaded successfully');

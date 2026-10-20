@@ -1,16 +1,13 @@
 <!DOCTYPE html>
 <html lang="id">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Church Management System V6</title>
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
-        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
-
 <body>
     <!-- Login Page -->
     <div id="login-page" class="login-container">
@@ -48,101 +45,11 @@
             </form>
             <div id="login-notification" class="login-notification"></div>
             <div class="login-footer">
-                <button type="button" id="btn-show-register" class="btn-register-link">
-                    Daftar Gereja Baru
-                </button>
+                <p><i class="fas fa-info-circle"></i> <span data-lang="default-login">Default: admin / admin123</span></p>
             </div>
             <div class="language-selector" style="margin-top: 15px; text-align: center;">
-                <button type="button" class="lang-btn active" onclick="setLanguage('id')" data-lang="lang-id">Bahasa
-                    Indonesia</button>
+                <button type="button" class="lang-btn active" onclick="setLanguage('id')" data-lang="lang-id">Bahasa Indonesia</button>
                 <button type="button" class="lang-btn" onclick="setLanguage('en')" data-lang="lang-en">English</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Register Page — HARUS di luar login-page -->
-    <div id="register-page" class="login-container hidden">
-        <div class="login-box" style="max-width: 520px;">
-            <div class="login-header">
-                <div class="login-logo">
-                    <i class="fas fa-church"></i>
-                </div>
-                <h2>Daftar Gereja Baru</h2>
-                <p>Buat akun untuk gereja Anda</p>
-            </div>
-
-            <form id="register-form" class="login-form">
-
-                <!-- DATA GEREJA -->
-                <p style="font-weight:600; margin-bottom:8px; color: var(--primary);">
-                    <i class="fas fa-church"></i> Data Gereja
-                </p>
-
-                <div class="form-group">
-                    <label>Nama Gereja</label>
-                    <input type="text" id="reg-church-name" placeholder="Gereja Kristen Indonesia" required>
-                </div>
-                <div class="form-group">
-                    <label>Alamat</label>
-                    <input type="text" id="reg-church-address" placeholder="Jl. Gereja No. 1" required>
-                </div>
-                <div class="form-row" style="display:flex; gap:12px;">
-                    <div class="form-group" style="flex:1;">
-                        <label>Kota</label>
-                        <input type="text" id="reg-church-city" placeholder="Jakarta" required>
-                    </div>
-                    <div class="form-group" style="flex:1;">
-                        <label>Telepon</label>
-                        <input type="tel" id="reg-church-phone" placeholder="021-12345678">
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label>Email Gereja</label>
-                    <input type="email" id="reg-church-email" placeholder="info@gereja.com">
-                </div>
-
-                <hr style="margin: 16px 0; border-color: #e2e8f0;">
-
-                <!-- DATA ADMIN -->
-                <p style="font-weight:600; margin-bottom:8px; color: var(--primary);">
-                    <i class="fas fa-user-shield"></i> Akun Super Admin
-                </p>
-
-                <div class="form-group">
-                    <label>Nama Admin</label>
-                    <input type="text" id="reg-admin-name" placeholder="Nama lengkap" required>
-                </div>
-                <div class="form-group">
-                    <label>Username</label>
-                    <input type="text" id="reg-admin-username" placeholder="username_admin" required>
-                </div>
-                <div class="form-group">
-                    <label>Email (untuk login)</label>
-                    <input type="email" id="reg-admin-email" placeholder="admin@gereja.com" required>
-                </div>
-                <div class="form-group">
-                    <label>Password</label>
-                    <div class="password-input">
-                        <input type="password" id="reg-admin-password" placeholder="Minimal 6 karakter" required
-                            minlength="6">
-                        <button type="button" class="toggle-password"
-                            onclick="this.previousElementSibling.type = this.previousElementSibling.type === 'password' ? 'text' : 'password'">
-                            <i class="fas fa-eye"></i>
-                        </button>
-                    </div>
-                </div>
-                <button type="submit" class="btn-login" style="margin-top:8px;">
-                    <i class="fas fa-check-circle"></i> Daftarkan Gereja
-                </button>
-            </form>
-
-            <div id="register-notification" class="login-notification"></div>
-
-            <div class="login-footer" style="margin-top:12px; text-align:center;">
-                <button type="button" id="btn-back-to-login"
-                    style="background:none; border:none; color:var(--primary); cursor:pointer; font-size:14px;">
-                    <i class="fas fa-arrow-left"></i> Kembali ke Login
-                </button>
             </div>
         </div>
     </div>
@@ -166,8 +73,7 @@
             <nav class="sidebar-nav">
                 <ul>
                     <li class="active" onclick="showPage('dashboard')">
-                        <a href="#"><i class="fas fa-tachometer-alt"></i> <span
-                                data-lang="dashboard">Dashboard</span></a>
+                        <a href="#"><i class="fas fa-tachometer-alt"></i> <span data-lang="dashboard">Dashboard</span></a>
                     </li>
                     <li onclick="showPage('members')">
                         <a href="#"><i class="fas fa-users"></i> <span data-lang="members">Members</span></a>
@@ -182,33 +88,25 @@
                         <a href="#"><i class="fas fa-calendar-alt"></i> <span data-lang="events">Events</span></a>
                     </li>
                     <li onclick="showPage('attendance')">
-                        <a href="#"><i class="fas fa-clipboard-check"></i> <span
-                                data-lang="attendance">Attendance</span></a>
+                        <a href="#"><i class="fas fa-clipboard-check"></i> <span data-lang="attendance">Attendance</span></a>
                     </li>
                     <li onclick="showPage('donations')">
-                        <a href="#"><i class="fas fa-hand-holding-heart"></i> <span
-                                data-lang="donations">Donations</span></a>
+                        <a href="#"><i class="fas fa-hand-holding-heart"></i> <span data-lang="donations">Donations</span></a>
                     </li>
                     <li onclick="showPage('finance')">
                         <a href="#"><i class="fas fa-money-bill-wave"></i> <span data-lang="finance">Finance</span></a>
                     </li>
                     <li onclick="showPage('volunteers')">
-                        <a href="#"><i class="fas fa-hands-helping"></i> <span
-                                data-lang="volunteers">Volunteers</span></a>
+                        <a href="#"><i class="fas fa-hands-helping"></i> <span data-lang="volunteers">Volunteers</span></a>
                     </li>
                     <li onclick="showPage('communication')">
-                        <a href="#"><i class="fas fa-comments"></i> <span
-                                data-lang="communication">Communication</span></a>
+                        <a href="#"><i class="fas fa-comments"></i> <span data-lang="communication">Communication</span></a>
                     </li>
                     <li onclick="showPage('reports')">
                         <a href="#"><i class="fas fa-chart-bar"></i> <span data-lang="reports">Reports</span></a>
                     </li>
                     <li id="menu-users" onclick="showPage('users')">
-                        <a href="#"><i class="fas fa-user-shield"></i> <span data-lang="user-management">User
-                                Management</span></a>
-                    </li>
-                    <li onclick="showPage('deaths')">
-                        <a href="#"><i class="fas fa-cross"></i> Data Kematian</a>
+                        <a href="#"><i class="fas fa-user-shield"></i> <span data-lang="user-management">User Management</span></a>
                     </li>
                 </ul>
             </nav>
@@ -271,10 +169,9 @@
                 <div id="page-dashboard" class="page active">
                     <div class="page-header">
                         <h1><i class="fas fa-tachometer-alt"></i> <span data-lang="dashboard">Dashboard</span></h1>
-                        <p><span data-lang="welcome-back">Selamat datang kembali</span>, <span
-                                id="welcome-name">Admin</span>!</p>
+                        <p><span data-lang="welcome-back">Selamat datang kembali</span>, <span id="welcome-name">Admin</span>!</p>
                     </div>
-
+                    
                     <!-- Stats Grid -->
                     <div class="stats-grid">
                         <div class="stat-card">
@@ -344,10 +241,8 @@
                         <!-- Recent Activity -->
                         <div class="dashboard-card">
                             <div class="card-header">
-                                <h3><i class="fas fa-history"></i> <span data-lang="recent-activity">Aktivitas
-                                        Terbaru</span></h3>
-                                <button class="btn-text" onclick="showPage('reports')" data-lang="view-all">Lihat
-                                    Semua</button>
+                                <h3><i class="fas fa-history"></i> <span data-lang="recent-activity">Aktivitas Terbaru</span></h3>
+                                <button class="btn-text" onclick="showPage('reports')" data-lang="view-all">Lihat Semua</button>
                             </div>
                             <div class="activity-list" id="activity-list">
                                 <!-- Dynamic content -->
@@ -357,21 +252,18 @@
                         <!-- Upcoming Events -->
                         <div class="dashboard-card">
                             <div class="card-header">
-                                <h3><i class="fas fa-calendar"></i> <span data-lang="upcoming-events">Event
-                                        Mendatang</span></h3>
-                                <button class="btn-text" onclick="showPage('events')" data-lang="view-all">Lihat
-                                    Semua</button>
+                                <h3><i class="fas fa-calendar"></i> <span data-lang="upcoming-events">Event Mendatang</span></h3>
+                                <button class="btn-text" onclick="showPage('events')" data-lang="view-all">Lihat Semua</button>
                             </div>
                             <div class="event-list" id="upcoming-events">
                                 <!-- Dynamic content -->
                             </div>
                         </div>
 
-                                    <!-- Attendance Chart -->
+                        <!-- Attendance Chart -->
                         <div class="dashboard-card full-width">
                             <div class="card-header">
-                                <h3><i class="fas fa-chart-line"></i> <span data-lang="attendance-stats">Statistik
-                                        Kehadiran</span></h3>
+                                <h3><i class="fas fa-chart-line"></i> <span data-lang="attendance-stats">Statistik Kehadiran</span></h3>
                                 <select id="attendance-period" onchange="updateAttendanceChart()">
                                     <option value="week" data-lang="this-week">Minggu Ini</option>
                                     <option value="month" data-lang="this-month">Bulan Ini</option>
@@ -386,8 +278,7 @@
                         <!-- Quick Stats -->
                         <div class="dashboard-card">
                             <div class="card-header">
-                                <h3><i class="fas fa-chart-pie"></i> <span data-lang="member-distribution">Distribusi
-                                        Jemaat</span></h3>
+                                <h3><i class="fas fa-chart-pie"></i> <span data-lang="member-distribution">Distribusi Jemaat</span></h3>
                             </div>
                             <div class="chart-container small">
                                 <canvas id="memberChart"></canvas>
@@ -397,10 +288,8 @@
                         <!-- Recent Donations -->
                         <div class="dashboard-card">
                             <div class="card-header">
-                                <h3><i class="fas fa-donate"></i> <span data-lang="recent-donations">Donasi
-                                        Terbaru</span></h3>
-                                <button class="btn-text" onclick="showPage('donations')" data-lang="view-all">Lihat
-                                    Semua</button>
+                                <h3><i class="fas fa-donate"></i> <span data-lang="recent-donations">Donasi Terbaru</span></h3>
+                                <button class="btn-text" onclick="showPage('donations')" data-lang="view-all">Lihat Semua</button>
                             </div>
                             <div class="donation-list" id="recent-donations">
                                 <!-- Dynamic content -->
@@ -415,12 +304,11 @@
                         <h1><i class="fas fa-users"></i> <span data-lang="members">Members</span></h1>
                         <p data-lang="manage-members">Kelola data jemaat gereja</p>
                     </div>
-
+                    
                     <div class="action-bar">
                         <div class="search-box">
                             <i class="fas fa-search"></i>
-                            <input type="text" id="search-members" placeholder="Cari jemaat..."
-                                onkeyup="searchMembers()" data-lang-placeholder="search-members">
+                            <input type="text" id="search-members" placeholder="Cari jemaat..." onkeyup="searchMembers()" data-lang-placeholder="search-members">
                         </div>
                         <div class="filter-group">
                             <select id="filter-status" onchange="filterMembers()">
@@ -440,16 +328,11 @@
                                     <i class="fas fa-download"></i> <span data-lang="export">Export</span>
                                 </button>
                                 <div class="export-menu" id="export-menu-members">
-                                    <button onclick="exportData('members', 'csv')"><i class="fas fa-file-csv"></i>
-                                        CSV</button>
-                                    <button onclick="exportData('members', 'xls')"><i class="fas fa-file-excel"></i>
-                                        Excel</button>
-                                    <button onclick="exportData('members', 'pdf')"><i class="fas fa-file-pdf"></i>
-                                        PDF</button>
-                                    <button onclick="exportData('members', 'docx')"><i class="fas fa-file-word"></i>
-                                        Word</button>
-                                    <button onclick="exportData('members', 'txt')"><i class="fas fa-file-alt"></i>
-                                        TXT</button>
+                                    <button onclick="exportData('members', 'csv')"><i class="fas fa-file-csv"></i> CSV</button>
+                                    <button onclick="exportData('members', 'xls')"><i class="fas fa-file-excel"></i> Excel</button>
+                                    <button onclick="exportData('members', 'pdf')"><i class="fas fa-file-pdf"></i> PDF</button>
+                                    <button onclick="exportData('members', 'docx')"><i class="fas fa-file-word"></i> Word</button>
+                                    <button onclick="exportData('members', 'txt')"><i class="fas fa-file-alt"></i> TXT</button>
                                 </div>
                             </div>
                             <button class="btn btn-primary" onclick="showAddMemberModal()">
@@ -485,12 +368,11 @@
                         <h1><i class="fas fa-home"></i> <span data-lang="families">Families</span></h1>
                         <p data-lang="manage-families">Kelola data keluarga jemaat</p>
                     </div>
-
+                    
                     <div class="action-bar">
                         <div class="search-box">
                             <i class="fas fa-search"></i>
-                            <input type="text" id="search-families" placeholder="Cari keluarga..."
-                                onkeyup="searchFamilies()" data-lang-placeholder="search-families">
+                            <input type="text" id="search-families" placeholder="Cari keluarga..." onkeyup="searchFamilies()" data-lang-placeholder="search-families">
                         </div>
                         <div class="action-buttons">
                             <button class="btn btn-primary" onclick="showAddFamilyModal()">
@@ -510,12 +392,11 @@
                         <h1><i class="fas fa-object-group"></i> <span data-lang="groups">Groups / Ministry</span></h1>
                         <p data-lang="manage-groups">Kelola group dan pelayanan</p>
                     </div>
-
+                    
                     <div class="action-bar">
                         <div class="search-box">
                             <i class="fas fa-search"></i>
-                            <input type="text" id="search-groups" placeholder="Cari group..." onkeyup="searchGroups()"
-                                data-lang-placeholder="search-groups">
+                            <input type="text" id="search-groups" placeholder="Cari group..." onkeyup="searchGroups()" data-lang-placeholder="search-groups">
                         </div>
                         <div class="action-buttons">
                             <button class="btn btn-primary" onclick="showAddGroupModal()">
@@ -535,12 +416,11 @@
                         <h1><i class="fas fa-calendar-alt"></i> <span data-lang="events">Events</span></h1>
                         <p data-lang="manage-events">Kelola event dan kegiatan gereja</p>
                     </div>
-
+                    
                     <div class="action-bar">
                         <div class="search-box">
                             <i class="fas fa-search"></i>
-                            <input type="text" id="search-events" placeholder="Cari event..." onkeyup="searchEvents()"
-                                data-lang-placeholder="search-events">
+                            <input type="text" id="search-events" placeholder="Cari event..." onkeyup="searchEvents()" data-lang-placeholder="search-events">
                         </div>
                         <div class="filter-group">
                             <select id="filter-event-status" onchange="filterEvents()">
@@ -568,22 +448,18 @@
                         <h1><i class="fas fa-clipboard-check"></i> <span data-lang="attendance">Attendance</span></h1>
                         <p data-lang="attendance-system">Sistem check-in dan data kehadiran</p>
                     </div>
-
+                    
                     <div class="attendance-tabs">
-                        <button class="tab-btn active" onclick="showAttendanceTab('checkin', this)"
-                            data-lang="checkin">Check-in</button>
-                        <button class="tab-btn" onclick="showAttendanceTab('data', this)"
-                            data-lang="attendance-data">Data Kehadiran</button>
-                        <button class="tab-btn" onclick="showAttendanceTab('report', this)"
-                            data-lang="report">Laporan</button>
+                        <button class="tab-btn active" onclick="showAttendanceTab('checkin', this)" data-lang="checkin">Check-in</button>
+                        <button class="tab-btn" onclick="showAttendanceTab('data', this)" data-lang="attendance-data">Data Kehadiran</button>
+                        <button class="tab-btn" onclick="showAttendanceTab('report', this)" data-lang="report">Laporan</button>
                     </div>
 
                     <!-- Check-in Tab -->
                     <div id="attendance-checkin" class="attendance-tab-content active">
                         <div class="checkin-container">
                             <div class="checkin-form">
-                                <h3><i class="fas fa-qrcode"></i> <span data-lang="checkin-attendance">Check-in
-                                        Kehadiran</span></h3>
+                                <h3><i class="fas fa-qrcode"></i> <span data-lang="checkin-attendance">Check-in Kehadiran</span></h3>
                                 <div class="form-group">
                                     <label data-lang="select-event">Pilih Event</label>
                                     <select id="attendance-event">
@@ -602,14 +478,14 @@
                                 </button>
                             </div>
                             <div class="checkin-today">
-                                <h3><i class="fas fa-list"></i> <span data-lang="today-attendance">Kehadiran Hari
-                                        Ini</span></h3>
+                                <h3><i class="fas fa-list"></i> <span data-lang="today-attendance">Kehadiran Hari Ini</span></h3>
                                 <div class="checkin-list" id="today-checkin">
                                     <!-- Dynamic content -->
                                 </div>
                             </div>
                         </div>
                     </div>
+
                     <!-- Data Tab -->
                     <div id="attendance-data" class="attendance-tab-content">
                         <div class="action-bar">
@@ -625,12 +501,9 @@
                                     <i class="fas fa-download"></i> <span data-lang="export">Export</span>
                                 </button>
                                 <div class="export-menu" id="export-menu-attendance">
-                                    <button onclick="exportData('attendance', 'csv')"><i class="fas fa-file-csv"></i>
-                                        CSV</button>
-                                    <button onclick="exportData('attendance', 'xls')"><i class="fas fa-file-excel"></i>
-                                        Excel</button>
-                                    <button onclick="exportData('attendance', 'pdf')"><i class="fas fa-file-pdf"></i>
-                                        PDF</button>
+                                    <button onclick="exportData('attendance', 'csv')"><i class="fas fa-file-csv"></i> CSV</button>
+                                    <button onclick="exportData('attendance', 'xls')"><i class="fas fa-file-excel"></i> Excel</button>
+                                    <button onclick="exportData('attendance', 'pdf')"><i class="fas fa-file-pdf"></i> PDF</button>
                                 </div>
                             </div>
                         </div>
@@ -682,7 +555,7 @@
                         <h1><i class="fas fa-hand-holding-heart"></i> <span data-lang="donations">Donations</span></h1>
                         <p data-lang="manage-donations">Kelola donasi dan keuangan gereja</p>
                     </div>
-
+                    
                     <!-- Summary Cards -->
                     <div class="stats-grid">
                         <div class="stat-card">
@@ -731,12 +604,9 @@
                                     <i class="fas fa-download"></i> <span data-lang="export">Export</span>
                                 </button>
                                 <div class="export-menu" id="export-menu-donations">
-                                    <button onclick="exportData('donations', 'csv')"><i class="fas fa-file-csv"></i>
-                                        CSV</button>
-                                    <button onclick="exportData('donations', 'xls')"><i class="fas fa-file-excel"></i>
-                                        Excel</button>
-                                    <button onclick="exportData('donations', 'pdf')"><i class="fas fa-file-pdf"></i>
-                                        PDF</button>
+                                    <button onclick="exportData('donations', 'csv')"><i class="fas fa-file-csv"></i> CSV</button>
+                                    <button onclick="exportData('donations', 'xls')"><i class="fas fa-file-excel"></i> Excel</button>
+                                    <button onclick="exportData('donations', 'pdf')"><i class="fas fa-file-pdf"></i> PDF</button>
                                 </div>
                             </div>
                             <button class="btn btn-primary" onclick="showAddDonationModal()">
@@ -765,19 +635,16 @@
                 </div>
 
                 <!-- Volunteers Page -->
-                 <div id="page-volunteers" class="page">
+                <div id="page-volunteers" class="page">
                     <div class="page-header">
                         <h1><i class="fas fa-hands-helping"></i> <span data-lang="volunteers">Volunteers</span></h1>
                         <p data-lang="manage-volunteers">Kelola relawan dan jadwal pelayanan</p>
                     </div>
-
+                    
                     <div class="volunteers-tabs">
-                        <button class="tab-btn active" onclick="showVolunteersTab('list', this)"
-                            data-lang="volunteer-list">Daftar Relawan</button>
-                        <button class="tab-btn" onclick="showVolunteersTab('schedule', this)"
-                            data-lang="service-schedule">Jadwal Pelayanan</button>
-                        <button class="tab-btn" onclick="showVolunteersTab('assignment', this)"
-                            data-lang="assignments">Penugasan</button>
+                        <button class="tab-btn active" onclick="showVolunteersTab('list', this)" data-lang="volunteer-list">Daftar Relawan</button>
+                        <button class="tab-btn" onclick="showVolunteersTab('schedule', this)" data-lang="service-schedule">Jadwal Pelayanan</button>
+                        <button class="tab-btn" onclick="showVolunteersTab('assignment', this)" data-lang="assignments">Penugasan</button>
                     </div>
 
                     <!-- List Tab -->
@@ -785,8 +652,7 @@
                         <div class="action-bar">
                             <div class="search-box">
                                 <i class="fas fa-search"></i>
-                                <input type="text" id="search-volunteers" placeholder="Cari relawan..."
-                                    onkeyup="searchVolunteers()" data-lang-placeholder="search-volunteers">
+                                <input type="text" id="search-volunteers" placeholder="Cari relawan..." onkeyup="searchVolunteers()" data-lang-placeholder="search-volunteers">
                             </div>
                             <div class="action-buttons">
                                 <button class="btn btn-primary" onclick="showAddVolunteerModal()">
@@ -825,14 +691,11 @@
                         <h1><i class="fas fa-comments"></i> <span data-lang="communication">Communication</span></h1>
                         <p data-lang="communication-system">Sistem komunikasi dan broadcast</p>
                     </div>
-
+                    
                     <div class="communication-tabs">
-                        <button class="tab-btn active" onclick="showCommunicationTab('broadcast', this)"
-                            data-lang="email-broadcast">Email Broadcast</button>
-                        <button class="tab-btn" onclick="showCommunicationTab('messages', this)"
-                            data-lang="send-message">Kirim Pesan</button>
-                        <button class="tab-btn" onclick="showCommunicationTab('announcements', this)"
-                            data-lang="announcements-tab">Pengumuman</button>
+                        <button class="tab-btn active" onclick="showCommunicationTab('broadcast', this)" data-lang="email-broadcast">Email Broadcast</button>
+                        <button class="tab-btn" onclick="showCommunicationTab('messages', this)" data-lang="send-message">Kirim Pesan</button>
+                        <button class="tab-btn" onclick="showCommunicationTab('announcements', this)" data-lang="announcements-tab">Pengumuman</button>
                     </div>
 
                     <!-- Broadcast Tab -->
@@ -860,8 +723,7 @@
                                     <i class="fas fa-save"></i> <span data-lang="save-draft">Simpan Draft</span>
                                 </button>
                                 <button class="btn btn-primary" onclick="sendBroadcast()">
-                                    <i class="fas fa-paper-plane"></i> <span data-lang="send-broadcast">Kirim
-                                        Broadcast</span>
+                                    <i class="fas fa-paper-plane"></i> <span data-lang="send-broadcast">Kirim Broadcast</span>
                                 </button>
                             </div>
                         </div>
@@ -878,8 +740,7 @@
                                     </button>
                                 </div>
                                 <div class="contacts-search">
-                                    <input type="text" placeholder="Cari kontak..." onkeyup="searchContacts(this.value)"
-                                        data-lang-placeholder="search-contacts">
+                                    <input type="text" placeholder="Cari kontak..." onkeyup="searchContacts(this.value)" data-lang-placeholder="search-contacts">
                                 </div>
                                 <div class="contacts-items" id="contacts-list">
                                     <!-- Dynamic content -->
@@ -893,8 +754,7 @@
                                     <!-- Dynamic content -->
                                 </div>
                                 <div class="chat-input" id="chat-input" style="display: none;">
-                                    <input type="text" id="message-text" placeholder="Tulis pesan..."
-                                        data-lang-placeholder="type-message">
+                                    <input type="text" id="message-text" placeholder="Tulis pesan..." data-lang-placeholder="type-message">
                                     <button onclick="sendMessage()">
                                         <i class="fas fa-paper-plane"></i>
                                     </button>
@@ -922,7 +782,7 @@
                         <h1><i class="fas fa-chart-bar"></i> <span data-lang="reports">Reports</span></h1>
                         <p data-lang="reports-system">Laporan dan statistik sistem</p>
                     </div>
-
+                    
                     <div class="reports-grid">
                         <div class="report-card" onclick="generateReport('members')">
                             <div class="report-icon bg-blue">
@@ -955,21 +815,17 @@
                     </div>
 
                     <!-- Data Management Section -->
-                    <div class="data-management-section"
-                        style="margin-top: 40px; padding: 25px; background: var(--card-bg); border-radius: var(--radius); border: 1px solid var(--border-color);">
-                        <h3 style="margin-bottom: 20px; color: var(--primary-color);"><i class="fas fa-database"></i>
-                            Manajemen Data</h3>
-                        <p style="color: var(--text-muted); margin-bottom: 20px;">Backup dan restore data sistem. Data
-                            tersimpan secara permanen di browser Anda.</p>
-
+                    <div class="data-management-section" style="margin-top: 40px; padding: 25px; background: var(--card-bg); border-radius: var(--radius); border: 1px solid var(--border-color);">
+                        <h3 style="margin-bottom: 20px; color: var(--primary-color);"><i class="fas fa-database"></i> Manajemen Data</h3>
+                        <p style="color: var(--text-muted); margin-bottom: 20px;">Backup dan restore data sistem. Data tersimpan secara permanen di browser Anda.</p>
+                        
                         <div style="display: flex; gap: 15px; flex-wrap: wrap;">
                             <button class="btn btn-primary" onclick="backupData()">
                                 <i class="fas fa-download"></i> Backup Data
                             </button>
                             <label class="btn btn-secondary" style="cursor: pointer; margin: 0;">
                                 <i class="fas fa-upload"></i> Restore Data
-                                <input type="file" id="restore-file" accept=".json" style="display: none;"
-                                    onchange="restoreData(this.files[0])">
+                                <input type="file" id="restore-file" accept=".json" style="display: none;" onchange="restoreData(this.files[0])">
                             </label>
                             <button class="btn btn-danger" onclick="clearAllData()">
                                 <i class="fas fa-trash-alt"></i> Hapus Semua Data
@@ -986,16 +842,11 @@
                                         <i class="fas fa-download"></i> <span data-lang="save-as">Save As</span>
                                     </button>
                                     <div class="export-menu" id="export-menu-report">
-                                        <button onclick="saveReportAs('pdf')"><i class="fas fa-file-pdf"></i>
-                                            PDF</button>
-                                        <button onclick="saveReportAs('docx')"><i class="fas fa-file-word"></i>
-                                            Word</button>
-                                        <button onclick="saveReportAs('xls')"><i class="fas fa-file-excel"></i>
-                                            Excel</button>
-                                        <button onclick="saveReportAs('csv')"><i class="fas fa-file-csv"></i>
-                                            CSV</button>
-                                        <button onclick="saveReportAs('txt')"><i class="fas fa-file-alt"></i>
-                                            TXT</button>
+                                        <button onclick="saveReportAs('pdf')"><i class="fas fa-file-pdf"></i> PDF</button>
+                                        <button onclick="saveReportAs('docx')"><i class="fas fa-file-word"></i> Word</button>
+                                        <button onclick="saveReportAs('xls')"><i class="fas fa-file-excel"></i> Excel</button>
+                                        <button onclick="saveReportAs('csv')"><i class="fas fa-file-csv"></i> CSV</button>
+                                        <button onclick="saveReportAs('txt')"><i class="fas fa-file-alt"></i> TXT</button>
                                     </div>
                                 </div>
                                 <button class="btn btn-primary" onclick="printReport()">
@@ -1010,8 +861,8 @@
                             <!-- Dynamic content -->
                         </div>
                     </div>
-                                </div>
-                
+                </div>
+
                 <!-- Finance Page -->
                 <div id="page-finance" class="page">
                     <div class="page-header">
@@ -1021,18 +872,12 @@
 
                     <!-- Finance Tabs -->
                     <div class="finance-tabs">
-                        <button class="finance-tab active" onclick="showFinanceTab('dashboard', this)"
-                            data-lang="finance-dashboard">Dashboard</button>
-                        <button class="finance-tab" onclick="showFinanceTab('pemasukan', this)"
-                            data-lang="income">Pemasukan</button>
-                        <button class="finance-tab" onclick="showFinanceTab('pengeluaran', this)"
-                            data-lang="expense">Pengeluaran</button>
-                        <button class="finance-tab" onclick="showFinanceTab('kategori', this)"
-                            data-lang="categories">Kategori</button>
-                        <button class="finance-tab" onclick="showFinanceTab('laporan', this)"
-                            data-lang="finance-report">Laporan</button>
-                        <button class="finance-tab" id="tab-approval" onclick="showFinanceTab('approval', this)"
-                            data-lang="approval">Approval</button>
+                        <button class="finance-tab active" onclick="showFinanceTab('dashboard', this)" data-lang="finance-dashboard">Dashboard</button>
+                        <button class="finance-tab" onclick="showFinanceTab('pemasukan', this)" data-lang="income">Pemasukan</button>
+                        <button class="finance-tab" onclick="showFinanceTab('pengeluaran', this)" data-lang="expense">Pengeluaran</button>
+                        <button class="finance-tab" onclick="showFinanceTab('kategori', this)" data-lang="categories">Kategori</button>
+                        <button class="finance-tab" onclick="showFinanceTab('laporan', this)" data-lang="finance-report">Laporan</button>
+                        <button class="finance-tab" id="tab-approval" onclick="showFinanceTab('approval', this)" data-lang="approval">Approval</button>
                     </div>
 
                     <!-- Dashboard Tab -->
@@ -1081,8 +926,7 @@
                         <div class="dashboard-grid">
                             <div class="dashboard-card full-width">
                                 <div class="card-header">
-                                    <h3><i class="fas fa-chart-line"></i> <span data-lang="income-expense-chart">Grafik
-                                            Pemasukan & Pengeluaran</span></h3>
+                                    <h3><i class="fas fa-chart-line"></i> <span data-lang="income-expense-chart">Grafik Pemasukan & Pengeluaran</span></h3>
                                     <select id="finance-chart-period" onchange="updateFinanceChart()">
                                         <option value="month" data-lang="this-month">Bulan Ini</option>
                                         <option value="year" data-lang="this-year">Tahun Ini</option>
@@ -1094,8 +938,7 @@
                             </div>
                             <div class="dashboard-card">
                                 <div class="card-header">
-                                    <h3><i class="fas fa-chart-pie"></i> <span data-lang="income-by-category">Pemasukan
-                                            per Kategori</span></h3>
+                                    <h3><i class="fas fa-chart-pie"></i> <span data-lang="income-by-category">Pemasukan per Kategori</span></h3>
                                 </div>
                                 <div class="chart-container small">
                                     <canvas id="incomeCategoryChart"></canvas>
@@ -1103,8 +946,7 @@
                             </div>
                             <div class="dashboard-card">
                                 <div class="card-header">
-                                    <h3><i class="fas fa-chart-pie"></i> <span
-                                            data-lang="expense-by-category">Pengeluaran per Kategori</span></h3>
+                                    <h3><i class="fas fa-chart-pie"></i> <span data-lang="expense-by-category">Pengeluaran per Kategori</span></h3>
                                 </div>
                                 <div class="chart-container small">
                                     <canvas id="expenseCategoryChart"></canvas>
@@ -1117,13 +959,13 @@
                             <!-- Dynamic notifications -->
                         </div>
                     </div>
-                          <!-- Pemasukan Tab -->
-                    div id="finance-pemasukan" class="finance-tab-content">
+
+                    <!-- Pemasukan Tab -->
+                    <div id="finance-pemasukan" class="finance-tab-content">
                         <div class="action-bar">
                             <div class="search-box">
                                 <i class="fas fa-search"></i>
-                                <input type="text" id="search-pemasukan" placeholder="Cari pemasukan..."
-                                    onkeyup="searchPemasukan()">
+                                <input type="text" id="search-pemasukan" placeholder="Cari pemasukan..." onkeyup="searchPemasukan()">
                             </div>
                             <div class="filter-box">
                                 <select id="filter-pemasukan-kategori" onchange="filterPemasukan()">
@@ -1165,8 +1007,7 @@
                         <div class="action-bar">
                             <div class="search-box">
                                 <i class="fas fa-search"></i>
-                                <input type="text" id="search-pengeluaran" placeholder="Cari pengeluaran..."
-                                    onkeyup="searchPengeluaran()">
+                                <input type="text" id="search-pengeluaran" placeholder="Cari pengeluaran..." onkeyup="searchPengeluaran()">
                             </div>
                             <div class="filter-box">
                                 <select id="filter-pengeluaran-kategori" onchange="filterPengeluaran()">
@@ -1207,8 +1048,7 @@
                         <div class="action-bar">
                             <div class="search-box">
                                 <i class="fas fa-search"></i>
-                                <input type="text" id="search-kategori" placeholder="Cari kategori..."
-                                    onkeyup="searchKategori()">
+                                <input type="text" id="search-kategori" placeholder="Cari kategori..." onkeyup="searchKategori()">
                             </div>
                             <div class="action-buttons">
                                 <button class="btn btn-primary finance-add-btn" onclick="showAddKategoriModal()">
@@ -1250,8 +1090,7 @@
                             </div>
                             <div class="filter-group">
                                 <button class="btn btn-secondary" onclick="exportLaporan()">
-                                    <i class="fas fa-download"></i> <span data-lang="export-report">Export
-                                        Laporan</span>
+                                    <i class="fas fa-download"></i> <span data-lang="export-report">Export Laporan</span>
                                 </button>
                             </div>
                         </div>
@@ -1263,15 +1102,13 @@
                     <!-- Approval Tab -->
                     <div id="finance-approval" class="finance-tab-content">
                         <div class="approval-section">
-                            <h3><i class="fas fa-clock"></i> <span data-lang="pending-approval">Menunggu Approval</span>
-                            </h3>
+                            <h3><i class="fas fa-clock"></i> <span data-lang="pending-approval">Menunggu Approval</span></h3>
                             <div class="approval-list" id="pending-approval-list">
                                 <!-- Dynamic content -->
                             </div>
                         </div>
                         <div class="approval-section">
-                            <h3><i class="fas fa-history"></i> <span data-lang="approval-history">Riwayat
-                                    Approval</span></h3>
+                            <h3><i class="fas fa-history"></i> <span data-lang="approval-history">Riwayat Approval</span></h3>
                             <div class="approval-list" id="approval-history-list">
                                 <!-- Dynamic content -->
                             </div>
@@ -1282,16 +1119,14 @@
                 <!-- User Management Page -->
                 <div id="page-users" class="page">
                     <div class="page-header">
-                        <h1><i class="fas fa-user-shield"></i> <span data-lang="user-management">User Management</span>
-                        </h1>
+                        <h1><i class="fas fa-user-shield"></i> <span data-lang="user-management">User Management</span></h1>
                         <p data-lang="manage-users">Kelola pengguna dan akses sistem</p>
                     </div>
-
+                    
                     <div class="action-bar">
                         <div class="search-box">
                             <i class="fas fa-search"></i>
-                            <input type="text" id="search-users" placeholder="Cari user..." onkeyup="searchUsers()"
-                                data-lang-placeholder="search-users">
+                            <input type="text" id="search-users" placeholder="Cari user..." onkeyup="searchUsers()" data-lang-placeholder="search-users">
                         </div>
                         <div class="action-buttons">
                             <button class="btn btn-primary" onclick="showAddUserModal()">
@@ -1306,8 +1141,10 @@
                 </div>
             </div>
         </main>
-                                </div><!-- Modals -->
+    </div>
 
+    <!-- Modals -->
+    
     <!-- Add/Edit Member Modal -->
     <div id="modal-member" class="modal">
         <div class="modal-content modal-large">
@@ -1355,7 +1192,7 @@
                             </div>
                         </div>
                     </div>
-
+                    
                     <div class="form-section">
                         <h4><i class="fas fa-home"></i> <span data-lang="address-info">Informasi Alamat</span></h4>
                         <div class="form-group">
@@ -1373,7 +1210,7 @@
                             </div>
                         </div>
                     </div>
-
+                    
                     <div class="form-section">
                         <h4><i class="fas fa-church"></i> <span data-lang="church-info">Informasi Gereja</span></h4>
                         <div class="form-row">
@@ -1399,8 +1236,7 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" onclick="closeModal('modal-member')"
-                        data-lang="cancel">Batal</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('modal-member')" data-lang="cancel">Batal</button>
                     <button type="submit" class="btn btn-primary" data-lang="save">Simpan</button>
                 </div>
             </form>
@@ -1439,8 +1275,7 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" onclick="closeModal('modal-family')"
-                        data-lang="cancel">Batal</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('modal-family')" data-lang="cancel">Batal</button>
                     <button type="submit" class="btn btn-primary" data-lang="save">Simpan</button>
                 </div>
             </form>
@@ -1483,8 +1318,7 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" onclick="closeModal('modal-group')"
-                        data-lang="cancel">Batal</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('modal-group')" data-lang="cancel">Batal</button>
                     <button type="submit" class="btn btn-primary" data-lang="save">Simpan</button>
                 </div>
             </form>
@@ -1517,7 +1351,7 @@
                         </div>
                     </div>
                 </div>
-
+                
                 <!-- Current Members Section -->
                 <div class="form-section">
                     <h4><i class="fas fa-users"></i> <span data-lang="current-members">Anggota Saat Ini</span></h4>
@@ -1527,8 +1361,7 @@
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" onclick="closeModal('modal-group-members')"
-                    data-lang="close">Tutup</button>
+                <button type="button" class="btn btn-secondary" onclick="closeModal('modal-group-members')" data-lang="close">Tutup</button>
             </div>
         </div>
     </div>
@@ -1597,15 +1430,15 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" onclick="closeModal('modal-event')"
-                        data-lang="cancel">Batal</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('modal-event')" data-lang="cancel">Batal</button>
                     <button type="submit" class="btn btn-primary" data-lang="save">Simpan</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- Event Participants Modal -->    <div id="modal-participants" class="modal">
+    <!-- Event Participants Modal -->
+    <div id="modal-participants" class="modal">
         <div class="modal-content modal-large">
             <div class="modal-header">
                 <h3 data-lang="event-participants">Daftar Peserta Event</h3>
@@ -1615,8 +1448,7 @@
                 <div class="action-bar">
                     <div class="search-box">
                         <i class="fas fa-search"></i>
-                        <input type="text" id="search-participants" placeholder="Cari peserta..."
-                            data-lang-placeholder="search-participants">
+                        <input type="text" id="search-participants" placeholder="Cari peserta..." data-lang-placeholder="search-participants">
                     </div>
                     <button class="btn btn-primary" onclick="addParticipant()">
                         <i class="fas fa-plus"></i> <span data-lang="add-participant">Tambah Peserta</span>
@@ -1670,8 +1502,7 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" onclick="closeModal('modal-manual-participant')"
-                        data-lang="cancel">Batal</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('modal-manual-participant')" data-lang="cancel">Batal</button>
                     <button type="submit" class="btn btn-primary" data-lang="add-participant">Tambah Peserta</button>
                 </div>
             </form>
@@ -1723,16 +1554,14 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" onclick="closeModal('modal-donation')"
-                        data-lang="cancel">Batal</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('modal-donation')" data-lang="cancel">Batal</button>
                     <button type="submit" class="btn btn-primary" data-lang="save">Simpan</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- Add 
-Modal -->
+    <!-- Add Volunteer Modal -->
     <div id="modal-volunteer" class="modal">
         <div class="modal-content modal-large">
             <div class="modal-header">
@@ -1774,8 +1603,7 @@ Modal -->
                     <div class="form-group">
                         <label data-lang="service-area">Area Pelayanan <span class="required">*</span></label>
                         <select id="volunteer-area" required onchange="handleVolunteerAreaChange()">
-                            <option value="guru-sekolah-minggu" data-lang="sunday-school-teacher">Guru Sekolah Minggu
-                            </option>
+                            <option value="guru-sekolah-minggu" data-lang="sunday-school-teacher">Guru Sekolah Minggu</option>
                             <option value="singer" data-lang="singer">Singer</option>
                             <option value="worship-leader" data-lang="worship-leader">Worship Leader</option>
                             <option value="pemain-musik" data-lang="musician">Pemain Musik</option>
@@ -1796,14 +1624,10 @@ Modal -->
                     <div class="form-group">
                         <label data-lang="available-schedule">Jadwal Tersedia</label>
                         <div class="schedule-checkboxes">
-                            <label><input type="checkbox" name="jadwal" value="minggu-pagi"> <span
-                                    data-lang="sunday-morning">Minggu Pagi</span></label>
-                            <label><input type="checkbox" name="jadwal" value="minggu-sore"> <span
-                                    data-lang="sunday-evening">Minggu Sore</span></label>
-                            <label><input type="checkbox" name="jadwal" value="sabtu"> <span
-                                    data-lang="saturday">Sabtu</span></label>
-                            <label><input type="checkbox" name="jadwal" value="weekday"> <span data-lang="weekday">Hari
-                                    Kerja</span></label>
+                            <label><input type="checkbox" name="jadwal" value="minggu-pagi"> <span data-lang="sunday-morning">Minggu Pagi</span></label>
+                            <label><input type="checkbox" name="jadwal" value="minggu-sore"> <span data-lang="sunday-evening">Minggu Sore</span></label>
+                            <label><input type="checkbox" name="jadwal" value="sabtu"> <span data-lang="saturday">Sabtu</span></label>
+                            <label><input type="checkbox" name="jadwal" value="weekday"> <span data-lang="weekday">Hari Kerja</span></label>
                         </div>
                     </div>
                     <div class="form-row">
@@ -1818,8 +1642,7 @@ Modal -->
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" onclick="closeModal('modal-volunteer')"
-                        data-lang="cancel">Batal</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('modal-volunteer')" data-lang="cancel">Batal</button>
                     <button type="submit" class="btn btn-primary" data-lang="save">Simpan</button>
                 </div>
             </form>
@@ -1874,8 +1697,7 @@ Modal -->
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" onclick="closeModal('modal-assignment')"
-                        data-lang="cancel">Batal</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('modal-assignment')" data-lang="cancel">Batal</button>
                     <button type="submit" class="btn btn-primary" data-lang="save">Simpan</button>
                 </div>
             </form>
@@ -1911,8 +1733,7 @@ Modal -->
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" onclick="closeModal('modal-announcement')"
-                        data-lang="cancel">Batal</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('modal-announcement')" data-lang="cancel">Batal</button>
                     <button type="submit" class="btn btn-primary" data-lang="publish">Publikasikan</button>
                 </div>
             </form>
@@ -1942,8 +1763,7 @@ Modal -->
                         <input type="email" id="user-email" placeholder="Contoh: john@email.com" required>
                     </div>
                     <div class="form-group">
-                        <label data-lang="password">Password <span class="required"
-                                id="password-required">*</span></label>
+                        <label data-lang="password">Password <span class="required" id="password-required">*</span></label>
                         <input type="password" id="user-password" placeholder="Masukkan password (min 4 karakter)">
                         <small id="password-hint" style="color: var(--text-muted); display: block; margin-top: 5px;">
                             <i class="fas fa-info-circle"></i> <span>Password minimal 4 karakter</span>
@@ -1957,14 +1777,12 @@ Modal -->
                             <option value="user" data-lang="user-view-only">User (View Only)</option>
                         </select>
                         <small style="color: var(--text-muted); display: block; margin-top: 5px;">
-                            <i class="fas fa-info-circle"></i> <span data-lang="user-role-info">User hanya dapat melihat
-                                data tanpa bisa mengedit</span>
+                            <i class="fas fa-info-circle"></i> <span data-lang="user-role-info">User hanya dapat melihat data tanpa bisa mengedit</span>
                         </small>
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" onclick="closeModal('modal-user')"
-                        data-lang="cancel">Batal</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('modal-user')" data-lang="cancel">Batal</button>
                     <button type="submit" class="btn btn-primary" data-lang="save">Simpan</button>
                 </div>
             </form>
@@ -1984,8 +1802,7 @@ Modal -->
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" onclick="closeModal('modal-detail')"
-                    data-lang="close">Tutup</button>
+                <button type="button" class="btn btn-secondary" onclick="closeModal('modal-detail')" data-lang="close">Tutup</button>
             </div>
         </div>
     </div>
@@ -2001,8 +1818,7 @@ Modal -->
                 <p id="confirm-message">Apakah Anda yakin?</p>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" onclick="closeModal('modal-confirm')"
-                    data-lang="cancel">Batal</button>
+                <button type="button" class="btn btn-secondary" onclick="closeModal('modal-confirm')" data-lang="cancel">Batal</button>
                 <button type="button" class="btn btn-danger" id="confirm-yes" data-lang="yes">Ya</button>
             </div>
         </div>
@@ -2021,8 +1837,7 @@ Modal -->
                     <div class="form-row">
                         <div class="form-group">
                             <label data-lang="category">Kategori</label>
-                            <select id="pemasukan-kategori"
-                                onchange="handleFinanceCategoryChange(this, 'pemasukan-kategori-lainnya')" required>
+                            <select id="pemasukan-kategori" onchange="handleFinanceCategoryChange(this, 'pemasukan-kategori-lainnya')" required>
                                 <option value="" data-lang="select-category">Pilih Kategori</option>
                             </select>
                         </div>
@@ -2054,8 +1869,7 @@ Modal -->
                 </form>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" onclick="closeModal('modal-pemasukan')"
-                    data-lang="cancel">Batal</button>
+                <button type="button" class="btn btn-secondary" onclick="closeModal('modal-pemasukan')" data-lang="cancel">Batal</button>
                 <button type="button" class="btn btn-primary" onclick="savePemasukan()" data-lang="save">Simpan</button>
             </div>
         </div>
@@ -2074,8 +1888,7 @@ Modal -->
                     <div class="form-row">
                         <div class="form-group">
                             <label data-lang="category">Kategori</label>
-                            <select id="pengeluaran-kategori"
-                                onchange="handleFinanceCategoryChange(this, 'pengeluaran-kategori-lainnya')" required>
+                            <select id="pengeluaran-kategori" onchange="handleFinanceCategoryChange(this, 'pengeluaran-kategori-lainnya')" required>
                                 <option value="" data-lang="select-category">Pilih Kategori</option>
                             </select>
                         </div>
@@ -2101,16 +1914,14 @@ Modal -->
                 </form>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" onclick="closeModal('modal-pengeluaran')"
-                    data-lang="cancel">Batal</button>
-                <button type="button" class="btn btn-primary" onclick="savePengeluaran()"
-                    data-lang="save">Simpan</button>
+                <button type="button" class="btn btn-secondary" onclick="closeModal('modal-pengeluaran')" data-lang="cancel">Batal</button>
+                <button type="button" class="btn btn-primary" onclick="savePengeluaran()" data-lang="save">Simpan</button>
             </div>
         </div>
     </div>
 
     <!-- Finance Kategori Modal -->
-     <div id="modal-kategori" class="modal">
+    <div id="modal-kategori" class="modal">
         <div class="modal-content modal-small">
             <div class="modal-header">
                 <h3 id="modal-kategori-title" data-lang="add-category">Tambah Kategori</h3>
@@ -2137,73 +1948,10 @@ Modal -->
                 </form>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" onclick="closeModal('modal-kategori')"
-                    data-lang="cancel">Batal</button>
+                <button type="button" class="btn btn-secondary" onclick="closeModal('modal-kategori')" data-lang="cancel">Batal</button>
                 <button type="button" class="btn btn-primary" onclick="saveKategori()" data-lang="save">Simpan</button>
             </div>
         </div>
-    </div>
-
-    <!-- =========================
-     DEATH MANAGEMENT PAGE (NEW)
-========================= -->
-    <div id="page-deaths" class="page">
-        <div class="page-header">
-            <h1><i class="fas fa-cross"></i> Data Kematian Jemaat</h1>
-            <p>Pencatatan data jemaat yang telah wafat</p>
-        </div>
-
-        <div class="action-bar">
-            <button class="btn btn-primary" onclick="toggleDeathForm()">
-                <i class="fas fa-plus"></i> Tambah Data
-            </button>
-        </div>
-
-        <!-- FORM -->
-        <!-- FORM -->
-        <div id="death-form-container" style="display:none; background:#fff; padding:20px; border-radius:8px; margin-bottom:20px; box-shadow:0 2px 8px rgba(0,0,0,0.08);">
-            <h3 id="death-form-title" style="margin-bottom:16px; font-size:16px;">Tambah Data</h3>
-
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
-                <div style="grid-column:1/-1;">
-                    <label style="font-size:13px; font-weight:600; display:block; margin-bottom:4px;">Nama Jemaat <span style="color:red">*</span></label>
-                    <input type="text" id="death-nama" placeholder="Nama lengkap" class="form-control" style="width:100%; padding:8px 12px; border:1px solid #ddd; border-radius:6px;">
-                </div>
-                <div>
-                    <label style="font-size:13px; font-weight:600; display:block; margin-bottom:4px;">Tanggal Lahir</label>
-                    <input type="date" id="death-lahir" class="form-control" style="width:100%; padding:8px 12px; border:1px solid #ddd; border-radius:6px;">
-                </div>
-                <div>
-                    <label style="font-size:13px; font-weight:600; display:block; margin-bottom:4px;">Tanggal Wafat <span style="color:red">*</span></label>
-                    <input type="date" id="death-wafat" class="form-control" style="width:100%; padding:8px 12px; border:1px solid #ddd; border-radius:6px;">
-                </div>
-                <div>
-                    <label style="font-size:13px; font-weight:600; display:block; margin-bottom:4px;">Tempat Wafat</label>
-                    <input type="text" id="death-tempat" placeholder="Nama rumah sakit / tempat" class="form-control" style="width:100%; padding:8px 12px; border:1px solid #ddd; border-radius:6px;">
-                </div>
-                <div>
-                    <label style="font-size:13px; font-weight:600; display:block; margin-bottom:4px;">Waktu Wafat</label>
-                    <input type="time" id="death-waktu" class="form-control" style="width:100%; padding:8px 12px; border:1px solid #ddd; border-radius:6px;">
-                </div>
-                <div>
-                    <label style="font-size:13px; font-weight:600; display:block; margin-bottom:4px;">Penyebab Wafat</label>
-                    <input type="text" id="death-penyebab" placeholder="Misal: Serangan jantung" class="form-control" style="width:100%; padding:8px 12px; border:1px solid #ddd; border-radius:6px;">
-                </div>
-                <div style="grid-column:1/-1;">
-                    <label style="font-size:13px; font-weight:600; display:block; margin-bottom:4px;">Riwayat Penyakit</label>
-                    <textarea id="death-riwayat" placeholder="Riwayat penyakit sebelumnya (opsional)" class="form-control" rows="2" style="width:100%; padding:8px 12px; border:1px solid #ddd; border-radius:6px; resize:vertical;"></textarea>
-                </div>
-            </div>
-
-            <div style="margin-top:16px; display:flex; gap:8px;">
-                <button class="btn btn-success" onclick="saveDeathData()"><i class="fas fa-save"></i> Simpan</button>
-                <button id="btn-cancel-death" class="btn btn-secondary" onclick="cancelDeathEdit()" style="display:none;"><i class="fas fa-times"></i> Batal Edit</button>
-                <button class="btn btn-secondary" onclick="toggleDeathForm()">Tutup Form</button>
-            </div>
-        </div>
-
-        <!-- LIST -->
-        <div id="death-list"></div>
     </div>
 
     <!-- Toast Notification -->
@@ -2225,7 +1973,7 @@ Modal -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <script type="module" src="js/firebase.js"></script>
-    <script type="module" src="js/app.js"></script>
+    <script src="js/firebase.js"></script>
+    <script src="js/app.js"></script>
 </body>
 </html>

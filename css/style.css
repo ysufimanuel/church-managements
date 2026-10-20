@@ -23,7 +23,7 @@
     --sidebar-width: 280px;
     --header-height: 70px;
     --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    --shadow: 0 4px 20px rgba(0, 0, 0, 0.4); 
+    --shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
     --shadow-lg: 0 10px 40px rgba(0, 0, 0, 0.6);
     --radius: 16px;
     --radius-sm: 10px;
@@ -996,7 +996,7 @@ body {
     transition: var(--transition);
 }
 
-9.event-item:hover {
+.event-item:hover {
     background: var(--dark-bg);
 }
 
@@ -4088,102 +4088,4 @@ body {
     .summary-item {
         width: 100%;
     }
-}
-
-/* ================================
-   DEATH MANAGEMENT STYLE (NEW)
-================================ */
-
-/* Container form */
-#death-form-container {
-    background: var(--card-bg);
-    padding: 20px;
-    border-radius: var(--radius);
-    border: 1px solid var(--border-color);
-    box-shadow: var(--shadow);
-}
-
-/* Input & textarea */
-#death-form-container input,
-#death-form-container textarea {
-    width: 100%;
-    padding: 12px 14px;
-    margin-bottom: 12px;
-    background: var(--dark-bg);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-sm);
-    color: var(--text-primary);
-    font-size: 14px;
-    transition: var(--transition);
-}
-
-/* Focus effect biar hidup */
-#death-form-container input:focus,
-#death-form-container textarea:focus {
-    outline: none;
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 3px rgba(255, 107, 0, 0.15);
-}
-
-/* Label */
-#death-form-container label {
-    font-size: 13px;
-    color: var(--text-secondary);
-    margin-bottom: 4px;
-    display: block;
-}
-
-/* Button save */
-#death-form-container .btn-success {
-    background: linear-gradient(135deg, var(--success-color), #388e3c);
-    border: none;
-    padding: 12px 16px;
-    border-radius: var(--radius-sm);
-    color: white;
-    font-weight: 500;
-    cursor: pointer;
-    transition: var(--transition);
-}
-
-#death-form-container .btn-success:hover {
-    transform: translateY(-2px);
-    box-shadow: var(--shadow);
-}
-
-/* LIST CARD */
-#death-list .card {
-    background: var(--card-bg);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius);
-    padding: 16px;
-    transition: var(--transition);
-}
-
-/* Hover biar interaktif */
-#death-list .card:hover {
-    background: var(--card-hover);
-    transform: translateY(-2px);
-    box-shadow: var(--shadow);
-}
-
-/* Judul nama */
-#death-list .card h3 {
-    font-size: 16px;
-    margin-bottom: 8px;
-    color: var(--primary-color);
-}
-
-/* Text detail */
-#death-list .card p {
-    font-size: 13px;
-    color: var(--text-secondary);
-    margin-bottom: 4px;
-}
-
-/* Empty state */
-#death-list p {
-    color: var(--text-muted);
-    font-size: 14px;
-    text-align: center;
-    margin-top: 20px;
 }

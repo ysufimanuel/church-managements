@@ -3,7 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useLang } from '@/components/lang-context';
 import { formatRupiah, formatDate, timeAgo } from '@/lib/utils';
-import { Users, ClipboardCheck, HandHeart, CalendarDays, Boxes, HandHelping, History, Calendar, Donate } from 'lucide-react';
+import { Users, ClipboardCheck, HandHeart, CalendarDays, Boxes, HandHelping, History, Calendar } from 'lucide-react';
 import { AttendanceBarChart, MemberPieChart } from './charts';
 import Link from 'next/link';
 

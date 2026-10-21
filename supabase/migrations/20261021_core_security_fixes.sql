@@ -38,7 +38,8 @@ create policy "messages mark read" on public.messages
   using (receiver_id = auth.uid())
   with check (receiver_id = auth.uid());
 
-revoke update on table public.messages from authenticated;
+revoke all on table public.messages from anon, authenticated;
+grant select, insert on table public.messages to authenticated;
 grant update (read) on table public.messages to authenticated;
 
 -- Keep identity sequences aligned with seeded IDs; safe to rerun.

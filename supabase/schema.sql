@@ -1,0 +1,564 @@
+-- ============================================================
+-- Church CMS — Supabase PostgreSQL Schema
+-- Jalankan di Supabase SQL Editor (urut dari atas ke bawah)
+-- ============================================================
+
+-- ---------- ENUMS ----------
+create type app_role as enum ('user', 'admin', 'superadmin');
+create type member_status as enum ('aktif', 'tidak-aktif');
+create type gender_type as enum ('Laki-laki', 'Perempuan');
+create type event_status as enum ('upcoming', 'ongoing', 'completed');
+create type approval_status as enum ('pending', 'approved', 'rejected');
+create type finance_type as enum ('pemasukan', 'pengeluaran');
+create type publish_state as enum ('draft', 'published');
+
+-- ---------- PROFILES (extends auth.users) ----------
+create table public.profiles (
+  id uuid primary key references auth.users(id) on delete cascade,
+  nama text not null,
+  username text unique not null,
+  email text,
+  role app_role not null default 'user',
+  avatar_url text,
+  status text not null default 'aktif',
+  last_login timestamptz,
+  created_at timestamptz not null default now()
+);
+
+-- Helper: role of current user (security definer to avoid RLS recursion)
+create or replace function public.my_role() returns app_role
+language sql stable security definer set search_path = public as $$
+  select role from public.profiles where id = auth.uid();
+$$;
+
+create or replace function public.is_admin() returns boolean
+language sql stable security definer set search_path = public as $$
+  select coalesce(public.my_role() in ('admin','superadmin'), false);
+$$;
+
+create or replace function public.is_superadmin() returns boolean
+language sql stable security definer set search_path = public as $$
+  select coalesce(public.my_role() = 'superadmin', false);
+$$;
+
+-- ---------- CHURCH PROFILE ----------
+create table public.church_profile (
+  id int primary key default 1,
+  nama text not null default 'Gereja Kristen Indonesia',
+  alamat text, kota text, telepon text, email text, website text,
+  constraint single_row check (id = 1)
+);
+
+-- ---------- MEMBERS ----------
+create table public.members (
+  id bigint generated always as identity primary key,
+  nama text not null,
+  email text, telepon text,
+  jk gender_type,
+  tempat_lahir text, tgl_lahir date,
+  alamat text, kota text, kodepos text,
+  status member_status not null default 'aktif',
+  group_id bigint,
+  join_date date default current_date,
+  avatar_url text,
+  created_at timestamptz not null default now()
+);
+
+-- ---------- FAMILIES ----------
+create table public.families (
+  id bigint generated always as identity primary key,
+  nama text not null,
+  kepala_id bigint references public.members(id) on delete set null,
+  alamat text, kota text,
+  created_at timestamptz not null default now()
+);
+create table public.family_members (
+  family_id bigint references public.families(id) on delete cascade,
+  member_id bigint references public.members(id) on delete cascade,
+  primary key (family_id, member_id)
+);
+
+-- ---------- GROUPS ----------
+create table public.groups (
+  id bigint generated always as identity primary key,
+  nama text not null,
+  deskripsi text,
+  leader_id bigint references public.members(id) on delete set null,
+  jadwal text,
+  show_phone boolean not null default true,
+  created_at timestamptz not null default now()
+);
+create table public.group_members (
+  group_id bigint references public.groups(id) on delete cascade,
+  member_id bigint references public.members(id) on delete cascade,
+  primary key (group_id, member_id)
+);
+alter table public.members
+  add constraint members_group_fk foreign key (group_id) references public.groups(id) on delete set null;
+
+-- ---------- EVENTS ----------
+create table public.events (
+  id bigint generated always as identity primary key,
+  nama text not null,
+  tipe text not null default 'ibadah',
+  custom_type text,
+  start_at timestamptz not null,
+  end_at timestamptz,
+  lokasi text, deskripsi text,
+  kapasitas int,
+  status event_status not null default 'upcoming',
+  image_url text,
+  created_at timestamptz not null default now()
+);
+create table public.event_participants (
+  id bigint generated always as identity primary key,
+  event_id bigint references public.events(id) on delete cascade,
+  member_id bigint references public.members(id) on delete cascade,
+  nama_manual text,
+  registered_at timestamptz not null default now()
+);
+
+-- ---------- ATTENDANCE ----------
+create table public.attendance (
+  id bigint generated always as identity primary key,
+  event_id bigint references public.events(id) on delete cascade,
+  member_id bigint references public.members(id) on delete cascade,
+  tanggal date not null default current_date,
+  waktu time not null default now()::time,
+  status text not null default 'hadir',
+  unique (event_id, member_id, tanggal)
+);
+
+-- ---------- DONATIONS & DONORS ----------
+create table public.donors (
+  id bigint generated always as identity primary key,
+  nama text not null, email text, telepon text,
+  total_donasi numeric not null default 0,
+  terakhir_donasi date,
+  created_at timestamptz not null default now()
+);
+create table public.donations (
+  id bigint generated always as identity primary key,
+  donor_id bigint references public.donors(id) on delete set null,
+  tipe text not null, -- perpuluhan | persembahan | pembangunan | sosial | lainnya
+  custom_type text,
+  jumlah numeric not null,
+  tanggal date not null default current_date,
+  keterangan text,
+  created_at timestamptz not null default now()
+);
+
+-- ---------- VOLUNTEERS ----------
+create table public.volunteers (
+  id bigint generated always as identity primary key,
+  member_id bigint references public.members(id) on delete set null,
+  external_nama text, external_email text, external_telepon text,
+  area text not null,
+  jadwal text[] not null default '{}',
+  status text not null default 'aktif',
+  created_at timestamptz not null default now()
+);
+create table public.volunteer_assignments (
+  id bigint generated always as identity primary key,
+  volunteer_id bigint references public.volunteers(id) on delete cascade,
+  event_id bigint references public.events(id) on delete set null,
+  tanggal date not null,
+  waktu time,
+  tempat text,
+  tugas text,
+  catatan text,
+  status text not null default 'assigned',
+  created_at timestamptz not null default now()
+);
+
+-- ---------- COMMUNICATION ----------
+create table public.announcements (
+  id bigint generated always as identity primary key,
+  judul text not null,
+  konten text not null,
+  tanggal date not null default current_date,
+  expiry date,
+  important boolean not null default false,
+  author_id uuid references public.profiles(id) on delete set null,
+  created_at timestamptz not null default now()
+);
+create table public.messages (
+  id bigint generated always as identity primary key,
+  sender_id uuid references public.profiles(id) on delete cascade,
+  receiver_id uuid references public.profiles(id) on delete cascade,
+  content text not null,
+  read boolean not null default false,
+  created_at timestamptz not null default now()
+);
+create table public.broadcasts (
+  id bigint generated always as identity primary key,
+  subject text not null,
+  message text not null,
+  recipients text not null default 'all', -- all | members | groups | custom
+  group_ids bigint[],
+  status text not null default 'draft', -- draft | sent
+  sent_at timestamptz,
+  created_by uuid references public.profiles(id) on delete set null,
+  created_at timestamptz not null default now()
+);
+
+-- ---------- ACTIVITIES & NOTIFICATIONS ----------
+create table public.activities (
+  id bigint generated always as identity primary key,
+  type text not null,
+  action text not null,
+  detail text,
+  created_at timestamptz not null default now()
+);
+create table public.notifications (
+  id bigint generated always as identity primary key,
+  user_id uuid references public.profiles(id) on delete cascade, -- null = broadcast ke semua
+  title text not null,
+  message text not null,
+  type text not null default 'info',
+  read boolean not null default false,
+  created_at timestamptz not null default now()
+);
+
+-- ---------- FINANCE ----------
+create table public.finance_settings (
+  id int primary key default 1,
+  saldo_awal numeric not null default 0,
+  constraint single_row check (id = 1)
+);
+create table public.finance_categories (
+  id bigint generated always as identity primary key,
+  nama text not null,
+  tipe finance_type not null,
+  deskripsi text
+);
+create table public.finance_transactions (
+  id bigint generated always as identity primary key,
+  tipe finance_type not null,
+  kategori_id bigint references public.finance_categories(id) on delete set null,
+  jumlah numeric not null,
+  tanggal date not null default current_date,
+  keterangan text,
+  donatur_id bigint references public.donors(id) on delete set null,
+  status approval_status not null default 'pending',
+  approved_by uuid references public.profiles(id) on delete set null,
+  approved_at timestamptz,
+  created_by uuid references public.profiles(id) on delete set null,
+  created_at timestamptz not null default now()
+);
+create table public.approval_history (
+  id bigint generated always as identity primary key,
+  transaction_id bigint references public.finance_transactions(id) on delete cascade,
+  action text not null, -- approved | rejected
+  by_user uuid references public.profiles(id) on delete set null,
+  created_at timestamptz not null default now()
+);
+
+-- ============================================================
+-- WEB MANAGER (CMS Publik)
+-- ============================================================
+create table public.site_nav_items (
+  id bigint generated always as identity primary key,
+  label text not null,
+  href text not null,
+  visible boolean not null default true,
+  sort_order int not null default 0,
+  state publish_state not null default 'published'
+);
+
+create table public.site_theme (
+  id int primary key default 1,
+  primary_color text not null default '#00E5FF',
+  font_family text not null default 'Inter',
+  state publish_state not null default 'published',
+  draft jsonb,           -- perubahan belum dipublish
+  published jsonb,       -- snapshot yang tampil ke publik
+  constraint single_row check (id = 1)
+);
+
+create table public.site_media (
+  id bigint generated always as identity primary key,
+  kind text not null default 'image',        -- image | video | map
+  url text not null,
+  ratio text not null default '16:9',        -- 16:9 19:9 1:1 4:3 4:5 2:3 9:16 2:9 32:91
+  layer text not null default 'front',       -- front | overlay (di belakang konten)
+  position text not null default 'center',   -- top | bottom | left | right | center
+  lat double precision, lng double precision, -- untuk map
+  title text,
+  sort_order int not null default 0,
+  state publish_state not null default 'published'
+);
+
+create table public.site_sections (
+  id bigint generated always as identity primary key,
+  page text not null default 'home',         -- home | events | tentang | kontak
+  type text not null,                        -- hero | event_feed | info_lokasi | media | map | richtext
+  sort_order int not null default 0,
+  content jsonb not null default '{}',       -- draft (editor bekerja di sini)
+  published jsonb,                           -- null = belum pernah publish
+  enabled boolean not null default true,
+  updated_at timestamptz not null default now()
+);
+
+-- ============================================================
+-- ROW LEVEL SECURITY
+-- ============================================================
+alter table public.profiles enable row level security;
+alter table public.church_profile enable row level security;
+alter table public.members enable row level security;
+alter table public.families enable row level security;
+alter table public.family_members enable row level security;
+alter table public.groups enable row level security;
+alter table public.group_members enable row level security;
+alter table public.events enable row level security;
+alter table public.event_participants enable row level security;
+alter table public.attendance enable row level security;
+alter table public.donors enable row level security;
+alter table public.donations enable row level security;
+alter table public.volunteers enable row level security;
+alter table public.volunteer_assignments enable row level security;
+alter table public.announcements enable row level security;
+alter table public.messages enable row level security;
+alter table public.broadcasts enable row level security;
+alter table public.activities enable row level security;
+alter table public.notifications enable row level security;
+alter table public.finance_settings enable row level security;
+alter table public.finance_categories enable row level security;
+alter table public.finance_transactions enable row level security;
+alter table public.approval_history enable row level security;
+alter table public.site_nav_items enable row level security;
+alter table public.site_theme enable row level security;
+alter table public.site_media enable row level security;
+alter table public.site_sections enable row level security;
+
+-- profiles: semua user login bisa lihat nama user lain (fitur communication)
+create policy "profiles read" on public.profiles for select to authenticated using (true);
+create policy "profiles self update" on public.profiles for update to authenticated
+  using (id = auth.uid()) with check (id = auth.uid() and role = public.my_role());
+create policy "profiles superadmin all" on public.profiles for all to authenticated
+  using (public.is_superadmin()) with check (public.is_superadmin());
+
+-- Macro-like policy set untuk tabel data operasional:
+--   user     = SELECT only
+--   admin    = SELECT + INSERT + UPDATE (tanpa DELETE)
+--   superadmin = ALL
+-- Diterapkan ke: members, families, family_members, groups, group_members,
+-- events, event_participants, attendance, donors, donations, volunteers,
+-- volunteer_assignments, announcements, broadcasts, activities
+do $$
+declare t text;
+begin
+  foreach t in array array[
+    'members','families','family_members','groups','group_members',
+    'events','event_participants','attendance','donors','donations',
+    'volunteers','volunteer_assignments','announcements','broadcasts','activities'
+  ] loop
+    execute format('create policy "%1$I read" on public.%1$I for select to authenticated using (true)', t);
+    execute format('create policy "%1$I insert" on public.%1$I for insert to authenticated with check (public.is_admin())', t);
+    execute format('create policy "%1$I update" on public.%1$I for update to authenticated using (public.is_admin()) with check (public.is_admin())', t);
+    execute format('create policy "%1$I delete" on public.%1$I for delete to authenticated using (public.is_superadmin())', t);
+  end loop;
+end $$;
+
+-- church_profile: publik boleh baca (untuk halaman publik), admin update
+create policy "church public read" on public.church_profile for select using (true);
+create policy "church admin update" on public.church_profile for update to authenticated
+  using (public.is_admin()) with check (public.is_admin());
+
+-- messages: hanya pesan milik sendiri
+create policy "messages own read" on public.messages for select to authenticated
+  using (sender_id = auth.uid() or receiver_id = auth.uid());
+create policy "messages send" on public.messages for insert to authenticated
+  with check (sender_id = auth.uid());
+create policy "messages mark read" on public.messages for update to authenticated
+  using (receiver_id = auth.uid()) with check (receiver_id = auth.uid());
+
+-- notifications: baca notif sendiri + broadcast (user_id null)
+create policy "notif read" on public.notifications for select to authenticated
+  using (user_id is null or user_id = auth.uid());
+create policy "notif update read" on public.notifications for update to authenticated
+  using (user_id is null or user_id = auth.uid())
+  with check (user_id is null or user_id = auth.uid());
+create policy "notif insert admin" on public.notifications for insert to authenticated
+  with check (public.is_admin());
+create policy "notif delete super" on public.notifications for delete to authenticated
+  using (public.is_superadmin());
+
+-- finance: user=read, admin=insert/update (create otomatis pending),
+-- approval (status -> approved/rejected) & delete = superadmin
+create policy "fin settings read" on public.finance_settings for select to authenticated using (true);
+create policy "fin settings update super" on public.finance_settings for update to authenticated
+  using (public.is_superadmin()) with check (public.is_superadmin());
+create policy "fin cat read" on public.finance_categories for select to authenticated using (true);
+create policy "fin cat insert" on public.finance_categories for insert to authenticated with check (public.is_admin());
+create policy "fin cat update" on public.finance_categories for update to authenticated using (public.is_admin());
+create policy "fin cat delete" on public.finance_categories for delete to authenticated using (public.is_superadmin());
+create policy "fin trx read" on public.finance_transactions for select to authenticated using (true);
+create policy "fin trx insert" on public.finance_transactions for insert to authenticated
+  with check (public.is_admin() and status = 'pending');
+create policy "fin trx update admin" on public.finance_transactions for update to authenticated
+  using (public.is_admin() and status = 'pending')
+  with check (public.is_admin() and status = 'pending');
+create policy "fin trx approve super" on public.finance_transactions for update to authenticated
+  using (public.is_superadmin()) with check (public.is_superadmin());
+create policy "fin trx delete super" on public.finance_transactions for delete to authenticated
+  using (public.is_superadmin());
+create policy "approval hist read" on public.approval_history for select to authenticated using (true);
+create policy "approval hist insert" on public.approval_history for insert to authenticated
+  with check (public.is_superadmin());
+
+-- Web Manager: publik baca yang published; admin edit draft; publish/delete = admin+superadmin
+create policy "nav public read" on public.site_nav_items for select using (state = 'published' or public.is_admin());
+create policy "nav write" on public.site_nav_items for all to authenticated
+  using (public.is_admin()) with check (public.is_admin());
+create policy "theme public read" on public.site_theme for select using (true);
+create policy "theme write" on public.site_theme for update to authenticated
+  using (public.is_admin()) with check (public.is_admin());
+create policy "media public read" on public.site_media for select using (state = 'published' or public.is_admin());
+create policy "media write" on public.site_media for all to authenticated
+  using (public.is_admin()) with check (public.is_admin());
+create policy "sections public read" on public.site_sections for select
+  using ((published is not null and enabled) or public.is_admin());
+create policy "sections write" on public.site_sections for all to authenticated
+  using (public.is_admin()) with check (public.is_admin());
+
+-- ============================================================
+-- REALTIME: aktifkan publication
+-- ============================================================
+alter publication supabase_realtime add table public.messages;
+alter publication supabase_realtime add table public.notifications;
+alter publication supabase_realtime add table public.activities;
+
+-- Trigger: setiap perubahan data penting -> catat activity + notifikasi broadcast
+create or replace function public.log_activity() returns trigger
+language plpgsql security definer set search_path = public as $$
+declare
+  v_label text := coalesce(to_jsonb(new)->>'nama', to_jsonb(new)->>'judul', to_jsonb(new)->>'keterangan', TG_TABLE_NAME);
+begin
+  insert into public.activities (type, action, detail)
+  values (TG_TABLE_NAME,
+    case TG_OP when 'INSERT' then 'Data ditambahkan' when 'UPDATE' then 'Data diubah' else 'Data dihapus' end,
+    v_label);
+  insert into public.notifications (title, message, type)
+  values ('Perubahan Data',
+    TG_TABLE_NAME || ': ' || (case TG_OP when 'INSERT' then 'ditambah' when 'UPDATE' then 'diubah' else 'dihapus' end) || ' — ' || v_label,
+    TG_TABLE_NAME);
+  return coalesce(new, old);
+end $$;
+
+do $$
+declare t text;
+begin
+  foreach t in array array['members','events','donations','groups','finance_transactions','announcements','volunteers'] loop
+    execute format('create trigger trg_activity_%1$I after insert or update or delete on public.%1$I for each row execute function public.log_activity()', t);
+  end loop;
+end $$;
+
+-- Trigger: pesan baru -> notifikasi ke penerima
+create or replace function public.notify_new_message() returns trigger
+language plpgsql security definer set search_path = public as $$
+declare v_sender text;
+begin
+  select nama into v_sender from public.profiles where id = new.sender_id;
+  insert into public.notifications (user_id, title, message, type)
+  values (new.receiver_id, 'Pesan Baru', coalesce(v_sender,'Seseorang') || ': ' || left(new.content, 80), 'message');
+  return new;
+end $$;
+create trigger trg_notify_message after insert on public.messages
+  for each row execute function public.notify_new_message();
+
+-- Auto-create profile saat user auth dibuat
+create or replace function public.handle_new_user() returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  insert into public.profiles (id, nama, username, email, role)
+  values (new.id,
+    coalesce(new.raw_user_meta_data->>'nama', split_part(new.email,'@',1)),
+    coalesce(new.raw_user_meta_data->>'username', split_part(new.email,'@',1)),
+    new.email,
+    coalesce((new.raw_user_meta_data->>'role')::app_role, 'user'))
+  on conflict (id) do nothing;
+  return new;
+end $$;
+create trigger on_auth_user_created after insert on auth.users
+  for each row execute function public.handle_new_user();
+
+-- ============================================================
+-- SEED DATA (sesuai defaultData base-code)
+-- ============================================================
+insert into public.church_profile (id, nama, alamat, kota, telepon, email, website) values
+  (1, 'Gereja Kristen Indonesia', 'Jl. Gereja No. 123', 'Jakarta', '021-12345678', 'info@gereja.com', 'www.gereja.com');
+
+insert into public.members (id, nama, email, telepon, jk, tempat_lahir, tgl_lahir, alamat, kota, kodepos, status, join_date) values
+  (1,'Budi Santoso','budi@email.com','081234567890','Laki-laki','Jakarta','1985-03-15','Jl. Mawar No. 1','Jakarta','12345','aktif','2020-01-15'),
+  (2,'Siti Aminah','siti@email.com','081234567891','Perempuan','Bandung','1988-07-20','Jl. Melati No. 5','Jakarta','12345','aktif','2019-06-10'),
+  (3,'Ahmad Hidayat','ahmad@email.com','081234567892','Laki-laki','Surabaya','1982-11-05','Jl. Anggrek No. 10','Jakarta','12345','aktif','2021-03-22'),
+  (4,'Dewi Kusuma','dewi@email.com','081234567893','Perempuan','Yogyakarta','1990-01-30','Jl. Kenanga No. 8','Jakarta','12345','aktif','2022-08-15'),
+  (5,'Eko Prasetyo','eko@email.com','081234567894','Laki-laki','Semarang','1978-09-12','Jl. Cempaka No. 15','Jakarta','12345','aktif','2018-12-01');
+
+insert into public.groups (id, nama, deskripsi, leader_id, jadwal, show_phone) values
+  (1,'Youth Ministry','Pelayanan pemuda gereja',1,'Setiap Jumat, 19:00 WIB',true),
+  (2,'Worship Team','Tim pujian dan penyembahan',2,'Setiap Sabtu, 16:00 WIB',true),
+  (3,'Prayer Team','Tim doa gereja',5,'Setiap Selasa, 18:00 WIB',false);
+update public.members set group_id = 1 where id in (1,3);
+update public.members set group_id = 2 where id = 2;
+update public.members set group_id = 3 where id = 5;
+insert into public.group_members (group_id, member_id) values (1,1),(1,3),(2,2),(3,5);
+
+insert into public.families (id, nama, kepala_id, alamat, kota) values
+  (1,'Keluarga Budi Santoso',1,'Jl. Mawar No. 1','Jakarta'),
+  (2,'Keluarga Ahmad Hidayat',3,'Jl. Anggrek No. 10','Jakarta');
+insert into public.family_members (family_id, member_id) values (1,1),(1,2),(2,3),(2,4);
+
+insert into public.events (id, nama, tipe, start_at, end_at, lokasi, deskripsi, kapasitas, status) values
+  (1,'Ibadah Minggu Pagi','ibadah','2024-01-21T07:00+07','2024-01-21T09:00+07','Gedung Utama Gereja','Ibadah rutin minggu pagi',200,'upcoming'),
+  (2,'Youth Fellowship','sosial','2024-01-26T19:00+07','2024-01-26T21:00+07','Ruang Youth','Persekutuan pemuda',50,'upcoming'),
+  (3,'Seminar Pernikahan','seminar','2024-02-10T09:00+07','2024-02-10T16:00+07','Aula Gereja','Seminar untuk pasangan yang akan menikah',30,'upcoming');
+
+insert into public.attendance (event_id, member_id, tanggal, waktu, status) values
+  (1,1,'2024-01-14','07:15','hadir'),(1,2,'2024-01-14','07:20','hadir'),(1,3,'2024-01-14','07:30','hadir');
+
+insert into public.donors (id, nama, email, telepon, total_donasi, terakhir_donasi) values
+  (1,'Budi Santoso','budi@email.com','081234567890',2500000,'2024-01-15'),
+  (2,'Siti Aminah','siti@email.com','081234567891',1500000,'2024-01-15'),
+  (3,'Ahmad Hidayat','ahmad@email.com','081234567892',1000000,'2024-01-10');
+insert into public.donations (donor_id, tipe, jumlah, tanggal, keterangan) values
+  (1,'perpuluhan',500000,'2024-01-15','Perpuluhan Januari'),
+  (2,'persembahan',250000,'2024-01-15','Persembahan Minggu'),
+  (3,'pembangunan',1000000,'2024-01-10','Donasi pembangunan');
+
+insert into public.volunteers (id, member_id, external_nama, external_email, external_telepon, area, jadwal, status) values
+  (1,1,null,null,null,'usher',array['minggu-pagi','minggu-sore'],'aktif'),
+  (2,2,null,null,null,'worship-leader',array['minggu-pagi'],'aktif'),
+  (3,null,'John Doe','john@email.com','081234567895','singer',array['minggu-pagi','minggu-sore'],'aktif');
+insert into public.volunteer_assignments (volunteer_id, event_id, tanggal, waktu, tempat, tugas, catatan, status) values
+  (1,1,'2024-01-21','06:30','Gedung Utama Gereja','Menerima tamu di pintu masuk','','assigned'),
+  (2,1,'2024-01-21','06:00','Ruang Worship','Lead worship','','assigned');
+
+insert into public.finance_settings (id, saldo_awal) values (1, 5000000);
+insert into public.finance_categories (id, nama, tipe, deskripsi) values
+  (1,'Persembahan','pemasukan','Persembahan jemaat'),
+  (2,'Perpuluhan','pemasukan','Perpuluhan jemaat'),
+  (3,'Donasi','pemasukan','Donasi dari jemaat'),
+  (4,'Lainnya (Pemasukan)','pemasukan','Pemasukan lainnya'),
+  (5,'Operasional','pengeluaran','Biaya operasional gereja'),
+  (6,'Kegiatan','pengeluaran','Biaya kegiatan gereja'),
+  (7,'Sosial','pengeluaran','Biaya sosial/misi'),
+  (8,'Lainnya (Pengeluaran)','pengeluaran','Pengeluaran lainnya');
+
+-- Web Manager seed: navigasi publik
+insert into public.site_nav_items (label, href, visible, sort_order, state) values
+  ('Home','/',true,1,'published'),
+  ('Events','/events',true,2,'published'),
+  ('About Us','/tentang',true,3,'published'),
+  ('Contact','/kontak',true,4,'published');
+insert into public.site_theme (id, primary_color, font_family, state, published) values
+  (1, '#00E5FF', 'Inter', 'published', '{"primary_color":"#00E5FF","font_family":"Inter"}');
+insert into public.site_sections (page, type, sort_order, content, published, enabled) values
+  ('home','hero',1,
+   '{"title":"Selamat Datang di WKC","subtitle":"Kami senang Anda di sini. Membangun komunitas yang terhubung, bertumbuh, dan melayani sejak 1995.","cta_label":"Learn More","cta_href":"/tentang","bg_image":""}',
+   '{"title":"Selamat Datang di WKC","subtitle":"Kami senang Anda di sini. Membangun komunitas yang terhubung, bertumbuh, dan melayani sejak 1995.","cta_label":"Learn More","cta_href":"/tentang","bg_image":""}', true),
+  ('home','event_feed',2,'{"title":"Event Mendatang","limit":3}','{"title":"Event Mendatang","limit":3}', true),
+  ('home','info_lokasi',3,
+   '{"title":"Jadwal Ibadah & Lokasi","address":"Jl. Gereja No. 123, Jakarta","hours":"Ibadah Raya 1: 07.00 WIB · Ibadah Raya 2: 10.00 WIB","maps_embed":"","lat":-6.1754,"lng":106.8272}',
+   '{"title":"Jadwal Ibadah & Lokasi","address":"Jl. Gereja No. 123, Jakarta","hours":"Ibadah Raya 1: 07.00 WIB · Ibadah Raya 2: 10.00 WIB","maps_embed":"","lat":-6.1754,"lng":106.8272}', true);

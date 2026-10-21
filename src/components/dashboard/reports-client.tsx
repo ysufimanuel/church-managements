@@ -1,0 +1,92 @@
+'use client';
+
+import * as React from 'react';
+import { useLang } from '@/components/lang-context';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Users, ClipboardCheck, HandHeart, PieChart, Download, Printer, X } from 'lucide-react';
+import { exportCSV, exportXLS, exportTXT, printPDF } from '@/lib/export';
+import { formatRupiah, formatDate } from '@/lib/utils';
+
+export function ReportsClient({ members, attendance, donations, events, groups, volunteers }: any) {
+  const { t } = useLang();
+  const [report, setReport] = React.useState<null | { title: string; rows: Record<string, any>[] }>(null);
+
+  const cards = [
+    { key: 'members', icon: Users, title: t('members-report'), desc: t('members-stats') },
+    { key: 'attendance', icon: ClipboardCheck, title: t('attendance-report'), desc: t('attendance-data-report') },
+    { key: 'donations', icon: HandHeart, title: t('donations-report'), desc: t('donations-summary') },
+    { key: 'system', icon: PieChart, title: t('system-stats'), desc: t('system-overview') },
+  ];
+
+  function generate(type: string) {
+    const eventName = (id: number) => events.find((e: any) => e.id === id)?.nama || '-';
+    if (type === 'members') {
+      setReport({ title: t('members-report'), rows: members.map((m: any) => ({ Nama: m.nama, Email: m.email, Telepon: m.telepon, Gender: m.jk, Status: m.status, Bergabung: m.join_date })) });
+    } else if (type === 'attendance') {
+      const memberName = (id: number) => members.find((m: any) => m.id === id)?.nama || '-';
+      setReport({ title: t('attendance-report'), rows: attendance.map((a: any) => ({ Tanggal: a.tanggal, Event: eventName(a.event_id), Nama: memberName(a.member_id), Waktu: a.waktu, Status: a.status })) });
+    } else if (type === 'donations') {
+      setReport({ title: t('donations-report'), rows: donations.map((d: any) => ({ Tanggal: d.tanggal, Tipe: d.tipe, Keterangan: d.keterangan, Jumlah: d.jumlah })) });
+    } else {
+      setReport({ title: t('system-stats'), rows: [
+        { Metrik: 'Total Jemaat', Nilai: members.length },
+        { Metrik: 'Total Events', Nilai: events.length },
+        { Metrik: 'Total Groups', Nilai: groups.length },
+        { Metrik: 'Total Relawan', Nilai: volunteers.length },
+        { Metrik: 'Total Kehadiran', Nilai: attendance.length },
+        { Metrik: 'Total Donasi', Nilai: formatRupiah(donations.reduce((s: number, d: any) => s + Number(d.jumlah), 0)) },
+      ] });
+    }
+  }
+
+  return (
+    <div className="space-y-4">
+      <div>
+        <h1 className="text-2xl font-bold">{t('reports')}</h1>
+        <p className="text-muted-foreground">{t('reports-system')}</p>
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {cards.map((c) => (
+          <button key={c.key} onClick={() => generate(c.key)} className="text-left cursor-pointer">
+            <Card className="h-full transition-colors hover:border-primary">
+              <CardContent className="p-6 text-center">
+                <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary"><c.icon className="h-6 w-6" /></div>
+                <h3 className="font-semibold">{c.title}</h3>
+                <p className="text-sm text-muted-foreground">{c.desc}</p>
+              </CardContent>
+            </Card>
+          </button>
+        ))}
+      </div>
+
+      {report && (
+        <Card>
+          <CardContent className="p-6 space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h2 className="text-lg font-bold">{report.title}</h2>
+              <div className="flex gap-2">
+                <Button variant="secondary" size="sm" onClick={() => exportCSV(report.rows, 'report')}><Download className="h-3 w-3" /> CSV</Button>
+                <Button variant="secondary" size="sm" onClick={() => exportXLS(report.rows, 'report')}>XLS</Button>
+                <Button variant="secondary" size="sm" onClick={() => exportTXT(report.rows, 'report')}>TXT</Button>
+                <Button variant="secondary" size="sm" onClick={() => printPDF(report.title, report.rows)}><Printer className="h-3 w-3" /> {t('print')}</Button>
+                <Button variant="ghost" size="sm" onClick={() => setReport(null)}><X className="h-4 w-4" /></Button>
+              </div>
+            </div>
+            <div className="overflow-auto">
+              <table className="w-full text-sm">
+                <thead><tr className="border-b">{Object.keys(report.rows[0] || {}).map((h) => <th key={h} className="p-2 text-left text-muted-foreground">{h}</th>)}</tr></thead>
+                <tbody>
+                  {report.rows.slice(0, 100).map((r, i) => (
+                    <tr key={i} className="border-b">{Object.values(r).map((v, j) => <td key={j} className="p-2">{String(v ?? '-')}</td>)}</tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+}

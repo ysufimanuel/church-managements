@@ -1,7 +1,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { createClient: createServerClient, getCurrentProfile } from '@/lib/supabase/server';
+import { getCurrentProfile } from '@/lib/supabase/server';
 import { requireRole } from './helpers';
 import { canManageUsers, type Role } from '@/lib/rbac';
 

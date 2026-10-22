@@ -14,11 +14,15 @@ export default async function FinancePage() {
     supabase.from('approval_history').select('*').order('created_at', { ascending: false }).limit(50),
     supabase.from('donors').select('id, nama').order('nama'),
   ]);
+  const readOnly = profile!.role === 'user';
   return (
-    <FinanceClient
-      transactions={transactions || []} categories={categories || []}
-      settings={settings} history={history || []} donors={donors || []}
-      role={profile!.role as Role}
-    />
+    <div className={readOnly ? 'finance-read-only' : undefined}>
+      {readOnly && <style>{`.finance-read-only button:has(svg.lucide-download){display:none}`}</style>}
+      <FinanceClient
+        transactions={transactions || []} categories={categories || []}
+        settings={settings} history={history || []} donors={donors || []}
+        role={profile!.role as Role}
+      />
+    </div>
   );
 }

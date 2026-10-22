@@ -1,11 +1,12 @@
 'use client';
 
+import Link from 'next/link';
 import { useFormState, useFormStatus } from 'react-dom';
 import { loginAction } from '@/lib/actions/auth';
 import { LangProvider, LangSwitcher, useLang } from '@/components/lang-context';
 import { Button } from '@/components/ui/button';
 import { Input, Label } from '@/components/ui/input';
-import { Church, Eye, EyeOff, LogIn, Info } from 'lucide-react';
+import { Church, Eye, EyeOff, LogIn, Info, UserPlus } from 'lucide-react';
 import { useState } from 'react';
 
 function SubmitButton() {
@@ -60,6 +61,13 @@ function LoginForm() {
         )}
         <SubmitButton />
       </form>
+
+      <div className="mt-5 border-t pt-5 text-center">
+        <p className="mb-2 text-sm text-muted-foreground">Belum punya akun gereja?</p>
+        <Link href="/register" className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline">
+          <UserPlus className="h-4 w-4" /> Daftar Gereja
+        </Link>
+      </div>
 
       <p className="mt-4 flex items-center justify-center gap-1 text-xs text-muted-foreground">
         <Info className="h-3 w-3" /> {t('default-login')}

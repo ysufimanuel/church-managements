@@ -1,4 +1,4 @@
--- Realtime in-app notifications for chat and data mutations.
+-- Realtime in-app notifications for chat and business-data mutations.
 
 create or replace function public.notify_new_message()
 returns trigger language plpgsql security definer set search_path = '' as $$
@@ -26,10 +26,9 @@ end $$;
 DO $$
 declare t text;
   tables text[] := array[
-    'profiles','members','families','family_members','groups','group_members',
-    'events','event_participants','attendance','donors','donations','volunteers',
-    'volunteer_assignments','announcements','broadcasts','finance_settings',
-    'finance_categories','finance_transactions','approval_history','site_nav_items',
+    'members','families','family_members','groups','group_members','events','event_participants',
+    'attendance','donors','donations','volunteers','volunteer_assignments','announcements','broadcasts',
+    'finance_settings','finance_categories','finance_transactions','approval_history','site_nav_items',
     'site_theme','site_media','site_sections'
   ];
 begin

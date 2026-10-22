@@ -1,22 +1,15 @@
 import type { Metadata } from 'next';
-import { SectionRenderer } from '@/components/public/section-renderer';
-import { createClient } from '@/lib/supabase/server';
+import { redirect } from 'next/navigation';
 
-export async function generateMetadata(): Promise<Metadata> {
-  const supabase = await createClient();
-  const { data: church } = await supabase.from('church_profile').select('*').eq('id', 1).maybeSingle();
-  return {
-    title: `${church?.nama || 'WKC Church'} — Selamat Datang`,
-    description: 'Selamat datang di WKC. Kami senang Anda di sini — membangun komunitas yang terhubung, bertumbuh, dan melayani sejak 1995.',
-  };
-}
+export const metadata: Metadata = {
+  title: 'Login',
+  description: 'Masuk ke Church Management System.',
+};
 
-export const revalidate = 60; // ISR: SEO-friendly + konten segar
-
-export default function HomePage() {
-  return (
-    <main>
-      <SectionRenderer page="home" />
-    </main>
-  );
+/**
+ * The root public route is intentionally kept outside the tenant renderer.
+ * Tenant websites live under /site/[slug], while the application root opens login.
+ */
+export default function PublicHomePage() {
+  redirect('/login');
 }

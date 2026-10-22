@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
-import { requireRole } from './helpers';
+import { requireRole, runAction } from './helpers';
 import { canAdd, canEdit, canDelete, type Role } from '@/lib/rbac';
 
 export interface MemberInput {
@@ -16,28 +16,32 @@ export interface MemberInput {
 }
 
 export async function saveMember(input: MemberInput) {
-  const { denied } = await requireRole((r: Role) => (input.id ? canEdit(r) : canAdd(r)));
-  if (denied) return { ok: false, error: denied };
-  const supabase = await createClient();
-  const payload = { ...input, id: undefined };
-  delete (payload as any).id;
-  let error;
-  if (input.id) {
-    ({ error } = await supabase.from('members').update(payload).eq('id', input.id));
-  } else {
-    ({ error } = await supabase.from('members').insert(payload));
-  }
-  if (error) return { ok: false, error: error.message };
-  revalidatePath('/dashboard/members');
-  return { ok: true };
+  return runAction('saveMember', async () => {
+    const { denied } = await requireRole((r: Role) => (input.id ? canEdit(r) : canAdd(r)));
+    if (denied) return { ok: false, error: denied };
+    const supabase = await createClient();
+    const payload = { ...input, id: undefined };
+    delete (payload as any).id;
+    let error;
+    if (input.id) {
+      ({ error } = await supabase.from('members').update(payload).eq('id', input.id));
+    } else {
+      ({ error } = await supabase.from('members').insert(payload));
+    }
+    if (error) return { ok: false, error: error.message };
+    revalidatePath('/dashboard/members');
+    return { ok: true };
+  });
 }
 
 export async function deleteMember(id: number) {
-  const { denied } = await requireRole((r: Role) => canDelete(r), 'Hanya Superadmin yang dapat menghapus data');
-  if (denied) return { ok: false, error: denied };
-  const supabase = await createClient();
-  const { error } = await supabase.from('members').delete().eq('id', id);
-  if (error) return { ok: false, error: error.message };
-  revalidatePath('/dashboard/members');
-  return { ok: true };
+  return runAction('deleteMember', async () => {
+    const { denied } = await requireRole((r: Role) => canDelete(r), 'Hanya Superadmin yang dapat menghapus data');
+    if (denied) return { ok: false, error: denied };
+    const supabase = await createClient();
+    const { error } = await supabase.from('members').delete().eq('id', id);
+    if (error) return { ok: false, error: error.message };
+    revalidatePath('/dashboard/members');
+    return { ok: true };
+  });
 }

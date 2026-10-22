@@ -1,7 +1,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { createClient, getCurrentProfile } from '@/lib/supabase/server';
+import { createClient: createServerClient, getCurrentProfile } from '@/lib/supabase/server';
 import { requireRole } from './helpers';
 import { canManageUsers, type Role } from '@/lib/rbac';
 
@@ -13,12 +13,10 @@ export interface UserInput {
 export async function saveUser(input: UserInput) {
   const { denied } = await requireRole((r: Role) => canManageUsers(r), 'Hanya Superadmin');
   if (denied) return { ok: false, error: denied };
-
   const profile = await getCurrentProfile();
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   if (!serviceKey || !url) return { ok: false, error: 'SUPABASE_SERVICE_ROLE_KEY belum diset' };
-
   const { createClient: createAdmin } = await import('@supabase/supabase-js');
   const admin = createAdmin(url, serviceKey, { auth: { persistSession: false } });
 
@@ -31,14 +29,14 @@ export async function saveUser(input: UserInput) {
     });
     if (error) return { ok: false, error: error.message };
   } else {
+    const { data: target } = await admin.from('profiles').select('church_id').eq('id', input.id).maybeSingle();
+    if (!target || target.church_id !== profile!.church_id) return { ok: false, error: 'User berasal dari gereja lain atau tidak ditemukan' };
     const { error } = await admin.from('profiles').update({
       nama: input.nama, username: input.username, email: input.email,
       role: input.role, status: input.status ?? 'aktif',
     }).eq('id', input.id).eq('church_id', profile!.church_id);
     if (error) return { ok: false, error: error.message };
-    if (input.password) {
-      await admin.auth.admin.updateUserById(input.id, { password: input.password });
-    }
+    if (input.password) await admin.auth.admin.updateUserById(input.id, { password: input.password });
     await admin.auth.admin.updateUserById(input.id, { app_metadata: { church_id: profile!.church_id, role: input.role } });
   }
   revalidatePath('/dashboard/users');
@@ -54,6 +52,8 @@ export async function deleteUser(id: string) {
   if (!serviceKey || !url) return { ok: false, error: 'SUPABASE_SERVICE_ROLE_KEY belum diset' };
   const { createClient: createAdmin } = await import('@supabase/supabase-js');
   const admin = createAdmin(url, serviceKey, { auth: { persistSession: false } });
+  const { data: target } = await admin.from('profiles').select('church_id').eq('id', id).maybeSingle();
+  if (!target || target.church_id !== profile!.church_id) return { ok: false, error: 'User berasal dari gereja lain atau tidak ditemukan' };
   const { error } = await admin.auth.admin.deleteUser(id);
   if (error) return { ok: false, error: error.message };
   revalidatePath('/dashboard/users');

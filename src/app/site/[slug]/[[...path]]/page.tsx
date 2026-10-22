@@ -52,6 +52,6 @@ export default async function PublicChurchPage({ params, searchParams }: Props) 
     {preview && <div className="sticky top-0 z-50 border-b bg-amber-500 px-3 py-2 text-center text-xs font-semibold text-black">DRAFT PREVIEW — perubahan belum dipublish</div>}
     <header className="sticky top-0 z-30 border-b bg-background/90 backdrop-blur"><div className="container flex min-h-16 items-center gap-5 px-4"><Link href={base} className="min-w-0 flex-1"><p className="truncate font-bold">{church.nama}</p><p className="text-xs text-muted-foreground">Gereja Digital</p></Link><nav className="hidden items-center gap-4 md:flex">{(navItems || []).map((item) => <Link key={item.id} href={publicHref(base, item.href)} className="text-sm text-muted-foreground hover:text-foreground">{item.label}</Link>)}</nav></div></header>
     <SectionRenderer page={page} churchId={church.id} basePath={base} preview={preview} />
-    <footer className="border-t py-8"><div className="container px-4 text-sm text-muted-foreground"><p className="font-medium text-foreground">{church.nama}</p><p>{church.alamat}{church.kota ? `, ${church.kota}` : ''}</p>{church.telepon && <p>{church.telepon}</p>}{church.email && <p>{church.email}</p>}</div></div></footer>
+    <footer className="border-t py-8"><div className="container px-4 text-sm text-muted-foreground"><p className="font-medium text-foreground">{church.nama}</p><p>{church.alamat}{church.kota ? `, ${church.kota}` : ''}</p>{church.telepon && <p>{church.telepon}</p>}{church.email && <p>{church.email}</p>}</div></footer>
   </main>;
 }

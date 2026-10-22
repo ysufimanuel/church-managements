@@ -16,8 +16,8 @@ const RATIOS = ['16:9', '19:9', '1:1', '4:3', '4:5', '2:3', '9:16', '2:9', '32:9
 const FONTS = ['Poppins', 'Inter', 'Roboto', 'Montserrat'];
 const SECTION_TYPES = ['hero', 'event_feed', 'info_lokasi', 'media', 'map', 'richtext'];
 
-export function WebManagerClient({ navItems, theme, media, sections, role }: {
-  navItems: any[]; theme: any; media: any[]; sections: any[]; role: Role;
+export function WebManagerClient({ navItems, theme, media, sections, role, publicPath }: {
+  navItems: any[]; theme: any; media: any[]; sections: any[]; role: Role; publicPath: string | null;
 }) {
   const { t } = useLang();
   const [tab, setTab] = React.useState('nav');
@@ -41,6 +41,7 @@ export function WebManagerClient({ navItems, theme, media, sections, role }: {
   const [previewKey, setPreviewKey] = React.useState(0);
 
   const pageSections = sections.filter((s) => s.page === page).sort((a, b) => a.sort_order - b.sort_order);
+  const previewPath = publicPath ? `${publicPath}${page === 'home' ? '' : `/${page}`}` : null;
 
   async function run(p: Promise<{ ok: boolean; error?: string }>, okMsg?: string) {
     const r = await p;
@@ -188,13 +189,19 @@ export function WebManagerClient({ navItems, theme, media, sections, role }: {
               <Button variant="ghost" size="icon" onClick={() => setPreviewKey((k) => k + 1)} aria-label="Refresh"><Eye className="h-4 w-4" /></Button>
             </CardHeader>
             <CardContent>
-              <iframe
-                key={previewKey}
-                src={page === 'home' ? '/' : `/${page}`}
-                className="h-[560px] w-full rounded-lg border bg-white"
-                title="Live Preview"
-              />
-              <p className="mt-2 text-xs text-muted-foreground">Preview menampilkan versi published. Tekan Publish untuk mengirim perubahan ke publik.</p>
+              {previewPath ? (
+                <iframe
+                  key={`${previewPath}-${previewKey}`}
+                  src={previewPath}
+                  className="h-[560px] w-full rounded-lg border bg-white"
+                  title="Live Preview"
+                />
+              ) : (
+                <div className="flex h-[560px] items-center justify-center rounded-lg border text-sm text-muted-foreground">
+                  Website publik belum tersedia untuk gereja ini.
+                </div>
+              )}
+              <p className="mt-2 text-xs text-muted-foreground">Preview menampilkan halaman publik gereja. Perubahan draft akan tampil setelah dipublish.</p>
             </CardContent>
           </Card>
         </div>
@@ -258,143 +265,3 @@ function MediaForm({ initial, onSave, onCancel }: { initial: any; onSave: (v: Me
   return (
     <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
       <div className="space-y-3">
-        <div className="space-y-2"><Label>Tipe Media</Label>
-          <Select value={kind} onChange={(e) => setKind(e.target.value as any)}>
-            <option value="image">Gambar (Drive / Cloudinary / Unsplash)</option>
-            <option value="video">Video (YouTube / Vimeo)</option>
-            <option value="map">Map (Google Maps / Koordinat)</option>
-          </Select>
-        </div>
-        <div className="space-y-2"><Label>URL</Label><Input value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://..." /></div>
-        {kind === 'map' && (
-          <div className="grid grid-cols-2 gap-2">
-            <div className="space-y-2"><Label>Latitude</Label><Input value={lat} onChange={(e) => setLat(e.target.value)} placeholder="-6.1754" /></div>
-            <div className="space-y-2"><Label>Longitude</Label><Input value={lng} onChange={(e) => setLng(e.target.value)} placeholder="106.8272" /></div>
-          </div>
-        )}
-        {kind !== 'map' && (
-          <div className="space-y-2"><Label>Rasio</Label>
-            <Select value={ratio} onChange={(e) => setRatio(e.target.value)}>{RATIOS.map((r) => <option key={r} value={r}>{r}</option>)}</Select>
-          </div>
-        )}
-        <div className="grid grid-cols-2 gap-2">
-          <div className="space-y-2"><Label>Layer</Label>
-            <Select value={layer} onChange={(e) => setLayer(e.target.value as any)}>
-              <option value="front">Depan (front)</option><option value="overlay">Belakang (overlay)</option>
-            </Select>
-          </div>
-          <div className="space-y-2"><Label>Posisi</Label>
-            <Select value={position} onChange={(e) => setPosition(e.target.value)}>
-              {['center', 'top', 'bottom', 'left', 'right'].map((p) => <option key={p} value={p}>{p}</option>)}
-            </Select>
-          </div>
-        </div>
-        <div className="space-y-2"><Label>{t('title')}</Label><Input value={title} onChange={(e) => setTitle(e.target.value)} /></div>
-        <div className="flex gap-2">
-          <Button type="button" variant="secondary" onClick={onCancel}>{t('cancel')}</Button>
-          <Button type="button" onClick={() => onSave({ id: initial?.id, kind, url, ratio: kind === 'map' ? '1:1' : ratio, layer, position, title, lat: preview.lat, lng: preview.lng })}>{t('save')}</Button>
-        </div>
-      </div>
-      <div>
-        <Label>Auto-Preview</Label>
-        <div className="mt-2">{url || kind === 'map' ? <MediaFrame item={preview} /> : <p className="text-sm text-muted-foreground">Masukkan URL untuk pratinjau</p>}</div>
-      </div>
-    </div>
-  );
-}
-
-function SectionForm({ initial, page, onSave, onCancel }: { initial: any; page: string; onSave: (v: any) => void; onCancel: () => void }) {
-  const { t } = useLang();
-  const [type, setType] = React.useState(initial?.type || 'hero');
-  const c = initial?.content || {};
-
-  function submit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    const fd = new FormData(e.currentTarget);
-    let content: Record<string, any> = {};
-    if (type === 'hero') {
-      content = { title: fd.get('title'), subtitle: fd.get('subtitle'), cta_label: fd.get('cta_label'), cta_href: fd.get('cta_href'), bg_image: fd.get('bg_image') };
-    } else if (type === 'event_feed') {
-      content = { title: fd.get('title'), limit: Number(fd.get('limit') || 3) };
-    } else if (type === 'info_lokasi') {
-      content = { title: fd.get('title'), address: fd.get('address'), hours: fd.get('hours'), maps_embed: fd.get('maps_embed'), lat: Number(fd.get('lat') || 0), lng: Number(fd.get('lng') || 0) };
-    } else if (type === 'media') {
-      content = { media_url: fd.get('media_url'), ratio: fd.get('ratio') || '16:9', title: fd.get('title') };
-    } else if (type === 'map') {
-      content = { lat: Number(fd.get('lat') || 0), lng: Number(fd.get('lng') || 0), title: fd.get('title') };
-    } else {
-      content = { title: fd.get('title'), body: fd.get('body') };
-    }
-    onSave({
-      id: initial?.id, page: initial?.page || page, type,
-      sort_order: Number(fd.get('sort_order') || 0), content, enabled: initial?.enabled ?? true,
-    });
-  }
-
-  return (
-    <form onSubmit={submit} className="space-y-4">
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2"><Label>Tipe Section</Label>
-          <Select value={type} onChange={(e) => setType(e.target.value)}>
-            <option value="hero">Hero Banner</option>
-            <option value="event_feed">Event Feed (otomatis upcoming/ongoing)</option>
-            <option value="info_lokasi">Info & Lokasi</option>
-            <option value="media">Media</option>
-            <option value="map">Map 1:1 + Koordinat</option>
-            <option value="richtext">Rich Text</option>
-          </Select>
-        </div>
-        <div className="space-y-2"><Label>Urutan</Label><Input name="sort_order" type="number" defaultValue={initial?.sort_order || 0} /></div>
-      </div>
-
-      <div className="space-y-2"><Label>{t('title')}</Label><Input name="title" defaultValue={c.title || ''} /></div>
-
-      {type === 'hero' && (
-        <>
-          <div className="space-y-2"><Label>Sub-judul</Label><Input name="subtitle" defaultValue={c.subtitle || ''} /></div>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2"><Label>Label Tombol CTA</Label><Input name="cta_label" defaultValue={c.cta_label || 'Learn More'} /></div>
-            <div className="space-y-2"><Label>Link CTA</Label><Input name="cta_href" defaultValue={c.cta_href || '/tentang'} /></div>
-          </div>
-          <div className="space-y-2"><Label>URL Gambar Latar</Label><Input name="bg_image" defaultValue={c.bg_image || ''} /></div>
-        </>
-      )}
-      {type === 'event_feed' && (
-        <div className="space-y-2"><Label>Jumlah event ditampilkan</Label><Input name="limit" type="number" defaultValue={c.limit || 3} /></div>
-      )}
-      {type === 'info_lokasi' && (
-        <>
-          <div className="space-y-2"><Label>{t('address')}</Label><Input name="address" defaultValue={c.address || ''} /></div>
-          <div className="space-y-2"><Label>Jam Operasional</Label><Input name="hours" defaultValue={c.hours || ''} /></div>
-          <div className="space-y-2"><Label>Google Maps Embed URL</Label><Input name="maps_embed" defaultValue={c.maps_embed || ''} /></div>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2"><Label>Latitude</Label><Input name="lat" defaultValue={c.lat ?? ''} /></div>
-            <div className="space-y-2"><Label>Longitude</Label><Input name="lng" defaultValue={c.lng ?? ''} /></div>
-          </div>
-        </>
-      )}
-      {type === 'media' && (
-        <>
-          <div className="space-y-2"><Label>URL Media</Label><Input name="media_url" defaultValue={c.media_url || ''} /></div>
-          <div className="space-y-2"><Label>Rasio</Label>
-            <Select name="ratio" defaultValue={c.ratio || '16:9'}>{RATIOS.map((r) => <option key={r} value={r}>{r}</option>)}</Select>
-          </div>
-        </>
-      )}
-      {type === 'map' && (
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-2"><Label>Latitude</Label><Input name="lat" defaultValue={c.lat ?? ''} required /></div>
-          <div className="space-y-2"><Label>Longitude</Label><Input name="lng" defaultValue={c.lng ?? ''} required /></div>
-        </div>
-      )}
-      {type === 'richtext' && (
-        <div className="space-y-2"><Label>{t('content')}</Label><textarea name="body" rows={5} defaultValue={c.body || ''} className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm" /></div>
-      )}
-
-      <div className="flex justify-end gap-2">
-        <Button type="button" variant="secondary" onClick={onCancel}>{t('cancel')}</Button>
-        <Button type="submit">{t('wm-draft')}</Button>
-      </div>
-    </form>
-  );
-}

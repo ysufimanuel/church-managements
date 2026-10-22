@@ -33,7 +33,14 @@ export default async function WebManagerPage() {
           </Link>
         </div>
       )}
-      <WebManagerClient navItems={navItems || []} theme={theme} media={media || []} sections={sections || []} role={profile!.role as Role} />
+      <WebManagerClient
+        navItems={navItems || []}
+        theme={theme}
+        media={media || []}
+        sections={sections || []}
+        role={profile!.role as Role}
+        publicPath={publicPath}
+      />
     </div>
   );
 }

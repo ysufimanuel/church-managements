@@ -2,12 +2,13 @@
 'use client';
 
 import * as React from 'react';
+import ColorPicker from 'react-best-gradient-color-picker';
 import { useLang } from '@/components/lang-context';
 import { Button } from '@/components/ui/button';
 import { Input, Label, Select } from '@/components/ui/input';
 import { Modal, Tabs, Switch } from '@/components/ui/modal';
 import { Badge, Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Plus, Pencil, Trash2, Rocket, Eye, Image as ImageIcon } from 'lucide-react';
+import { Plus, Pencil, Trash2, Rocket, Eye, Image as ImageIcon, X, GripVertical } from 'lucide-react';
 import { saveNavItem, toggleNavVisibility, deleteNavItem, publishNav, saveThemeDraft, publishTheme, saveSectionDraft, publishSections, publishWebManager, deleteSection, type ThemeInput } from '@/lib/actions/webmanager';
 import { toast } from 'sonner';
 import { MediaFrame } from '@/components/public/media-frame';
@@ -17,6 +18,50 @@ const RATIOS = ['19:9', '16:9', '1:1', '4:3', '4:5', '2:3', '9:16', '2:9', '32:9
 const FONTS = ['Poppins', 'Inter', 'Roboto', 'Montserrat'];
 const SECTION_TYPES = ['hero', 'event_feed', 'info_lokasi', 'media', 'map', 'richtext'];
 const POSITIONS = ['center', 'top', 'bottom', 'left', 'right'];
+
+type SectionMediaItem = {
+  id: string;
+  kind: 'image' | 'video';
+  url: string;
+  ratio: string;
+  size: number;
+  radius: number;
+  position: string;
+  layer: 'front' | 'overlay';
+  autoplay: boolean;
+  title?: string;
+};
+
+function normalizeMediaItems(content: any): SectionMediaItem[] {
+  if (Array.isArray(content?.media_items)) {
+    return content.media_items.map((m: any, i: number) => ({
+      id: String(m.id || `media-${i + 1}`), kind: m.kind === 'video' ? 'video' : 'image', url: m.url || '',
+      ratio: m.ratio || '16:9', size: Number(m.size ?? 100), radius: Number(m.radius ?? 16),
+      position: m.position || 'center', layer: m.layer === 'overlay' ? 'overlay' : 'front', autoplay: Boolean(m.autoplay), title: m.title || '',
+    }));
+  }
+  if (content?.media_url) return [{ id: 'media-1', kind: content.media_kind === 'video' ? 'video' : 'image', url: content.media_url, ratio: content.ratio || '16:9', size: Number(content.media_size ?? 100), radius: Number(content.media_radius ?? 16), position: content.media_position || 'center', layer: content.media_layer === 'overlay' ? 'overlay' : 'front', autoplay: Boolean(content.media_autoplay), title: content.title || '' }];
+  return [];
+}
+
+function toRgba(value: string | undefined, fallback: string) {
+  const v = String(value || fallback).trim();
+  if (/^rgba?\(/i.test(v) || /^linear-gradient\(/i.test(v) || /^radial-gradient\(/i.test(v)) return v;
+  if (/^#[0-9a-f]{6}$/i.test(v)) { const r = parseInt(v.slice(1, 3), 16), g = parseInt(v.slice(3, 5), 16), b = parseInt(v.slice(5, 7), 16); return `rgba(${r},${g},${b},1)`; }
+  if (/^#[0-9a-f]{3}$/i.test(v)) { const r = parseInt(v[1] + v[1], 16), g = parseInt(v[2] + v[2], 16), b = parseInt(v[3] + v[3], 16); return `rgba(${r},${g},${b},1)`; }
+  return fallback;
+}
+
+function ColorField({ label, value, onChange, id }: { label: string; value: string; onChange: (v: string) => void; id: string }) {
+  const pickerValue = toRgba(value, 'rgba(255,255,255,1)');
+  return <div className="space-y-2 rounded-xl border p-3">
+    <Label>{label}</Label>
+    <div className="overflow-hidden rounded-lg border bg-background p-2">
+      <ColorPicker value={pickerValue} onChange={onChange} width={280} height={220} showHexAlpha idSuffix={id} />
+    </div>
+    <Input value={value} onChange={(e) => onChange(e.target.value)} placeholder="rgba(...) / linear-gradient(...)" />
+  </div>;
+}
 
 export function WebManagerClient({ navItems, theme, sections, role, publicPath }: { navItems: any[]; theme: any; media?: any[]; sections: any[]; role: Role; publicPath: string | null }) {
   const { t } = useLang();
@@ -29,36 +74,20 @@ export function WebManagerClient({ navItems, theme, sections, role, publicPath }
   const [secEditing, setSecEditing] = React.useState<any>(null);
   const [previewKey, setPreviewKey] = React.useState(0);
 
-  React.useEffect(() => {
-    setThemeValues(theme?.draft || theme?.published || { primary_color: '#FFFFFF', secondary_color: '#1F2937', accent_color: '#22C55E', font_family: 'Inter' });
-  }, [theme]);
-
-  const pages = React.useMemo(() => {
-    const set = new Set(['home', 'events', 'tentang', 'kontak']);
-    navItems.forEach((n) => { const href = String(n.draft?.href || n.href || '').replace(/^\//, '').split('/')[0]; if (href) set.add(href); });
-    sections.forEach((s) => s.page && set.add(s.page));
-    return Array.from(set);
-  }, [navItems, sections]);
+  React.useEffect(() => { setThemeValues(theme?.draft || theme?.published || { primary_color: '#FFFFFF', secondary_color: '#1F2937', accent_color: '#22C55E', font_family: 'Inter' }); }, [theme]);
+  const pages = React.useMemo(() => { const set = new Set(['home', 'events', 'tentang', 'kontak']); navItems.forEach((n) => { const href = String(n.draft?.href || n.href || '').replace(/^\//, '').split('/')[0]; if (href) set.add(href); }); sections.forEach((s) => s.page && set.add(s.page)); return Array.from(set); }, [navItems, sections]);
   const pageSections = sections.filter((s) => s.page === page).sort((a, b) => a.sort_order - b.sort_order);
   const previewPath = publicPath ? `${publicPath}${page === 'home' ? '' : `/${page}`}?preview=draft` : null;
 
-  async function run(p: Promise<{ ok: boolean; error?: string }>, okMsg?: string) {
-    const r = await p;
-    if (r.ok) { toast.success(okMsg || t('save')); setPreviewKey((k) => k + 1); }
-    else toast.error(r.error || 'Gagal menyimpan');
-    return r;
-  }
+  async function run(p: Promise<{ ok: boolean; error?: string }>, okMsg?: string) { const r = await p; if (r.ok) { toast.success(okMsg || t('save')); setPreviewKey((k) => k + 1); } else toast.error(r.error || 'Gagal menyimpan'); return r; }
 
   return <div className="space-y-4">
-    <div className="flex flex-wrap items-start justify-between gap-2">
-      <div><h1 className="text-2xl font-bold">{t('web-manager')}</h1><p className="text-muted-foreground">Kelola header, tema, halaman, draft, dan preview website publik.</p></div>
-      <Button onClick={() => run(publishWebManager(), t('publish'))}><Rocket className="h-4 w-4" /> {t('wm-publish')}</Button>
-    </div>
+    <div className="flex flex-wrap items-start justify-between gap-2"><div><h1 className="text-2xl font-bold">{t('web-manager')}</h1><p className="text-muted-foreground">Kelola header, tema, halaman, draft, dan preview website publik.</p></div><Button onClick={() => run(publishWebManager(), t('publish'))}><Rocket className="h-4 w-4" /> {t('wm-publish')}</Button></div>
     <Tabs active={tab} onChange={setTab} tabs={[{ id: 'nav', label: t('wm-header-nav') }, { id: 'theme', label: t('wm-theming') }, { id: 'sections', label: t('wm-sections') }]} />
 
     {tab === 'nav' && <Card><CardHeader className="flex-row items-center justify-between"><CardTitle>Header & Navigasi</CardTitle><div className="flex gap-2"><Button variant="secondary" onClick={() => run(publishNav(), t('publish'))}><Rocket className="h-4 w-4" /> Publish Menu</Button><Button onClick={() => { setNavEditing(null); setNavModal(true); }}><Plus className="h-4 w-4" /> Menu Baru</Button></div></CardHeader><CardContent className="space-y-2">{navItems.slice().sort((a, b) => a.sort_order - b.sort_order).map((n) => <div key={n.id} className="flex flex-wrap items-center gap-3 rounded-md border p-3"><div className="min-w-0 flex-1"><p className="font-medium">{n.draft?.label || n.label}</p><p className="truncate text-xs text-muted-foreground">{n.draft?.href || n.href} · order #{n.draft?.sort_order ?? n.sort_order}</p></div><Badge variant={n.state === 'draft' ? 'warning' : 'success'}>{n.state === 'draft' ? 'Draft' : 'Published'}</Badge><div className="flex items-center gap-2"><span className="text-xs text-muted-foreground">{(n.draft?.visible ?? n.visible) ? 'On' : 'Off'}</span><Switch checked={Boolean(n.draft?.visible ?? n.visible)} onCheckedChange={(v) => run(toggleNavVisibility(n.id, v))} /></div><Button variant="ghost" size="icon" onClick={() => { setNavEditing(n); setNavModal(true); }}><Pencil className="h-4 w-4" /></Button>{canDelete(role) && <Button variant="ghost" size="icon" onClick={() => confirm(t('confirmation')) && run(deleteNavItem(n.id))}><Trash2 className="h-4 w-4 text-destructive" /></Button>}</div>)}{navItems.length === 0 && <p className="text-sm text-muted-foreground">Belum ada menu.</p>}</CardContent></Card>}
 
-    {tab === 'theme' && <Card><CardHeader><CardTitle>Tampilan & Tema</CardTitle></CardHeader><CardContent className="space-y-5"><p className="text-sm text-muted-foreground">Aturan warna website: <b>60% Primary</b> untuk latar utama, <b>30% Secondary</b> untuk teks artikel dan navigasi, <b>10% Accent</b> khusus CTA utama seperti “Mulai Uji Coba Gratis”.</p><div className="grid gap-4 md:grid-cols-3">{(['primary_color', 'secondary_color', 'accent_color'] as const).map((key) => <div key={key} className="space-y-2"><Label>{key === 'primary_color' ? 'Primary · 60%' : key === 'secondary_color' ? 'Secondary · 30%' : 'Accent · 10%'}</Label><div className="flex gap-2"><input type="color" value={themeValues[key]} onChange={(e) => setThemeValues((v) => ({ ...v, [key]: e.target.value }))} className="h-10 w-12 cursor-pointer rounded border" /><Input value={themeValues[key]} onChange={(e) => setThemeValues((v) => ({ ...v, [key]: e.target.value }))} /></div></div>)}</div><div className="grid grid-cols-[3fr_1.5fr_0.5fr] overflow-hidden rounded-xl border"><div className="min-h-20 p-4" style={{ background: themeValues.primary_color, color: themeValues.secondary_color }}>60% Primary</div><div className="min-h-20 p-4" style={{ background: themeValues.secondary_color, color: themeValues.primary_color }}>30% Secondary</div><div className="min-h-20 p-4" style={{ background: themeValues.accent_color, color: '#fff' }}>10%</div></div><Select value={themeValues.font_family} onChange={(e) => setThemeValues((v) => ({ ...v, font_family: e.target.value }))}>{FONTS.map((f) => <option key={f} value={f}>{f}</option>)}</Select><div className="flex flex-wrap gap-2"><Button variant="secondary" onClick={() => run(saveThemeDraft(themeValues), t('wm-draft'))}>{t('wm-draft')}</Button><Button onClick={() => run(publishTheme(), t('publish'))}><Rocket className="h-4 w-4" /> Publish Tema</Button></div></CardContent></Card>}
+    {tab === 'theme' && <Card><CardHeader><CardTitle>Tampilan & Tema</CardTitle></CardHeader><CardContent className="space-y-5"><div className="rounded-xl border p-4"><p className="font-semibold">Sistem warna 60 / 30 / 10</p><p className="mt-1 text-sm text-muted-foreground"><b>Primary 60%</b> untuk background dan ruang utama. <b>Secondary 30%</b> untuk teks artikel dan top navigation. <b>Accent 10%</b> hanya untuk CTA utama seperti “Mulai Uji Coba Gratis”.</p></div><div className="grid gap-4 lg:grid-cols-3"><ColorField id="primary" label="Primary · 60%" value={themeValues.primary_color} onChange={(v) => setThemeValues((x) => ({ ...x, primary_color: v }))} /><ColorField id="secondary" label="Secondary · 30%" value={themeValues.secondary_color} onChange={(v) => setThemeValues((x) => ({ ...x, secondary_color: v }))} /><ColorField id="accent" label="Accent · 10% · CTA saja" value={themeValues.accent_color} onChange={(v) => setThemeValues((x) => ({ ...x, accent_color: v }))} /></div><div className="grid grid-cols-[3fr_1.5fr_0.5fr] overflow-hidden rounded-xl border"><div className="min-h-20 p-4" style={{ background: themeValues.primary_color, color: themeValues.secondary_color }}>60% Primary</div><div className="min-h-20 p-4" style={{ background: themeValues.secondary_color, color: themeValues.primary_color }}>30% Secondary</div><div className="min-h-20 p-4" style={{ background: themeValues.accent_color, color: '#fff' }}>CTA</div></div><Select value={themeValues.font_family} onChange={(e) => setThemeValues((v) => ({ ...v, font_family: e.target.value }))}>{FONTS.map((f) => <option key={f} value={f}>{f}</option>)}</Select><div className="flex flex-wrap gap-2"><Button variant="secondary" onClick={() => run(saveThemeDraft(themeValues), t('wm-draft'))}>{t('wm-draft')}</Button><Button onClick={() => run(publishTheme(), t('publish'))}><Rocket className="h-4 w-4" /> Publish Tema</Button></div></CardContent></Card>}
 
     {tab === 'sections' && <div className="grid grid-cols-1 gap-4 xl:grid-cols-2"><Card><CardHeader className="flex-row items-center justify-between"><div className="flex items-center gap-2"><CardTitle>Editor Halaman</CardTitle><Select value={page} onChange={(e) => setPage(e.target.value)} className="w-auto">{pages.map((p) => <option key={p} value={p}>{p}</option>)}</Select></div><div className="flex gap-2"><Button variant="secondary" onClick={() => run(publishSections(page), t('publish'))}><Rocket className="h-4 w-4" /></Button><Button onClick={() => { setSecEditing(null); setSecModal(true); }}><Plus className="h-4 w-4" /></Button></div></CardHeader><CardContent className="space-y-2">{pageSections.map((s) => <div key={s.id} className="flex flex-wrap items-center gap-3 rounded-md border p-3"><div className="min-w-0 flex-1"><p className="font-medium capitalize">{s.type.replace('_', ' ')}</p><p className="text-xs text-muted-foreground">order #{s.sort_order} · {s.draft_deleted ? 'deleted draft' : s.published ? 'published' : 'draft'}</p></div><Switch checked={s.enabled && !s.draft_deleted} onCheckedChange={(v) => run(saveSectionDraft({ id: s.id, page: s.page, type: s.type, sort_order: s.sort_order, content: s.content, enabled: v }))} /><Button variant="ghost" size="icon" onClick={() => { setSecEditing(s); setSecModal(true); }}><Pencil className="h-4 w-4" /></Button>{canDelete(role) && <Button variant="ghost" size="icon" onClick={() => confirm(t('confirmation')) && run(deleteSection(s.id))}><Trash2 className="h-4 w-4 text-destructive" /></Button>}</div>)}{pageSections.length === 0 && <p className="text-sm text-muted-foreground">Belum ada section.</p>}</CardContent></Card><Card className="sticky top-20 self-start"><CardHeader className="flex-row items-center justify-between"><CardTitle className="flex items-center gap-2"><Eye className="h-4 w-4" /> Preview Draft</CardTitle><Button variant="ghost" size="icon" onClick={() => setPreviewKey((k) => k + 1)}><Eye className="h-4 w-4" /></Button></CardHeader><CardContent>{previewPath ? <iframe key={`${previewPath}-${previewKey}`} src={previewPath} className="h-[620px] w-full rounded-lg border bg-white" title="Preview Draft" /> : <div className="flex h-[620px] items-center justify-center rounded-lg border text-sm text-muted-foreground">Website publik belum tersedia.</div>}<p className="mt-2 text-xs text-muted-foreground">Preview selalu membaca draft terbaru. Publish diperlukan untuk website publik.</p></CardContent></Card></div>}
 
@@ -75,13 +104,7 @@ function SectionForm({ initial, page, onSave, onCancel }: { initial: any; page: 
   const [body, setBody] = React.useState(c.body || '');
   const [ctaLabel, setCtaLabel] = React.useState(c.cta_label || '');
   const [ctaHref, setCtaHref] = React.useState(c.cta_href || '/tentang');
-  const [mediaKind, setMediaKind] = React.useState(c.media_kind || 'image');
-  const [mediaUrl, setMediaUrl] = React.useState(c.media_url || '');
-  const [ratio, setRatio] = React.useState(c.ratio || '16:9');
-  const [mediaSize, setMediaSize] = React.useState(Number(c.media_size || 100));
-  const [mediaRadius, setMediaRadius] = React.useState(Number(c.media_radius ?? 16));
-  const [mediaPosition, setMediaPosition] = React.useState(c.media_position || 'center');
-  const [mediaLayer, setMediaLayer] = React.useState(c.media_layer || 'front');
+  const [mediaItems, setMediaItems] = React.useState<SectionMediaItem[]>(() => normalizeMediaItems(c));
   const [bgImage, setBgImage] = React.useState(c.bg_image || '');
   const [titleSize, setTitleSize] = React.useState(Number(c.title_font_size || 40));
   const [subtitleSize, setSubtitleSize] = React.useState(Number(c.subtitle_font_size || 20));
@@ -96,10 +119,13 @@ function SectionForm({ initial, page, onSave, onCancel }: { initial: any; page: 
   const [lng, setLng] = React.useState(c.lng ?? '');
   const [mapsEmbed, setMapsEmbed] = React.useState(c.maps_embed || '');
 
+  function updateMedia(id: string, patch: Partial<SectionMediaItem>) { setMediaItems((items) => items.map((m) => m.id === id ? { ...m, ...patch } : m)); }
+  function addMedia() { setMediaItems((items) => [...items, { id: `media-${Date.now()}-${items.length + 1}`, kind: 'image', url: '', ratio: '16:9', size: 100, radius: 16, position: 'center', layer: 'front', autoplay: false, title: '' }]); }
+  function removeMedia(id: string) { setMediaItems((items) => items.filter((m) => m.id !== id)); }
+
   const content = {
     ...c, title, subtitle, body, cta_label: ctaLabel, cta_href: ctaHref,
-    media_kind: mediaKind, media_url: mediaUrl, ratio, media_size: mediaSize,
-    media_radius: mediaRadius, media_position: mediaPosition, media_layer: mediaLayer,
+    media_items: mediaItems.map(({ id, ...m }) => m),
     bg_image: bgImage, title_font_size: titleSize, subtitle_font_size: subtitleSize,
     body_font_size: bodySize, cta_font_size: ctaSize, limit, address, hours,
     maps_embed: mapsEmbed, lat: lat === '' ? null : Number(lat), lng: lng === '' ? null : Number(lng),
@@ -115,13 +141,11 @@ function SectionForm({ initial, page, onSave, onCancel }: { initial: any; page: 
       {type === 'info_lokasi' && <><Label>Alamat<Input value={address} onChange={(e) => setAddress(e.target.value)} /></Label><Label>Jam ibadah<Input value={hours} onChange={(e) => setHours(e.target.value)} /></Label><div className="grid grid-cols-2 gap-2"><Input value={lat} onChange={(e) => setLat(e.target.value)} placeholder="Latitude" /><Input value={lng} onChange={(e) => setLng(e.target.value)} placeholder="Longitude" /></div></>}
       {type === 'map' && <><Label>Judul<Input value={title} onChange={(e) => setTitle(e.target.value)} /></Label><Label>Google Maps URL / Embed<Input value={mapsEmbed} onChange={(e) => setMapsEmbed(e.target.value)} /></Label><div className="grid grid-cols-2 gap-2"><Input value={lat} onChange={(e) => setLat(e.target.value)} placeholder="Latitude" /><Input value={lng} onChange={(e) => setLng(e.target.value)} placeholder="Longitude" /></div></>}
 
-      <div className="rounded-xl border p-4 space-y-4"><div className="flex items-center gap-2 font-semibold"><ImageIcon className="h-4 w-4" /> Media Section <span className="text-xs font-normal text-muted-foreground">(tersedia di semua tipe section)</span></div><div className="grid grid-cols-2 gap-3"><Label>Jenis<Select value={mediaKind} onChange={(e) => setMediaKind(e.target.value)}><option value="image">Foto</option><option value="video">Video</option></Select></Label><Label>Rasio<Select value={ratio} onChange={(e) => setRatio(e.target.value)}>{RATIOS.map((x) => <option key={x}>{x}</option>)}</Select></Label></div><Label>URL Media<Input value={mediaUrl} onChange={(e) => setMediaUrl(e.target.value)} placeholder="https://..." /></Label><div className="grid grid-cols-2 gap-3"><Label>Ukuran %<Input type="number" min="1" max="100" value={mediaSize} onChange={(e) => setMediaSize(Number(e.target.value))} /></Label><Label>Radius px<Input type="number" min="0" max="100" value={mediaRadius} onChange={(e) => setMediaRadius(Number(e.target.value))} /></Label></div><div className="grid grid-cols-2 gap-3"><Label>Posisi<Select value={mediaPosition} onChange={(e) => setMediaPosition(e.target.value)}>{POSITIONS.map((x) => <option key={x}>{x}</option>)}</Select></Label><Label>Layer<Select value={mediaLayer} onChange={(e) => setMediaLayer(e.target.value)}><option value="front">Di depan konten</option><option value="overlay">Overlay di belakang konten</option></Select></Label></div></div>
+      <div className="rounded-xl border p-4 space-y-4"><div className="flex flex-wrap items-center justify-between gap-2"><div className="flex items-center gap-2 font-semibold"><ImageIcon className="h-4 w-4" /> Media Section <span className="text-xs font-normal text-muted-foreground">({mediaItems.length} media)</span></div><Button type="button" size="sm" onClick={addMedia}><Plus className="h-4 w-4" /> Tambah Media</Button></div><p className="text-xs text-muted-foreground">Setiap section dapat memiliki beberapa media. Masing-masing media punya ukuran, rasio, posisi, layer, radius, dan autoplay video sendiri.</p>{mediaItems.length === 0 && <div className="rounded-lg border border-dashed p-5 text-center text-sm text-muted-foreground">Belum ada media. Klik “Tambah Media”.</div>}{mediaItems.map((m, index) => <div key={m.id} className="space-y-3 rounded-xl border bg-muted/10 p-3"><div className="flex items-center justify-between"><div className="flex items-center gap-2 text-sm font-medium"><GripVertical className="h-4 w-4 text-muted-foreground" /> Media #{index + 1}</div><Button type="button" variant="ghost" size="icon" onClick={() => removeMedia(m.id)}><X className="h-4 w-4 text-destructive" /></Button></div><div className="grid grid-cols-2 gap-3"><Label>Jenis<Select value={m.kind} onChange={(e) => updateMedia(m.id, { kind: e.target.value as 'image' | 'video', autoplay: e.target.value === 'video' ? m.autoplay : false })}><option value="image">Foto</option><option value="video">Video</option></Select></Label><Label>Rasio<Select value={m.ratio} onChange={(e) => updateMedia(m.id, { ratio: e.target.value })}>{RATIOS.map((x) => <option key={x}>{x}</option>)}</Select></Label></div><Label>URL Media<Input value={m.url} onChange={(e) => updateMedia(m.id, { url: e.target.value })} placeholder="https://..." /></Label><div className="grid grid-cols-2 gap-3"><Label>Ukuran %<Input type="number" min="1" max="100" value={m.size} onChange={(e) => updateMedia(m.id, { size: Number(e.target.value) })} /></Label><Label>Radius px<Input type="number" min="0" max="100" value={m.radius} onChange={(e) => updateMedia(m.id, { radius: Number(e.target.value) })} /></Label></div><div className="grid grid-cols-2 gap-3"><Label>Posisi<Select value={m.position} onChange={(e) => updateMedia(m.id, { position: e.target.value })}>{POSITIONS.map((x) => <option key={x}>{x}</option>)}</Select></Label><Label>Layer<Select value={m.layer} onChange={(e) => updateMedia(m.id, { layer: e.target.value as 'front' | 'overlay' })}><option value="front">Di depan konten</option><option value="overlay">Overlay di belakang konten</option></Select></Label></div>{m.kind === 'video' && <label className="flex items-center gap-2 rounded-lg border p-3 text-sm"><Switch checked={m.autoplay} onCheckedChange={(v) => updateMedia(m.id, { autoplay: v })} /><span><b>Autoplay video</b><span className="block text-xs text-muted-foreground">On = video mencoba play otomatis; Off = manual.</span></span></label>}</div>)}</div>
 
       <div className="rounded-xl border p-4 space-y-4"><p className="font-semibold">Tipografi</p><div className="grid grid-cols-2 gap-3"><Label>Ukuran Judul px<Input type="number" min="12" max="96" value={titleSize} onChange={(e) => setTitleSize(Number(e.target.value))} /></Label><Label>Ukuran Subtitle px<Input type="number" min="10" max="48" value={subtitleSize} onChange={(e) => setSubtitleSize(Number(e.target.value))} /></Label><Label>Ukuran Isi px<Input type="number" min="10" max="36" value={bodySize} onChange={(e) => setBodySize(Number(e.target.value))} /></Label><Label>Ukuran CTA px<Input type="number" min="10" max="32" value={ctaSize} onChange={(e) => setCtaSize(Number(e.target.value))} /></Label></div></div>
-
-      <div className="flex items-center justify-between rounded-lg border p-3"><span className="text-sm">Section aktif</span><Switch checked={enabled} onCheckedChange={setEnabled} /></div>
-      <div className="flex justify-end gap-2"><Button type="button" variant="secondary" onClick={onCancel}>{'Batal'}</Button><Button type="button" onClick={() => onSave({ id: initial?.id, page, type, sort_order: sortOrder, content, enabled })}>{'Simpan Draft'}</Button></div>
+      <div className="flex items-center justify-between rounded-lg border p-3"><span className="text-sm">Section aktif</span><Switch checked={enabled} onCheckedChange={setEnabled} /></div><div className="flex justify-end gap-2"><Button type="button" variant="secondary" onClick={onCancel}>Batal</Button><Button type="button" onClick={() => onSave({ id: initial?.id, page, type, sort_order: sortOrder, content, enabled })}>Simpan Draft</Button></div>
     </div>
-    <div className="rounded-xl border bg-muted/20 p-4"><p className="mb-3 text-sm font-semibold">Preview Media</p>{mediaUrl ? <MediaFrame item={{ id: 0, kind: mediaKind, url: mediaUrl, ratio, layer: mediaLayer, position: mediaPosition, title } as any} /> : <div className="flex aspect-video items-center justify-center rounded-lg border text-sm text-muted-foreground">Masukkan URL media untuk preview</div>}<p className="mt-3 text-xs text-muted-foreground">Media ini melekat pada section yang sedang diedit, bukan gallery global.</p></div>
+    <div className="rounded-xl border bg-muted/20 p-4"><p className="mb-3 text-sm font-semibold">Preview Media</p>{mediaItems.filter((m) => m.url).length ? <div className="space-y-4">{mediaItems.filter((m) => m.url).map((m) => <MediaFrame key={m.id} item={{ id: 0, kind: m.kind, url: m.url, ratio: m.ratio, layer: m.layer, position: m.position, title: m.title, autoplay: m.autoplay } as any} />)}</div> : <div className="flex aspect-video items-center justify-center rounded-lg border text-sm text-muted-foreground">Tambahkan URL media untuk preview</div>}<p className="mt-3 text-xs text-muted-foreground">Media melekat pada section yang sedang diedit, bukan gallery global.</p></div>
   </div>;
 }

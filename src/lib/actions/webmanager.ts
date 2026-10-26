@@ -9,18 +9,27 @@ async function guardWM() {
   return requireRole((r: Role) => canUseWebManager(r), 'Web Manager hanya untuk Admin/Superadmin');
 }
 
-// ---------- TAB 1: HEADER & NAVIGASI ----------
-export async function saveNavItem(input: { id?: number; label: string; href: string; visible: boolean; sort_order: number }) {
+function revalidateWM() {
+  revalidatePath('/dashboard/web-manager');
+  revalidatePath('/');
+}
+
+// ---------- HEADER & NAVIGASI ----------
+export type NavInput = { id?: number; label: string; href: string; visible: boolean; sort_order: number };
+
+export async function saveNavItem(input: NavInput) {
   const { denied } = await guardWM();
   if (denied) return { ok: false, error: denied };
   const supabase = await createClient();
-  const payload = { label: input.label, href: input.href, visible: input.visible, sort_order: input.sort_order };
+  const draft = { label: input.label, href: input.href, visible: input.visible, sort_order: input.sort_order };
   let error;
-  if (input.id) ({ error } = await supabase.from('site_nav_items').update(payload).eq('id', input.id));
-  else ({ error } = await supabase.from('site_nav_items').insert({ ...payload, state: 'published' }));
+  if (input.id) {
+    ({ error } = await supabase.from('site_nav_items').update({ ...draft, draft, state: 'draft' }).eq('id', input.id));
+  } else {
+    ({ error } = await supabase.from('site_nav_items').insert({ ...draft, draft, published: null, state: 'draft' }));
+  }
   if (error) return { ok: false, error: error.message };
-  revalidatePath('/dashboard/web-manager');
-  revalidatePath('/');
+  revalidateWM();
   return { ok: true };
 }
 
@@ -28,10 +37,13 @@ export async function toggleNavVisibility(id: number, visible: boolean) {
   const { denied } = await guardWM();
   if (denied) return { ok: false, error: denied };
   const supabase = await createClient();
-  const { error } = await supabase.from('site_nav_items').update({ visible }).eq('id', id);
+  const { data, error: readError } = await supabase.from('site_nav_items').select('label,href,sort_order,draft').eq('id', id).maybeSingle();
+  if (readError || !data) return { ok: false, error: readError?.message || 'Menu tidak ditemukan' };
+  const current = (data.draft || { label: data.label, href: data.href, sort_order: data.sort_order }) as NavInput;
+  const draft = { label: current.label, href: current.href, visible, sort_order: current.sort_order };
+  const { error } = await supabase.from('site_nav_items').update({ ...draft, draft, state: 'draft' }).eq('id', id);
   if (error) return { ok: false, error: error.message };
-  revalidatePath('/dashboard/web-manager');
-  revalidatePath('/');
+  revalidateWM();
   return { ok: true };
 }
 
@@ -39,22 +51,54 @@ export async function deleteNavItem(id: number) {
   const { denied } = await requireRole((r: Role) => canDelete(r), 'Hanya Superadmin');
   if (denied) return { ok: false, error: denied };
   const supabase = await createClient();
-  const { error } = await supabase.from('site_nav_items').delete().eq('id', id);
-  if (error) return { ok: false, error: error.message };
-  revalidatePath('/dashboard/web-manager');
-  revalidatePath('/');
+  const { data, error: readError } = await supabase.from('site_nav_items').select('published').eq('id', id).maybeSingle();
+  if (readError || !data) return { ok: false, error: readError?.message || 'Menu tidak ditemukan' };
+  if (!data.published) {
+    const { error } = await supabase.from('site_nav_items').delete().eq('id', id);
+    if (error) return { ok: false, error: error.message };
+  } else {
+    const { error } = await supabase.from('site_nav_items').update({ draft: null, state: 'draft' }).eq('id', id);
+    if (error) return { ok: false, error: error.message };
+  }
+  revalidateWM();
   return { ok: true };
 }
 
-// ---------- TAB 2: TEMA & MEDIA ----------
-export async function saveThemeDraft(theme: { primary_color: string; font_family: string }) {
+export async function publishNav() {
   const { denied } = await guardWM();
   if (denied) return { ok: false, error: denied };
   const supabase = await createClient();
-  const { error } = await supabase.from('site_theme')
-    .update({ ...theme, draft: theme, state: 'draft' }).eq('id', 1);
+  const { data: items, error } = await supabase.from('site_nav_items').select('*').order('sort_order').order('id');
   if (error) return { ok: false, error: error.message };
-  revalidatePath('/dashboard/web-manager');
+  for (const item of items || []) {
+    if (!item.draft) {
+      const { error: deleteError } = await supabase.from('site_nav_items').delete().eq('id', item.id);
+      if (deleteError) return { ok: false, error: deleteError.message };
+      continue;
+    }
+    const draft = item.draft as NavInput;
+    const { error: updateError } = await supabase.from('site_nav_items').update({ ...draft, published: draft, state: 'published' }).eq('id', item.id);
+    if (updateError) return { ok: false, error: updateError.message };
+  }
+  revalidateWM();
+  return { ok: true };
+}
+
+// ---------- TEMA ----------
+export type ThemeInput = { primary_color: string; secondary_color: string; accent_color: string; font_family: string };
+
+export async function saveThemeDraft(theme: ThemeInput) {
+  const { denied } = await guardWM();
+  if (denied) return { ok: false, error: denied };
+  const supabase = await createClient();
+  const { error } = await supabase.from('site_theme').update({
+    primary_color: theme.primary_color,
+    font_family: theme.font_family,
+    draft: theme,
+    state: 'draft',
+  }).eq('id', 1);
+  if (error) return { ok: false, error: error.message };
+  revalidateWM();
   return { ok: true };
 }
 
@@ -62,17 +106,27 @@ export async function publishTheme() {
   const { denied } = await guardWM();
   if (denied) return { ok: false, error: denied };
   const supabase = await createClient();
-  const { data: theme } = await supabase.from('site_theme').select('*').eq('id', 1).single();
-  if (!theme) return { ok: false, error: 'Tema tidak ditemukan' };
-  const published = { primary_color: theme.primary_color, font_family: theme.font_family };
-  const { error } = await supabase.from('site_theme')
-    .update({ published, state: 'published' }).eq('id', 1);
+  const { data: theme, error: readError } = await supabase.from('site_theme').select('*').eq('id', 1).single();
+  if (readError || !theme) return { ok: false, error: readError?.message || 'Tema tidak ditemukan' };
+  const published = (theme.draft || theme.published || {
+    primary_color: theme.primary_color,
+    secondary_color: theme.primary_color,
+    accent_color: theme.primary_color,
+    font_family: theme.font_family,
+  }) as ThemeInput;
+  const { error } = await supabase.from('site_theme').update({
+    primary_color: published.primary_color,
+    font_family: published.font_family,
+    published,
+    draft: published,
+    state: 'published',
+  }).eq('id', 1);
   if (error) return { ok: false, error: error.message };
-  revalidatePath('/dashboard/web-manager');
-  revalidatePath('/');
+  revalidateWM();
   return { ok: true };
 }
 
+// ---------- MEDIA ----------
 export interface MediaInput {
   id?: number; kind: 'image' | 'video' | 'map'; url: string; ratio: string;
   layer: 'front' | 'overlay'; position: string; title?: string;
@@ -92,8 +146,7 @@ export async function saveMedia(input: MediaInput) {
   if (input.id) ({ error } = await supabase.from('site_media').update(payload).eq('id', input.id));
   else ({ error } = await supabase.from('site_media').insert({ ...payload, state: 'published' }));
   if (error) return { ok: false, error: error.message };
-  revalidatePath('/dashboard/web-manager');
-  revalidatePath('/');
+  revalidateWM();
   return { ok: true };
 }
 
@@ -103,46 +156,51 @@ export async function deleteMedia(id: number) {
   const supabase = await createClient();
   const { error } = await supabase.from('site_media').delete().eq('id', id);
   if (error) return { ok: false, error: error.message };
-  revalidatePath('/dashboard/web-manager');
-  revalidatePath('/');
+  revalidateWM();
   return { ok: true };
 }
 
-// ---------- TAB 3: SECTION BUILDER ----------
+// ---------- SECTION BUILDER ----------
 export interface SectionInput {
   id?: number; page: string; type: string; sort_order: number;
   content: Record<string, any>; enabled: boolean;
 }
 
-/** Simpan sebagai DRAFT — publik tidak berubah sampai Publish */
 export async function saveSectionDraft(input: SectionInput) {
   const { denied } = await guardWM();
   if (denied) return { ok: false, error: denied };
   const supabase = await createClient();
   const payload = {
     page: input.page, type: input.type, sort_order: input.sort_order,
-    content: input.content, enabled: input.enabled, updated_at: new Date().toISOString(),
+    content: input.content, enabled: input.enabled, draft_deleted: false,
+    updated_at: new Date().toISOString(),
   };
   let error;
   if (input.id) ({ error } = await supabase.from('site_sections').update(payload).eq('id', input.id));
   else ({ error } = await supabase.from('site_sections').insert(payload));
   if (error) return { ok: false, error: error.message };
-  revalidatePath('/dashboard/web-manager');
+  revalidateWM();
   return { ok: true };
 }
 
-/** Publish semua draft section pada satu halaman */
 export async function publishSections(page: string) {
   const { denied } = await guardWM();
   if (denied) return { ok: false, error: denied };
   const supabase = await createClient();
-  const { data: sections } = await supabase.from('site_sections').select('*').eq('page', page);
+  const { data: sections, error } = await supabase.from('site_sections').select('*').eq('page', page);
+  if (error) return { ok: false, error: error.message };
   for (const s of sections || []) {
-    await supabase.from('site_sections').update({ published: s.content }).eq('id', s.id);
+    if (s.draft_deleted) {
+      const { error: updateError } = await supabase.from('site_sections').update({ published: null, enabled: false, draft_deleted: false }).eq('id', s.id);
+      if (updateError) return { ok: false, error: updateError.message };
+      continue;
+    }
+    const { error: updateError } = await supabase.from('site_sections').update({ published: s.content }).eq('id', s.id);
+    if (updateError) return { ok: false, error: updateError.message };
   }
   revalidatePath('/dashboard/web-manager');
   revalidatePath('/');
-  revalidatePath(`/${page === 'home' ? '' : page}`);
+  revalidatePath(`/site`, 'layout');
   return { ok: true };
 }
 
@@ -150,8 +208,15 @@ export async function deleteSection(id: number) {
   const { denied } = await requireRole((r: Role) => canDelete(r), 'Hanya Superadmin');
   if (denied) return { ok: false, error: denied };
   const supabase = await createClient();
-  const { error } = await supabase.from('site_sections').delete().eq('id', id);
-  if (error) return { ok: false, error: error.message };
-  revalidatePath('/dashboard/web-manager');
+  const { data, error: readError } = await supabase.from('site_sections').select('published').eq('id', id).maybeSingle();
+  if (readError || !data) return { ok: false, error: readError?.message || 'Section tidak ditemukan' };
+  if (!data.published) {
+    const { error } = await supabase.from('site_sections').delete().eq('id', id);
+    if (error) return { ok: false, error: error.message };
+  } else {
+    const { error } = await supabase.from('site_sections').update({ draft_deleted: true }).eq('id', id);
+    if (error) return { ok: false, error: error.message };
+  }
+  revalidateWM();
   return { ok: true };
 }

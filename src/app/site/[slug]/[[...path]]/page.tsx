@@ -8,7 +8,7 @@ import { canUseWebManager, type Role } from '@/lib/rbac';
 import { SectionRenderer } from '@/components/public/section-renderer';
 
 export const dynamic = 'force-dynamic';
-type Props = { params: { slug: string; path?: string[] }; searchParams?: { preview?: string } };
+type Props = { params: { slug: string; path?: string[] }; searchParams?: { preview?: string; v?: string } };
 function publicHref(base: string, href: string) { if (!href || href === '/') return base; if (/^https?:\/\//i.test(href)) return href; return `${base}${href.startsWith('/') ? href : `/${href}`}`; }
 async function getChurch(slug: string) { const admin = createAdminClient(); const { data } = await admin.from('churches').select('id,slug,nama,alamat,kota,telepon,email').eq('slug', slug).maybeSingle(); return data; }
 export async function generateMetadata({ params }: Props): Promise<Metadata> { const church = await getChurch(params.slug); if (!church) return { title: 'Gereja tidak ditemukan' }; return { title: church.nama, description: `Website resmi ${church.nama}` }; }

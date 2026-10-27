@@ -8,7 +8,7 @@
     --foreground: 0 0% 100%;
     --card: 222 18% 12%;             /* #1A1D24 */
     --card-foreground: 0 0% 100%;
-    --primary: 187 100% 50%;         /* #00E5FF cyan accent */
+    --primary: 187 100% 50%;         /* #00E5FF */
     --primary-foreground: 222 25% 7%;
     --secondary: 220 13% 20%;
     --secondary-foreground: 214 32% 91%;
@@ -31,15 +31,13 @@
   html { color-scheme: dark; }
 }
 
-/* Scrollbar halus */
 ::-webkit-scrollbar { width: 8px; height: 8px; }
 ::-webkit-scrollbar-thumb { background: hsl(var(--border)); border-radius: 4px; }
 
-/* Aspect ratio media dinamis */
-.media-frame { position: relative; width: 100%; overflow: hidden; border-radius: var(--radius); background: hsl(var(--card)); }
+/* Media frames stay transparent until real media is present. */
+.media-frame { position: relative; width: 100%; overflow: hidden; border-radius: var(--radius); background: transparent; }
 .media-frame > * { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 
-/* posisi media */
 .pos-top { object-position: top; }
 .pos-bottom { object-position: bottom; }
 .pos-left { object-position: left; }

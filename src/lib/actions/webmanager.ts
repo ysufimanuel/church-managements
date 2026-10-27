@@ -8,7 +8,7 @@ import { canUseWebManager, canDelete, type Role } from '@/lib/rbac';
 async function guardWM() {
   return requireRole((r: Role) => canUseWebManager(r), 'Web Manager hanya untuk Admin/Superadmin');
 }
-function revalidateWM() { revalidatePath('/dashboard/web-manager'); revalidatePath('/'); }
+function revalidateWM() { revalidatePath('/dashboard/web-manager'); revalidatePath('/'); revalidatePath('/site/[slug]', 'page'); }
 
 export type NavInput = { id?: number; label: string; href: string; visible: boolean; sort_order: number };
 

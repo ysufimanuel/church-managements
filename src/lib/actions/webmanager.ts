@@ -54,14 +54,14 @@ export async function publishNav() {
 export type ThemeInput = { primary_color: string; secondary_color: string; accent_color: string; font_family: string };
 export async function saveThemeDraft(theme: ThemeInput) {
   const { denied } = await guardWM(); if (denied) return { ok: false, error: denied }; const supabase = await createClient();
-  const { error } = await supabase.from('site_theme').update({ primary_color: theme.primary_color, secondary_color: theme.secondary_color, accent_color: theme.accent_color, font_family: theme.font_family, draft: theme, state: 'draft' }).eq('id', 1);
+  const { error } = await supabase.from('site_theme').update({ primary_color: theme.primary_color, font_family: theme.font_family, draft: theme, state: 'draft' }).eq('id', 1);
   if (error) return { ok: false, error: error.message }; revalidateWM(); return { ok: true };
 }
 export async function publishTheme() {
   const { denied } = await guardWM(); if (denied) return { ok: false, error: denied }; const supabase = await createClient();
   const { data: theme, error: readError } = await supabase.from('site_theme').select('*').eq('id', 1).single(); if (readError || !theme) return { ok: false, error: readError?.message || 'Tema tidak ditemukan' };
   const published = (theme.draft || theme.published || { primary_color: theme.primary_color, secondary_color: theme.secondary_color, accent_color: theme.accent_color, font_family: theme.font_family }) as ThemeInput;
-  const result = await supabase.from('site_theme').update({ primary_color: published.primary_color, secondary_color: published.secondary_color, accent_color: published.accent_color, font_family: published.font_family, published, draft: published, state: 'published' }).eq('id', 1).select('id');
+  const result = await supabase.from('site_theme').update({ primary_color: published.primary_color, font_family: published.font_family, published, draft: published, state: 'published' }).eq('id', 1).select('id');
   if (result.error) return { ok: false, error: result.error.message };
   if (!result.data?.length) return { ok: false, error: 'Gagal publish tema: tidak ada row yang ter-update' };
   revalidateWM(); return { ok: true };

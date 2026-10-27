@@ -2,18 +2,22 @@ import type { Metadata } from 'next';
 import type { CSSProperties } from 'react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { unstable_noStore } from 'next/cache';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { getCurrentProfile } from '@/lib/supabase/server';
 import { canUseWebManager, type Role } from '@/lib/rbac';
 import { SectionRenderer } from '@/components/public/section-renderer';
 
 export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+export const fetchCache = 'force-no-store';
 type Props = { params: { slug: string; path?: string[] }; searchParams?: { preview?: string; v?: string } };
 function publicHref(base: string, href: string) { if (!href || href === '/') return base; if (/^https?:\/\//i.test(href)) return href; return `${base}${href.startsWith('/') ? href : `/${href}`}`; }
 async function getChurch(slug: string) { const admin = createAdminClient(); const { data } = await admin.from('churches').select('id,slug,nama,alamat,kota,telepon,email').eq('slug', slug).maybeSingle(); return data; }
 export async function generateMetadata({ params }: Props): Promise<Metadata> { const church = await getChurch(params.slug); if (!church) return { title: 'Gereja tidak ditemukan' }; return { title: church.nama, description: `Website resmi ${church.nama}` }; }
 
 export default async function PublicChurchPage({ params, searchParams }: Props) {
+  unstable_noStore();
   const church = await getChurch(params.slug); if (!church) notFound();
   const previewRequested = searchParams?.preview === 'draft'; let preview = false;
   if (previewRequested) { const profile = await getCurrentProfile(); if (!profile || profile.church_id !== church.id || !canUseWebManager(profile.role as Role)) notFound(); preview = true; }

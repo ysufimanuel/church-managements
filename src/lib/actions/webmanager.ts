@@ -43,7 +43,10 @@ export async function publishNav() {
   if (error) return { ok: false, error: error.message };
   for (const item of items || []) {
     if (!item.draft) { const r = await supabase.from('site_nav_items').delete().eq('id', item.id); if (r.error) return { ok: false, error: r.error.message }; continue; }
-    const draft = item.draft as NavInput; const r = await supabase.from('site_nav_items').update({ ...draft, published: draft, state: 'published' }).eq('id', item.id); if (r.error) return { ok: false, error: r.error.message };
+    const draft = item.draft as NavInput;
+    const r = await supabase.from('site_nav_items').update({ ...draft, published: draft, state: 'published' }).eq('id', item.id).select('id');
+    if (r.error) return { ok: false, error: r.error.message };
+    if (!r.data?.length) return { ok: false, error: `Gagal publish menu #${item.id}: tidak ada row yang ter-update` };
   }
   revalidateWM(); return { ok: true };
 }
@@ -51,15 +54,17 @@ export async function publishNav() {
 export type ThemeInput = { primary_color: string; secondary_color: string; accent_color: string; font_family: string };
 export async function saveThemeDraft(theme: ThemeInput) {
   const { denied } = await guardWM(); if (denied) return { ok: false, error: denied }; const supabase = await createClient();
-  const { error } = await supabase.from('site_theme').update({ primary_color: theme.primary_color, font_family: theme.font_family, draft: theme, state: 'draft' }).eq('id', 1);
+  const { error } = await supabase.from('site_theme').update({ primary_color: theme.primary_color, secondary_color: theme.secondary_color, accent_color: theme.accent_color, font_family: theme.font_family, draft: theme, state: 'draft' }).eq('id', 1);
   if (error) return { ok: false, error: error.message }; revalidateWM(); return { ok: true };
 }
 export async function publishTheme() {
   const { denied } = await guardWM(); if (denied) return { ok: false, error: denied }; const supabase = await createClient();
   const { data: theme, error: readError } = await supabase.from('site_theme').select('*').eq('id', 1).single(); if (readError || !theme) return { ok: false, error: readError?.message || 'Tema tidak ditemukan' };
-  const published = (theme.draft || theme.published || { primary_color: theme.primary_color, secondary_color: theme.primary_color, accent_color: theme.primary_color, font_family: theme.font_family }) as ThemeInput;
-  const { error } = await supabase.from('site_theme').update({ primary_color: published.primary_color, font_family: published.font_family, published, draft: published, state: 'published' }).eq('id', 1);
-  if (error) return { ok: false, error: error.message }; revalidateWM(); return { ok: true };
+  const published = (theme.draft || theme.published || { primary_color: theme.primary_color, secondary_color: theme.secondary_color, accent_color: theme.accent_color, font_family: theme.font_family }) as ThemeInput;
+  const result = await supabase.from('site_theme').update({ primary_color: published.primary_color, secondary_color: published.secondary_color, accent_color: published.accent_color, font_family: published.font_family, published, draft: published, state: 'published' }).eq('id', 1).select('id');
+  if (result.error) return { ok: false, error: result.error.message };
+  if (!result.data?.length) return { ok: false, error: 'Gagal publish tema: tidak ada row yang ter-update' };
+  revalidateWM(); return { ok: true };
 }
 
 export interface MediaInput { id?: number; kind: 'image' | 'video' | 'map'; url: string; ratio: string; layer: 'front' | 'overlay'; position: string; title?: string; lat?: number | null; lng?: number | null; sort_order?: number; }
@@ -80,19 +85,30 @@ export async function saveSectionDraft(input: SectionInput) {
 }
 export async function publishSections(page: string) {
   const { denied } = await guardWM(); if (denied) return { ok: false, error: denied }; const supabase = await createClient();
-  const { data: sections, error } = await supabase.from('site_sections').select('*').eq('page', page); if (error) return { ok: false, error: error.message };
-  for (const s of sections || []) { const r = s.draft_deleted ? await supabase.from('site_sections').update({ published: null, enabled: false, draft_deleted: false }).eq('id', s.id) : await supabase.from('site_sections').update({ published: s.content }).eq('id', s.id); if (r.error) return { ok: false, error: r.error.message }; }
+  const { data: sections, error } = await supabase.from('site_sections').select('id,content,draft_deleted').eq('page', page); if (error) return { ok: false, error: error.message };
+  for (const s of sections || []) {
+    const result = s.draft_deleted
+      ? await supabase.from('site_sections').update({ published: null, enabled: false, draft_deleted: false }).eq('id', s.id).select('id')
+      : await supabase.from('site_sections').update({ published: s.content }).eq('id', s.id).select('id');
+    if (result.error) return { ok: false, error: result.error.message };
+    if (!result.data?.length) return { ok: false, error: `Gagal publish section #${s.id}: tidak ada row yang ter-update` };
+  }
   revalidateWM(); return { ok: true };
 }
 export async function publishAllSections() {
   const { denied } = await guardWM(); if (denied) return { ok: false, error: denied }; const supabase = await createClient();
-  const { data: sections, error } = await supabase.from('site_sections').select('*'); if (error) return { ok: false, error: error.message };
-  for (const s of sections || []) { const r = s.draft_deleted ? await supabase.from('site_sections').update({ published: null, enabled: false, draft_deleted: false }).eq('id', s.id) : await supabase.from('site_sections').update({ published: s.content }).eq('id', s.id); if (r.error) return { ok: false, error: r.error.message }; }
+  const { data: sections, error } = await supabase.from('site_sections').select('id,content,draft_deleted').order('id'); if (error) return { ok: false, error: error.message };
+  for (const s of sections || []) {
+    const result = s.draft_deleted
+      ? await supabase.from('site_sections').update({ published: null, enabled: false, draft_deleted: false }).eq('id', s.id).select('id')
+      : await supabase.from('site_sections').update({ published: s.content }).eq('id', s.id).select('id');
+    if (result.error) return { ok: false, error: result.error.message };
+    if (!result.data?.length) return { ok: false, error: `Gagal publish section #${s.id}: tidak ada row yang ter-update` };
+  }
   revalidateWM(); return { ok: true };
 }
 export async function deleteSection(id: number) {
-  const { denied } = await requireRole((r: Role) => canDelete(r), 'Hanya Superadmin'); if (denied) return { ok: false, error: denied }; const supabase = await createClient();
-  const { data, error: readError } = await supabase.from('site_sections').select('published').eq('id', id).maybeSingle(); if (readError || !data) return { ok: false, error: readError?.message || 'Section tidak ditemukan' };
+  const { denied } = await requireRole((r: Role) => canDelete(r), 'Hanya Superadmin'); if (denied) return { ok: false, error: denied }; const supabase = await createClient(); const { data, error: readError } = await supabase.from('site_sections').select('published').eq('id', id).maybeSingle(); if (readError || !data) return { ok: false, error: readError?.message || 'Section tidak ditemukan' };
   const result = data.published ? await supabase.from('site_sections').update({ draft_deleted: true }).eq('id', id) : await supabase.from('site_sections').delete().eq('id', id);
   if (result.error) return { ok: false, error: result.error.message }; revalidateWM(); return { ok: true };
 }

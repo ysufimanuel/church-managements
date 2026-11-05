@@ -45,7 +45,7 @@ function resourceMediaFor(content: any, type: 'event' | 'group', id: number) {
 }
 
 function SectionShell({ content, children, className = '' }: { content: any; children: ReactNode; className?: string }) {
-  const overlayItems = normalizeMediaItems(content).some((m) => m.layer === 'overlay');
+  const overlayItems = normalizeMediaItems(content).some((m) => !m.resource_type && m.layer === 'overlay');
   const overlayColor = content.overlay_color || 'var(--site-primary)';
   const overlayOpacity = px(content.overlay_opacity, 70, 0, 100) / 100;
   const contentWidth = content.content_width === 'full' ? '100%' : `${px(content.content_width, 1200, 320, 1800)}px`;

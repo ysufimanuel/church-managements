@@ -122,7 +122,7 @@ export async function saveSectionDraft(input: SectionInput) {
 }
 export async function publishSections(page: string) {
   const { profile, denied } = await guardWM(); if (denied) return { ok: false, error: denied }; const supabase = await createClient();
-  const { data: sections, error } = await supabase.from('site_sections').select('id,page,draft_page,content,draft_deleted').eq('church_id', profile.church_id).or(`page.eq.${page},draft_page.eq.${page}`); if (error) return { ok: false, error: error.message };
+  const { data: sections, error } = await supabase.from('site_sections').select('id,page,draft_page,type,draft_type,sort_order,draft_sort_order,enabled,draft_enabled,content,draft_deleted').eq('church_id', profile.church_id).or(`page.eq.${page},draft_page.eq.${page}`); if (error) return { ok: false, error: error.message };
   for (const s of sections || []) {
     const result = s.draft_deleted
       ? await supabase.from('site_sections').update({ page: s.draft_page || s.page, draft_page: s.draft_page || s.page, type: s.draft_type || 'richtext', draft_type: s.draft_type || 'richtext', sort_order: s.draft_sort_order ?? 0, draft_sort_order: s.draft_sort_order ?? 0, published: null, enabled: false, draft_enabled: false, draft_deleted: false }).eq('id', s.id).select('id')
@@ -134,11 +134,11 @@ export async function publishSections(page: string) {
 }
 export async function publishAllSections() {
   const { profile, denied } = await guardWM(); if (denied) return { ok: false, error: denied }; const supabase = await createClient();
-  const { data: sections, error } = await supabase.from('site_sections').select('id,page,draft_page,content,draft_deleted').eq('church_id', profile.church_id).order('id'); if (error) return { ok: false, error: error.message };
+  const { data: sections, error } = await supabase.from('site_sections').select('id,page,draft_page,type,draft_type,sort_order,draft_sort_order,enabled,draft_enabled,content,draft_deleted').eq('church_id', profile.church_id).order('id'); if (error) return { ok: false, error: error.message };
   for (const s of sections || []) {
     const result = s.draft_deleted
-      ? await supabase.from('site_sections').update({ page: s.draft_page || s.page, draft_page: s.draft_page || s.page, published: null, enabled: false, draft_deleted: false }).eq('id', s.id).select('id')
-      : await supabase.from('site_sections').update({ page: s.draft_page || s.page, draft_page: s.draft_page || s.page, published: s.content }).eq('id', s.id).select('id');
+      ? await supabase.from('site_sections').update({ page: s.draft_page || s.page, draft_page: s.draft_page || s.page, type: s.draft_type || 'richtext', draft_type: s.draft_type || 'richtext', sort_order: s.draft_sort_order ?? 0, draft_sort_order: s.draft_sort_order ?? 0, published: null, enabled: false, draft_enabled: false, draft_deleted: false }).eq('id', s.id).select('id')
+      : await supabase.from('site_sections').update({ page: s.draft_page || s.page, draft_page: s.draft_page || s.page, type: s.draft_type || s.type, draft_type: s.draft_type || s.type, sort_order: s.draft_sort_order ?? s.sort_order, draft_sort_order: s.draft_sort_order ?? s.sort_order, published: s.content, enabled: s.draft_enabled, draft_enabled: s.draft_enabled }).eq('id', s.id).select('id');
     if (result.error) return { ok: false, error: result.error.message };
     if (!result.data?.length) return { ok: false, error: `Gagal publish section #${s.id}: tidak ada row yang ter-update` };
   }

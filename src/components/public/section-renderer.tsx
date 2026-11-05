@@ -4,7 +4,7 @@ import { MediaFrame } from '@/components/public/media-frame';
 import Link from 'next/link';
 import { MapPin, Clock } from 'lucide-react';
 
-type SectionMedia = { id: string | number; kind: 'image' | 'video'; url: string; ratio: string; size: number; radius: number; position: string; layer: 'front' | 'overlay'; autoplay?: boolean; muted?: boolean; title?: string };
+type SectionMedia = { id: string | number; kind: 'image' | 'video'; url: string; ratio: string; size: number; radius: number; position: string; layer: 'front' | 'overlay'; autoplay?: boolean; muted?: boolean; title?: string; resource_type?: 'event' | 'group'; resource_id?: number | null };
 
 function resolveHref(basePath: string, href?: string) {
   if (!href || href === '/' || href === '#home') return basePath;
@@ -17,15 +17,16 @@ function resolveHref(basePath: string, href?: string) {
 function mediaPositionClass(position: string) { if (position === 'left') return 'items-center justify-start'; if (position === 'right') return 'items-center justify-end'; if (position === 'top') return 'items-start justify-center'; if (position === 'bottom') return 'items-end justify-center'; return 'items-center justify-center'; }
 function px(value: unknown, fallback: number, min: number, max: number) { return Math.min(max, Math.max(min, Number(value ?? fallback))); }
 function normalizeMediaItems(content: any): SectionMedia[] {
-  if (Array.isArray(content?.media_items)) return content.media_items.map((m: any, i: number) => ({ id: m.id || `media-${i}`, kind: m.kind === 'video' ? 'video' : 'image', url: m.url || '', ratio: m.ratio || '16:9', size: px(m.size, 100, 1, 100), radius: px(m.radius, 16, 0, 100), position: m.position || 'center', layer: m.layer === 'overlay' ? 'overlay' : 'front', autoplay: Boolean(m.autoplay), muted: m.muted === undefined ? true : Boolean(m.muted), title: m.title || '' })).filter((m: SectionMedia) => m.url);
+  if (Array.isArray(content?.media_items)) return content.media_items.map((m: any, i: number) => ({ id: m.id || `media-${i}`, kind: m.kind === 'video' ? 'video' : 'image', url: m.url || '', ratio: m.ratio || '16:9', size: px(m.size, 100, 1, 100), radius: px(m.radius, 16, 0, 100), position: m.position || 'center', layer: m.layer === 'overlay' ? 'overlay' : 'front', autoplay: Boolean(m.autoplay), muted: m.muted === undefined ? true : Boolean(m.muted), title: m.title || '', resource_type: m.resource_type === 'event' || m.resource_type === 'group' ? m.resource_type : undefined, resource_id: Number.isSafeInteger(Number(m.resource_id)) && Number(m.resource_id) > 0 ? Number(m.resource_id) : null })).filter((m: SectionMedia) => m.url);
   if (content?.media_url) return [{ id: 'legacy-media', kind: content.media_kind === 'video' ? 'video' : 'image', url: content.media_url, ratio: content.ratio || '16:9', size: px(content.media_size, 100, 1, 100), radius: px(content.media_radius, 16, 0, 100), position: content.media_position || 'center', layer: content.media_layer === 'overlay' ? 'overlay' : 'front', autoplay: Boolean(content.media_autoplay), muted: content.media_muted === undefined ? true : Boolean(content.media_muted), title: content.title || '' }];
   return [];
 }
 function SectionMedia({ content }: { content: any }) {
   const items = normalizeMediaItems(content);
-  const front = items.filter((m) => m.layer === 'front');
-  const overlay = items.filter((m) => m.layer === 'overlay');
-  if (!items.length) return null;
+  const sectionItems = items.filter((m) => !m.resource_type);
+  const front = sectionItems.filter((m) => m.layer === 'front');
+  const overlay = sectionItems.filter((m) => m.layer === 'overlay');
+  if (!sectionItems.length) return null;
   const layout = content.media_layout || 'stack';
   const gridClass = layout === 'grid-3' ? 'grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3' : layout === 'grid-2' ? 'grid grid-cols-1 gap-5 sm:grid-cols-2' : 'flex flex-col gap-5';
   const width = content.content_width === 'full' ? '100%' : `${px(content.content_width, 1200, 320, 1800)}px`;
@@ -35,6 +36,14 @@ function SectionMedia({ content }: { content: any }) {
     {front.length > 0 && <div className={`relative z-10 mx-auto w-full px-4 ${gridClass}`} style={{ maxWidth: width }}>{front.map(frame)}</div>}
   </>;
 }
+function ResourceMedia({ items }: { items: SectionMedia[] }) {
+  if (!items.length) return null;
+  return <div className={items.length > 1 ? "mt-4 grid grid-cols-2 gap-2" : "mt-4"}>{items.map((item) => <div key={item.id} className="overflow-hidden rounded-lg" style={{ borderRadius: `${item.radius}px` }}><MediaFrame item={{ id: item.id, kind: item.kind, url: item.url, ratio: item.ratio, layer: 'front', position: item.position, autoplay: item.autoplay, muted: item.muted, title: item.title }} /></div>)}</div>;
+}
+function resourceMediaFor(content: any, type: 'event' | 'group', id: number) {
+  return normalizeMediaItems(content).filter((item) => item.resource_type === type && item.resource_id === id);
+}
+
 function SectionShell({ content, children, className = '' }: { content: any; children: ReactNode; className?: string }) {
   const overlayItems = normalizeMediaItems(content).some((m) => m.layer === 'overlay');
   const overlayColor = content.overlay_color || 'var(--site-primary)';

@@ -47,7 +47,7 @@ export async function addGroupMember(groupId: number, memberId: number) {
 }
 
 export async function removeGroupMember(groupId: number, memberId: number) {
-  const { denied } = await requireRole((r: Role) => canEdit(r));
+  const { denied } = await requireRole((r: Role) => canDelete(r), 'Hanya Superadmin yang dapat menghapus anggota komunitas');
   if (denied) return { ok: false, error: denied };
   const supabase = await createClient();
   const { error } = await supabase.from('group_members').delete()

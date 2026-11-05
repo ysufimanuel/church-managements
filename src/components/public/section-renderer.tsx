@@ -10,7 +10,8 @@ function resolveHref(basePath: string, href?: string) {
   if (!href || href === '/' || href === '#home') return basePath;
   if (/^(https?:\/\/|mailto:|tel:)/i.test(href)) return href;
   if (/^[a-z][a-z\d+.-]*:/i.test(href) || href.startsWith('//')) return basePath;
-  const route = href.startsWith('#') ? href.slice(1) : href;
+  if (href.startsWith('#')) return `${basePath}${href}`;
+  const route = href;
   return `${basePath}${route.startsWith('/') ? route : `/${route}`}`;
 }
 function mediaPositionClass(position: string) { if (position === 'left') return 'items-center justify-start'; if (position === 'right') return 'items-center justify-end'; if (position === 'top') return 'items-start justify-center'; if (position === 'bottom') return 'items-end justify-center'; return 'items-center justify-center'; }

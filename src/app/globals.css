@@ -43,3 +43,21 @@
 .pos-left { object-position: left; }
 .pos-right { object-position: right; }
 .pos-center { object-position: center; }
+
+/* Default Theme is a preview-only presentation preset. It never changes CMS content. */
+.default-theme-site {
+  --site-primary: #0F1117;
+  --site-secondary: #FFFFFF;
+  --site-accent: #00E5FF;
+  background: #0F1117;
+  color: #FFFFFF;
+  color-scheme: dark;
+}
+.default-theme-site a { transition: color .2s ease, opacity .2s ease; }
+.default-theme-site a:hover { color: #00E5FF; }
+.default-theme-content { background: #0F1117; color: #FFFFFF; }
+.default-theme-content > section { border-bottom: 1px solid #2D3748; }
+.default-theme-content h1,
+.default-theme-content h2,
+.default-theme-content h3 { letter-spacing: -0.035em; }
+.default-theme-content .media-frame { border: 1px solid #2D3748; border-radius: 1rem; }

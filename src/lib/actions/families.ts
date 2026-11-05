@@ -11,7 +11,7 @@ export interface FamilyInput {
 }
 
 export async function saveFamily(input: FamilyInput) {
-  const { denied } = await requireRole((r: Role) => (input.id ? canEdit(r) : canAdd(r)));
+  const { profile, denied } = await requireRole((r: Role) => (input.id ? canEdit(r) : canAdd(r)));
   if (denied) return { ok: false, error: denied };
   const supabase = await createClient();
   const { anggota = [], ...rest } = input;
@@ -28,12 +28,32 @@ export async function saveFamily(input: FamilyInput) {
     if (error) return { ok: false, error: error.message };
     familyId = data.id;
   }
-  // sync anggota
-  await supabase.from('family_members').delete().eq('family_id', familyId!);
-  if (anggota.length) {
-    await supabase.from('family_members').insert(
-      anggota.map((m) => ({ family_id: familyId!, member_id: m }))
-    );
+  // Admin boleh menambahkan relasi, tetapi penghapusan relasi tetap khusus Superadmin.
+  // Jangan menghapus lalu memasukkan ulang: itu melanggar RLS dan dapat meninggalkan data parsial.
+  const { data: existing, error: readError } = await supabase
+    .from('family_members').select('member_id').eq('family_id', familyId!);
+  if (readError) return { ok: false, error: readError.message };
+
+  const existingIds = new Set((existing || []).map((row) => row.member_id));
+  const requestedIds = [...new Set(anggota.filter((id) => Number.isSafeInteger(id) && id > 0))];
+
+  if (profile.role === 'superadmin') {
+    const { error: deleteError } = await supabase.from('family_members').delete().eq('family_id', familyId!);
+    if (deleteError) return { ok: false, error: deleteError.message };
+    if (requestedIds.length) {
+      const { error: insertError } = await supabase.from('family_members').insert(
+        requestedIds.map((memberId) => ({ family_id: familyId!, member_id: memberId }))
+      );
+      if (insertError) return { ok: false, error: insertError.message };
+    }
+  } else {
+    const additions = requestedIds.filter((memberId) => !existingIds.has(memberId));
+    if (additions.length) {
+      const { error: insertError } = await supabase.from('family_members').insert(
+        additions.map((memberId) => ({ family_id: familyId!, member_id: memberId }))
+      );
+      if (insertError) return { ok: false, error: insertError.message };
+    }
   }
   revalidatePath('/dashboard/families');
   return { ok: true };

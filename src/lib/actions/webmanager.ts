@@ -56,7 +56,8 @@ export async function saveThemeDraft(theme: ThemeInput) {
   const { profile, denied } = await guardWM(); if (denied) return { ok: false, error: denied }; const supabase = await createClient();
   const { data: current, error: readError } = await supabase.from('site_theme').select('draft,primary_color,font_family').eq('id', 1).eq('church_id', profile.church_id).maybeSingle();
   if (readError || !current) return { ok: false, error: readError?.message || 'Tema Draft tidak ditemukan' };
-  const draft = { ...theme, ...((current.draft && typeof current.draft === 'object') ? { website_theme: current.draft.website_theme } : {}) };
+  const currentDraft = current.draft && typeof current.draft === 'object' ? current.draft as Record<string, unknown> : null;
+  const draft = { ...theme, ...(currentDraft ? { website_theme: currentDraft.website_theme } : {}) };
   const { data, error } = await supabase.from('site_theme').update({ primary_color: theme.primary_color, font_family: theme.font_family, draft, state: 'draft' }).eq('id', 1).eq('church_id', profile.church_id).select('id').maybeSingle();
   if (error) return { ok: false, error: error.message };
   if (!data) return { ok: false, error: 'Tema Draft tidak tersimpan untuk gereja ini' };

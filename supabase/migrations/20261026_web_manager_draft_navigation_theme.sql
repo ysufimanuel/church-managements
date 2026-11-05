@@ -6,8 +6,10 @@ update public.site_nav_items
 set published = coalesce(published, jsonb_build_object('label', label, 'href', href, 'visible', visible, 'sort_order', sort_order)),
     draft = coalesce(draft, jsonb_build_object('label', label, 'href', href, 'visible', visible, 'sort_order', sort_order));
 
+-- Preserve any existing Draft metadata (for example website_theme) while
+-- normalizing the palette keys required by the Web Manager.
 update public.site_theme
-set draft = jsonb_build_object(
+set draft = coalesce(draft, '{}'::jsonb) || jsonb_build_object(
   'primary_color', coalesce(draft->>'primary_color', primary_color),
   'secondary_color', coalesce(draft->>'secondary_color', primary_color),
   'accent_color', coalesce(draft->>'accent_color', primary_color),

@@ -28,3 +28,19 @@
     scroll-behavior: auto !important;
   }
 }
+
+/* Layout primitives used by the Default Web section components. */
+.default-web-site .gutter {
+  width: min(100% - 2rem, 1200px);
+  margin-inline: auto;
+}
+
+.default-web-site .section {
+  padding-block: clamp(56px, 7vw, 96px);
+}
+
+@media (min-width: 640px) {
+  .default-web-site .gutter {
+    width: min(100% - 3rem, 1200px);
+  }
+}

@@ -2,7 +2,7 @@
 
 Branch: `default-web` · Status: draft untuk implementasi · Tanggal: 5 Nov 2026
 
-Dokumen ini menerjemahkan arah "modern, hangat, inklusif, berfokus pada komunitas" menjadi spesifikasi yang bisa langsung dikodekan. Pendamping: `docs/design-tokens.json` (sumber kebenaran token) dan `docs/tailwind.config.draft.ts` (konfigurasi Tailwind). Prototipe visual ada di canvas "WKC Church Landing Page".
+Dokumen ini menerjemahkan arah "modern, hangat, inklusif, berfokus pada komunitas" menjadi spesifikasi yang bisa langsung dikodekan. Pendamping: `docs/design-tokens.json` (sumber kebenaran token) dan `tailwind.config.ts` di root repo (konfigurasi Tailwind). Prototipe visual ada di canvas "WKC Church Landing Page".
 
 **Kondisi repo saat ini.** Branch `default-web` hanya berisi skills (`skills/`, `.claude/skills/`, `.agents/skills/`, `skills-lock.json`). Belum ada `package.json`, `src/`, atau konfigurasi build. Artinya ini proyek baru, dan seluruh struktur di bagian 4 adalah usulan, bukan penyesuaian ke kode yang sudah ada.
 
@@ -186,7 +186,6 @@ church-managements/            # branch default-web
 ├─ docs/
 │  ├─ UI-UX-BLUEPRINT.md       # dokumen ini
 │  ├─ design-tokens.json       # sumber kebenaran token
-│  └─ tailwind.config.draft.ts # dipindah ke root sebagai tailwind.config.ts
 ├─ skills/  .claude/skills/  .agents/skills/  skills-lock.json   # sudah ada, jangan diubah
 ├─ public/
 │  └─ photos/                  # foto monokrom (WebP/AVIF, sudah di-grayscale)
@@ -285,7 +284,7 @@ Jangan pernah memakai `user-scalable=no` atau `maximum-scale=1`.
 
 | Fase | Isi | Selesai bila |
 |---|---|---|
-| 0. Fondasi | `npm create vite`, pasang Tailwind, pindahkan `tailwind.config.draft.ts`, `index.html` baseline, font | Halaman kosong tampil gelap, font Plus Jakarta Sans termuat, `npm run build` hijau |
+| 0. Fondasi | `npm create vite`, pasang Tailwind, `tailwind.config.ts` dari token, `index.html` baseline, font | Halaman kosong tampil gelap, font Plus Jakarta Sans termuat, `npm run build` hijau |
 | 1. Atom | Button, Link, DateBadge, Logo, Icon | Semua varian dan state (hover, active, fokus) terlihat di halaman uji |
 | 2. Shell | Navbar, MobileDrawer, Footer, scroll-spy | Nav aktif berubah saat menggulir; drawer bekerja dengan keyboard |
 | 3. Seksi konten | Hero, NewToWkc, About, Leadership, Connect, Grow | Sesuai prototipe di 1360px, 768px, 390px |

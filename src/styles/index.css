@@ -1,0 +1,48 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-bg font-sans text-body text-ink antialiased;
+    margin: 0;
+  }
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
+    margin: 0;
+  }
+  p {
+    margin: 0;
+  }
+  /* Offset anchor agar judul seksi tidak tertutup navbar sticky */
+  section[id] {
+    scroll-margin-top: 72px;
+  }
+}
+
+@layer components {
+  .section {
+    @apply py-section-sm sm:py-section-md lg:py-section-lg;
+  }
+  .gutter {
+    @apply mx-auto w-full max-w-container px-4 sm:px-6;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}

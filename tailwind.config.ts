@@ -1,7 +1,6 @@
 /**
- * WKC Church: tailwind.config.ts (draft)
+ * WKC Church: tailwind.config.ts
  *
- * Pindahkan ke root proyek web sebagai `tailwind.config.ts`.
  * Target: Tailwind CSS 3.4+. Dark Mode First: tidak ada tema terang,
  * jadi warna didefinisikan langsung tanpa varian `dark:`.
  * Nilai mengikuti docs/design-tokens.json. Ubah di sana dulu, lalu di sini.
@@ -103,6 +102,17 @@ const config: Config = {
           'radial-gradient(90% 70% at 70% 20%, #4A505C 0%, #252933 42%, #101218 100%)',
         // Scrim untuk teks di atas foto (kartu Connect, hero).
         scrim: 'linear-gradient(to top, rgba(15,17,23,0.94) 0%, rgba(15,17,23,0.35) 55%, rgba(15,17,23,0.05) 100%)',
+      },
+
+      // Drawer mobile: masuk dari atas, 200ms. Keluar tanpa animasi (elemen dilepas dari DOM).
+      keyframes: {
+        'drawer-in': {
+          from: { opacity: '0', transform: 'translateY(-8px)' },
+          to: { opacity: '1', transform: 'translateY(0)' },
+        },
+      },
+      animation: {
+        'drawer-in': 'drawer-in 200ms cubic-bezier(0.32, 0.72, 0, 1) both',
       },
     },
   },

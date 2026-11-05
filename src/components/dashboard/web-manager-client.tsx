@@ -100,7 +100,7 @@ export function WebManagerClient({ navItems, theme, sections, role, publicPath, 
   }
 
   React.useEffect(() => { setThemeValues(theme?.draft || theme?.published || { primary_color: '#FFFFFF', secondary_color: '#1F2937', accent_color: '#22C55E', font_family: 'Inter' }); }, [theme]);
-  const pages = React.useMemo(() => { const set = new Set(['home', 'events', 'tentang', 'kontak']); navItems.forEach((n) => { const href = String(n.draft?.href || n.href || '').replace(/^\//, '').split('/')[0]; if (href) set.add(href); }); sections.forEach((s) => s.page && set.add(s.page)); return Array.from(set); }, [navItems, sections]);
+  const pages = React.useMemo(() => { const set = new Set(['home', 'events', 'community', 'worship', 'ministries', 'tentang', 'kontak']); navItems.forEach((n) => { const href = String(n.draft?.href || n.href || '').replace(/^\//, '').split('/')[0]; if (href) set.add(href); }); sections.forEach((s) => s.page && set.add(s.page)); return Array.from(set); }, [navItems, sections]);
   const pageSections = sections.filter((s) => s.page === page).sort((a, b) => a.sort_order - b.sort_order);
   const previewPath = publicPath ? `${publicPath}${page === 'home' ? '' : `/${page}`}?preview=draft` : null;
   async function run(p: Promise<{ ok: boolean; error?: string }>, okMsg?: string) { const r = await p; if (r.ok) { toast.success(okMsg || t('save')); setPreviewKey((k) => k + 1); } else toast.error(r.error || 'Gagal menyimpan'); return r; }

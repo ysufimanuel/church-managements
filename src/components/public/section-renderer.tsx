@@ -75,8 +75,6 @@ export async function SectionRenderer({ page, churchId, basePath, preview = fals
     else if (sectionType === 'map') out.push(<SectionShell key={s.id} content={c} className={useDefaultTheme ? "w-full px-4 py-20 md:px-8" : "w-full px-4 py-16"}><div className="mx-auto max-w-xl" style={sectionStyle}><h2 className="mb-8 text-center font-semibold" style={titleStyle}>{c.title || 'Lokasi'}</h2><MediaFrame item={{ id: s.id, kind: 'map', url: '', ratio: c.ratio || '1:1', layer: 'front', position: 'center', lat: c.lat, lng: c.lng, title: c.title }} /><p className="mt-2 text-center" style={bodyStyle}>Koordinat: {c.lat}, {c.lng}</p></div></SectionShell>);
     else if (sectionType === 'richtext') out.push(<SectionShell key={s.id} content={c} className={useDefaultTheme ? "w-full px-4 py-20 md:px-8" : "w-full px-4 py-16"}><div className="mx-auto w-full" style={sectionStyle}>{c.title && <h2 className="mb-4 font-semibold" style={titleStyle}>{c.title}</h2>}<div className="whitespace-pre-wrap leading-relaxed" style={bodyStyle}>{c.body}</div></div></SectionShell>);
   }
-  // Legacy church-wide media has no page/category relation, so keep it on Home only.
-  // Event, community, worship, and ministry media must live in sections belonging to their own page.
-  if (!preview && page === 'home') { const mediaItems = (media || []).filter((m) => m.layer === 'front' && m.url); if (mediaItems.length) out.push(<section key="media-gallery" className="w-full px-4 py-16"><div className="grid gap-6 md:grid-cols-2">{mediaItems.map((m) => <MediaFrame key={m.id} item={m as any} />)}</div></section>); }
+  // Page media is rendered only by media sections assigned to this page.
   return <div className={useDefaultTheme ? "default-theme-content" : undefined} data-page={page}>{out}</div>;
 }

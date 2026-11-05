@@ -40,7 +40,8 @@ function SectionShell({ content, children, className = '' }: { content: any; chi
   const overlayColor = content.overlay_color || 'var(--site-primary)';
   const overlayOpacity = px(content.overlay_opacity, 70, 0, 100) / 100;
   const contentWidth = content.content_width === 'full' ? '100%' : `${px(content.content_width, 1200, 320, 1800)}px`;
-  return <section className={`relative overflow-hidden ${className}`}><SectionMedia content={content} />{overlayItems && <div className="pointer-events-none absolute inset-0 z-[1]" style={{ background: overlayColor, opacity: overlayOpacity }} />}<div className="relative z-10 mx-auto w-full" style={{ maxWidth: contentWidth }}>{children}</div></section>;
+  const anchorId = typeof content.anchor_id === 'string' ? content.anchor_id.trim().replace(/[^a-zA-Z0-9_-]/g, '') : '';
+  return <section id={anchorId || undefined} className={`relative overflow-hidden ${className}`}><SectionMedia content={content} />{overlayItems && <div className="pointer-events-none absolute inset-0 z-[1]" style={{ background: overlayColor, opacity: overlayOpacity }} />}<div className="relative z-10 mx-auto w-full" style={{ maxWidth: contentWidth }}>{children}</div></section>;
 }
 
 export async function SectionRenderer({ page, churchId, basePath, preview = false, themePreset = 'cms' }: { page: string; churchId: string; basePath: string; preview?: boolean; themePreset?: 'cms' | 'default' }) {

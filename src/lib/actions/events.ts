@@ -12,35 +12,35 @@ export interface EventInput {
 }
 
 export async function saveEvent(input: EventInput) {
-  const { denied } = await requireRole((r: Role) => (input.id ? canEdit(r) : canAdd(r)));
+  const { profile, denied } = await requireRole((r: Role) => (input.id ? canEdit(r) : canAdd(r)));
   if (denied) return { ok: false, error: denied };
   const supabase = await createClient();
   const payload = { ...input, id: undefined };
   delete (payload as any).id;
   let error;
-  if (input.id) ({ error } = await supabase.from('events').update(payload).eq('id', input.id));
-  else ({ error } = await supabase.from('events').insert(payload));
+  if (input.id) ({ error } = await supabase.from('events').update(payload).eq('id', input.id).eq('church_id', profile.church_id));
+  else ({ error } = await supabase.from('events').insert({ ...payload, church_id: profile.church_id }));
   if (error) return { ok: false, error: error.message };
   revalidatePath('/dashboard/events');
   return { ok: true };
 }
 
 export async function deleteEvent(id: number) {
-  const { denied } = await requireRole((r: Role) => canDelete(r), 'Hanya Superadmin yang dapat menghapus data');
+  const { profile, denied } = await requireRole((r: Role) => canDelete(r), 'Hanya Superadmin yang dapat menghapus data');
   if (denied) return { ok: false, error: denied };
   const supabase = await createClient();
-  const { error } = await supabase.from('events').delete().eq('id', id);
+  const { error } = await supabase.from('events').delete().eq('id', id).eq('church_id', profile.church_id);
   if (error) return { ok: false, error: error.message };
   revalidatePath('/dashboard/events');
   return { ok: true };
 }
 
 export async function addParticipant(eventId: number, memberId?: number, namaManual?: string) {
-  const { denied } = await requireRole((r: Role) => canEdit(r));
+  const { profile, denied } = await requireRole((r: Role) => canEdit(r));
   if (denied) return { ok: false, error: denied };
   const supabase = await createClient();
   const { error } = await supabase.from('event_participants')
-    .insert({ event_id: eventId, member_id: memberId ?? null, nama_manual: namaManual ?? null });
+    .insert({ event_id: eventId, member_id: memberId ?? null, nama_manual: namaManual ?? null, church_id: profile.church_id });
   if (error) return { ok: false, error: error.message };
   revalidatePath('/dashboard/events');
   return { ok: true };
@@ -50,7 +50,7 @@ export async function removeParticipant(id: number) {
   const { denied } = await requireRole((r: Role) => canDelete(r), 'Hanya Superadmin yang dapat menghapus peserta event');
   if (denied) return { ok: false, error: denied };
   const supabase = await createClient();
-  const { error } = await supabase.from('event_participants').delete().eq('id', id);
+  const { error } = await supabase.from('event_participants').delete().eq('id', id).eq('church_id', profile.church_id);
   if (error) return { ok: false, error: error.message };
   revalidatePath('/dashboard/events');
   return { ok: true };

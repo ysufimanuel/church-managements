@@ -1,3 +1,9 @@
+-- IMPORTANT: LEGACY BASELINE ONLY.
+-- This file does NOT represent the current multi-tenant production schema.
+-- The live database also depends on migration history (including the church_cms_initial_schema
+-- and multi_tenant_church_rbac migrations), which must be restored to this repository before
+-- using this file to bootstrap a fresh environment. Do not recreate production from this file alone.
+--
 -- ============================================================
 -- Church CMS — Supabase PostgreSQL Schema
 -- Jalankan di Supabase SQL Editor (urut dari atas ke bawah)

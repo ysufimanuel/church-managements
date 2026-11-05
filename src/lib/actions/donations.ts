@@ -61,7 +61,7 @@ export async function saveDonation(input: DonationInput) {
 
   const donorIds = new Set([previousDonorId, input.donor_id ?? null]
     .filter((id): id is number => typeof id === 'number'));
-  for (const donorId of donorIds) {
+  for (const donorId of Array.from(donorIds)) {
     const aggregateError = await refreshDonorTotals(supabase, donorId, profile.church_id);
     if (aggregateError) return { ok: false, error: `Donasi tersimpan, tetapi total donatur gagal diperbarui: ${aggregateError}` };
   }

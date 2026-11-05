@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import gsap from 'gsap';
 import { CustomEase } from 'gsap/CustomEase';
-import { CalendarDays, Globe2, LogOut, Search, Settings, Users, type LucideIcon } from 'lucide-react';
+import { Globe2, LayoutDashboard, LogOut, Search, Settings, Wallet, type LucideIcon } from 'lucide-react';
 import { useLang, LangSwitcher } from '@/components/lang-context';
 import { logoutAction } from '@/lib/actions/auth';
 import { cn } from '@/lib/utils';
@@ -17,7 +17,7 @@ if (typeof window !== 'undefined') {
 
 export type NavItem = { href: string; key: string; icon: LucideIcon };
 
-type TabId = 'members' | 'events' | 'search' | 'web' | 'menu';
+type TabId = 'dashboard' | 'finance' | 'search' | 'web' | 'menu';
 type Tab = { id: TabId; icon: LucideIcon; label: string; href?: string };
 
 const prefersReduced = () =>
@@ -25,8 +25,8 @@ const prefersReduced = () =>
 
 /** Gerak ikon saat tab jadi aktif — masing-masing ikon beda karakter. */
 const ICON_FX: Record<TabId, { from: gsap.TweenVars; to: gsap.TweenVars }> = {
-  members: { from: { scale: 0.6 }, to: { scale: 1, duration: 0.5, ease: 'back.out(2.5)' } },
-  events: { from: { rotate: -30, scale: 0.7, y: 2 }, to: { rotate: 0, scale: 1, y: 0, duration: 0.55, ease: 'back.out(2)' } },
+  dashboard: { from: { scale: 0.6, rotate: -20 }, to: { scale: 1, rotate: 0, duration: 0.55, ease: 'back.out(2.5)' } },
+  finance: { from: { y: -8, scale: 0.85 }, to: { y: 0, scale: 1, duration: 0.7, ease: 'bounce.out' } },
   search: { from: { rotate: -60, scale: 0.7, x: -2 }, to: { rotate: 0, scale: 1, x: 0, duration: 0.6, ease: 'elastic.out(1, 0.5)' } },
   web: { from: { rotate: -200 }, to: { rotate: 0, duration: 0.7, ease: 'outStrong' } },
   menu: { from: { rotate: -120, scale: 0.8 }, to: { rotate: 0, scale: 1, duration: 0.6, ease: 'outStrong' } },
@@ -119,20 +119,19 @@ export function MobileNav({
   const [query, setQuery] = React.useState('');
 
   const tabs: Tab[] = [
-    { id: 'members', icon: Users, label: t('members'), href: '/dashboard/members' },
-    { id: 'events', icon: CalendarDays, label: t('events'), href: '/dashboard/events' },
+    { id: 'dashboard', icon: LayoutDashboard, label: t('dashboard'), href: '/dashboard' },
+    { id: 'finance', icon: Wallet, label: t('finance'), href: '/dashboard/finance' },
     { id: 'search', icon: Search, label: t('nav-search') },
     ...(canWebManager ? [{ id: 'web' as const, icon: Globe2, label: t('web-manager'), href: '/dashboard/web-manager' }] : []),
     { id: 'menu', icon: Settings, label: t('nav-menu') },
   ];
 
-  // Tab aktif: sheet yang terbuka > rute saat ini. Dashboard home = tidak ada yang aktif,
-  // fitur lain (finance, groups, dst) = tab Menu.
-  const routeTab: TabId | null =
-    pathname.startsWith('/dashboard/members') ? 'members'
-    : pathname.startsWith('/dashboard/events') ? 'events'
+  // Tab aktif: sheet yang terbuka > rute saat ini. Fitur yang tidak punya tab sendiri
+  // (members, events, groups, dst) dianggap bagian dari tab Menu.
+  const routeTab: TabId =
+    pathname === '/dashboard' ? 'dashboard'
+    : pathname.startsWith('/dashboard/finance') ? 'finance'
     : pathname.startsWith('/dashboard/web-manager') && canWebManager ? 'web'
-    : pathname === '/dashboard' ? null
     : 'menu';
   const activeId: TabId | null = sheet ?? routeTab;
 

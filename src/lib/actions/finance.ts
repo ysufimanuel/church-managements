@@ -46,11 +46,14 @@ export async function approveTransaction(id: number) {
   const { profile, denied } = await requireRole((r: Role) => canApprove(r), 'Hanya Superadmin yang dapat approve');
   if (denied) return { ok: false, error: denied };
   const supabase = await createClient();
-  const { error } = await supabase.from('finance_transactions')
+  const { data: updated, error } = await supabase.from('finance_transactions')
     .update({ status: 'approved', approved_by: profile.id, approved_at: new Date().toISOString() })
-    .eq('id', id).eq('status', 'pending');
+    .eq('id', id).eq('status', 'pending').select('id').maybeSingle();
   if (error) return { ok: false, error: error.message };
-  await supabase.from('approval_history').insert({ transaction_id: id, action: 'approved', by_user: profile.id });
+  if (!updated) return { ok: false, error: 'Transaksi tidak ditemukan atau sudah diproses sebelumnya' };
+  const { error: historyError } = await supabase.from('approval_history')
+    .insert({ transaction_id: id, action: 'approved', by_user: profile.id });
+  if (historyError) return { ok: false, error: `Transaksi sudah disetujui, tetapi riwayat gagal disimpan: ${historyError.message}` };
   revalidatePath('/dashboard/finance');
   return { ok: true };
 }
@@ -59,11 +62,14 @@ export async function rejectTransaction(id: number) {
   const { profile, denied } = await requireRole((r: Role) => canApprove(r), 'Hanya Superadmin yang dapat reject');
   if (denied) return { ok: false, error: denied };
   const supabase = await createClient();
-  const { error } = await supabase.from('finance_transactions')
+  const { data: updated, error } = await supabase.from('finance_transactions')
     .update({ status: 'rejected', approved_by: profile.id, approved_at: new Date().toISOString() })
-    .eq('id', id).eq('status', 'pending');
+    .eq('id', id).eq('status', 'pending').select('id').maybeSingle();
   if (error) return { ok: false, error: error.message };
-  await supabase.from('approval_history').insert({ transaction_id: id, action: 'rejected', by_user: profile.id });
+  if (!updated) return { ok: false, error: 'Transaksi tidak ditemukan atau sudah diproses sebelumnya' };
+  const { error: historyError } = await supabase.from('approval_history')
+    .insert({ transaction_id: id, action: 'rejected', by_user: profile.id });
+  if (historyError) return { ok: false, error: `Transaksi sudah ditolak, tetapi riwayat gagal disimpan: ${historyError.message}` };
   revalidatePath('/dashboard/finance');
   return { ok: true };
 }

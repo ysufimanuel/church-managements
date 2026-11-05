@@ -166,6 +166,7 @@ function SectionForm({ initial, page, pages, onSave, onCancel }: { initial: any;
   const c = initial?.content || {};
   const [sectionPage, setSectionPage] = React.useState(initial?.draft_page || initial?.page || page);
   const [type, setType] = React.useState(initial?.draft_type || initial?.type || 'hero');
+  const [anchorId, setAnchorId] = React.useState(c.anchor_id || '');
   const [title, setTitle] = React.useState(c.title || ''); const [subtitle, setSubtitle] = React.useState(c.subtitle || ''); const [body, setBody] = React.useState(c.body || '');
   const [ctaLabel, setCtaLabel] = React.useState(c.cta_label || ''); const [ctaHref, setCtaHref] = React.useState(c.cta_href || '/tentang');
   const [mediaItems, setMediaItems] = React.useState<SectionMediaItem[]>(() => normalizeMediaItems(c)); const [bgImage, setBgImage] = React.useState(c.bg_image || '');
@@ -184,11 +185,12 @@ function SectionForm({ initial, page, pages, onSave, onCancel }: { initial: any;
   function addCard() { setCards((items) => [...items, { id: `card-${Date.now()}-${items.length + 1}`, title: '', body: '', image_url: '', href: '' }]); }
   function removeCard(id: string) { setCards((items) => items.filter((card) => card.id !== id)); }
   function setColor(key: string, value: string) { setColors((x) => ({ ...x, [key]: value })); }
-  const content = { ...c, title, subtitle, body, cta_label: ctaLabel, cta_href: ctaHref, media_items: mediaItems.map(({ id, ...m }) => m), bg_image: bgImage, title_font_size: titleSize, subtitle_font_size: subtitleSize, body_font_size: bodySize, cta_font_size: ctaSize, content_width: contentWidth, media_layout: mediaLayout, grid_columns: Number(gridColumns), cards: cards.map(({ id, ...card }) => card), limit, address, hours, maps_embed: mapsEmbed, lat: lat === '' ? null : Number(lat), lng: lng === '' ? null : Number(lng), ...colors };
+  const content = { ...c, anchor_id: anchorId.trim(), title, subtitle, body, cta_label: ctaLabel, cta_href: ctaHref, media_items: mediaItems.map(({ id, ...m }) => m), bg_image: bgImage, title_font_size: titleSize, subtitle_font_size: subtitleSize, body_font_size: bodySize, cta_font_size: ctaSize, content_width: contentWidth, media_layout: mediaLayout, grid_columns: Number(gridColumns), cards: cards.map(({ id, ...card }) => card), limit, address, hours, maps_embed: mapsEmbed, lat: lat === '' ? null : Number(lat), lng: lng === '' ? null : Number(lng), ...colors };
 
   return <div className="grid gap-6 md:grid-cols-2">
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-3"><Label>Halaman tujuan<Select value={sectionPage} onChange={(e) => setSectionPage(e.target.value)}>{pages.map((p) => <option key={p} value={p}>{p}</option>)}</Select></Label><Label>Tipe<Select value={type} onChange={(e) => setType(e.target.value)}>{SECTION_TYPES.map((x) => <option key={x} value={x}>{x}</option>)}</Select></Label><Label>Urutan<Input type="number" value={sortOrder} onChange={(e) => setSortOrder(Number(e.target.value))} /></Label></div>
+      <Label>Anchor ID (opsional)<Input value={anchorId} onChange={(e) => setAnchorId(e.target.value)} placeholder="contoh: connect, grow, resources" /><span className="text-xs text-muted-foreground">Untuk navigasi Default Web seperti #connect. Gunakan URL /connect jika ingin membuka halaman terpisah.</span></Label>
       {type !== 'map' && type !== 'event_feed' && <Label>Judul<Input value={title} onChange={(e) => setTitle(e.target.value)} /></Label>}
       {(type === 'hero' || type === 'card_grid') && <Label>Subtitle<Input value={subtitle} onChange={(e) => setSubtitle(e.target.value)} /></Label>}
       {type === 'hero' && <><div className="grid grid-cols-2 gap-2"><Input value={ctaLabel} onChange={(e) => setCtaLabel(e.target.value)} placeholder="CTA label" /><Input value={ctaHref} onChange={(e) => setCtaHref(e.target.value)} placeholder="/tentang" /></div><Label>Background image URL<Input value={bgImage} onChange={(e) => setBgImage(e.target.value)} /></Label></>}

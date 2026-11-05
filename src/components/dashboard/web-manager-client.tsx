@@ -136,7 +136,23 @@ export function WebManagerClient({ navItems, theme, sections, role, publicPath, 
   }, [navItems, sections]);
   const pageSections = sections.filter((s) => String(s.draft_page || s.page || '').trim().toLowerCase() === page).sort((a, b) => (a.draft_sort_order ?? a.sort_order) - (b.draft_sort_order ?? b.sort_order));
   const previewPath = publicPath ? `${publicPath}${page === 'home' ? '' : `/${page}`}?preview=draft` : null;
-  async function run(p: Promise<{ ok: boolean; error?: string }>, okMsg?: string) { const r = await p; if (r.ok) { toast.success(okMsg || t('save')); setPreviewKey((k) => k + 1); router.refresh(); } else toast.error(r.error || 'Gagal menyimpan'); return r; }
+  async function run(p: Promise<{ ok: boolean; error?: string }>, okMsg?: string) {
+    try {
+      const result = await p;
+      if (result.ok) {
+        toast.success(okMsg || t('save'));
+        setPreviewKey((k) => k + 1);
+        router.refresh();
+      } else {
+        toast.error(result.error || 'Gagal menyimpan');
+      }
+      return result;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Terjadi kesalahan saat menghubungi server.';
+      toast.error(message);
+      return { ok: false, error: message };
+    }
+  }
 
   return <div className="space-y-4">
     <div className="flex flex-wrap items-start justify-between gap-2"><div><h1 className="text-2xl font-bold">{t('web-manager')}</h1><p className="text-muted-foreground">Kelola header, tema, halaman, draft, dan preview website publik.</p></div><Button onClick={() => run(publishWebManager(), t('publish'))}><Rocket className="h-4 w-4" /> {t('wm-publish')}</Button></div>

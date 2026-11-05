@@ -37,23 +37,21 @@ export async function saveFamily(input: FamilyInput) {
   const existingIds = new Set((existing || []).map((row) => row.member_id));
   const requestedIds = [...new Set(anggota.filter((id) => Number.isSafeInteger(id) && id > 0))];
 
+  const additions = requestedIds.filter((memberId) => !existingIds.has(memberId));
   if (profile.role === 'superadmin') {
-    const { error: deleteError } = await supabase.from('family_members').delete().eq('family_id', familyId!);
-    if (deleteError) return { ok: false, error: deleteError.message };
-    if (requestedIds.length) {
-      const { error: insertError } = await supabase.from('family_members').insert(
-        requestedIds.map((memberId) => ({ family_id: familyId!, member_id: memberId }))
-      );
-      if (insertError) return { ok: false, error: insertError.message };
+    const removals = [...existingIds].filter((memberId) => !requestedIds.includes(memberId));
+    if (removals.length) {
+      const { error: deleteError } = await supabase.from('family_members')
+        .delete().eq('family_id', familyId!).in('member_id', removals);
+      if (deleteError) return { ok: false, error: deleteError.message };
     }
-  } else {
-    const additions = requestedIds.filter((memberId) => !existingIds.has(memberId));
-    if (additions.length) {
-      const { error: insertError } = await supabase.from('family_members').insert(
-        additions.map((memberId) => ({ family_id: familyId!, member_id: memberId }))
-      );
-      if (insertError) return { ok: false, error: insertError.message };
-    }
+  }
+
+  if (additions.length) {
+    const { error: insertError } = await supabase.from('family_members').insert(
+      additions.map((memberId) => ({ family_id: familyId!, member_id: memberId }))
+    );
+    if (insertError) return { ok: false, error: insertError.message };
   }
   revalidatePath('/dashboard/families');
   return { ok: true };

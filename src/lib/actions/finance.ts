@@ -82,7 +82,7 @@ export async function saveFinanceCategory(input: { id?: number; nama: string; ti
   let error;
   if (input.id) ({ error } = await supabase.from('finance_categories').update(payload)
     .eq('id', input.id).eq('church_id', profile.church_id));
-  else ({ error } = await supabase.from('finance_categories').insert({ ...payload, church_id: profile.church_id });
+  else ({ error } = await supabase.from('finance_categories').insert({ ...payload, church_id: profile.church_id }));
   if (error) return { ok: false, error: error.message };
   revalidatePath('/dashboard/finance');
   return { ok: true };

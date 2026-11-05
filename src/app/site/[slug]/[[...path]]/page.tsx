@@ -14,7 +14,8 @@ export const fetchCache = 'force-no-store';
 type Props = { params: { slug: string; path?: string[] }; searchParams?: { preview?: string; theme?: string; v?: string } };
 function publicHref(base: string, href: string) {
   if (!href || href === '/' || href === '#home') return base;
-  if (/^https?:\/\//i.test(href)) return href;
+  if (/^(https?:\/\/|mailto:|tel:)/i.test(href)) return href;
+  if (/^[a-z][a-z\d+.-]*:/i.test(href) || href.startsWith('//')) return base;
   const route = href.startsWith('#') ? href.slice(1) : href;
   return `${base}${route.startsWith('/') ? route : `/${route}`}`;
 }

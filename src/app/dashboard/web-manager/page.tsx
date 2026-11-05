@@ -11,10 +11,10 @@ export default async function WebManagerPage() {
   if (!canUseWebManager(profile?.role as Role)) redirect('/dashboard');
   const supabase = await createClient();
   const [{ data: navItems }, { data: theme }, { data: media }, { data: sections }, { data: church }] = await Promise.all([
-    supabase.from('site_nav_items').select('*').order('sort_order'),
-    supabase.from('site_theme').select('*').eq('id', 1).maybeSingle(),
-    supabase.from('site_media').select('*').order('sort_order'),
-    supabase.from('site_sections').select('*').order('sort_order'),
+    supabase.from('site_nav_items').select('*').eq('church_id', profile!.church_id).order('sort_order'),
+    supabase.from('site_theme').select('*').eq('church_id', profile!.church_id).eq('id', 1).maybeSingle(),
+    supabase.from('site_media').select('*').eq('church_id', profile!.church_id).order('sort_order'),
+    supabase.from('site_sections').select('*').eq('church_id', profile!.church_id).order('sort_order'),
     supabase.from('churches').select('slug').eq('id', profile!.church_id).maybeSingle(),
   ]);
   const publicPath = church ? `/site/${church.slug}` : null;

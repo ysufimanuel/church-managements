@@ -59,8 +59,8 @@ export async function SectionRenderer({ page, churchId, basePath, preview = fals
   const { data: allSections } = await supabase.from('site_sections').select('*').eq('church_id', churchId);
   const sections = (allSections || [])
     .filter((section) => (preview
-      ? (section.draft_page || section.page) === page && (section.draft_enabled ?? section.enabled)
-      : section.page === page && section.enabled))
+      ? String(section.draft_page || section.page || '').trim().toLowerCase() === page && (section.draft_enabled ?? section.enabled)
+      : String(section.page || '').trim().toLowerCase() === page && section.enabled))
     .sort((a, b) => preview
       ? (a.draft_sort_order ?? a.sort_order) - (b.draft_sort_order ?? b.sort_order)
       : a.sort_order - b.sort_order);

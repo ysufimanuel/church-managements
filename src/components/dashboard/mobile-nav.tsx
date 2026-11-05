@@ -46,6 +46,7 @@ function Sheet({
   const [mounted, setMounted] = React.useState(open);
   const panelRef = React.useRef<HTMLDivElement>(null);
   const overlayRef = React.useRef<HTMLDivElement>(null);
+  const restoreFocusRef = React.useRef<HTMLElement | null>(null);
 
   React.useEffect(() => { if (open) setMounted(true); }, [open]);
 
@@ -73,14 +74,54 @@ function Sheet({
     }
   }, [open, mounted, side]);
 
-  // Kunci scroll body + Escape selama sheet tampil
+  // Kunci scroll, pindahkan fokus ke sheet, jaga fokus di dalamnya, lalu pulihkan fokus.
   React.useEffect(() => {
     if (!mounted) return;
-    const prev = document.body.style.overflow;
+    const panel = panelRef.current;
+    if (!panel) return;
+    const previousOverflow = document.body.style.overflow;
+    restoreFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     document.body.style.overflow = 'hidden';
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+
+    const getFocusable = () => Array.from(panel.querySelectorAll<HTMLElement>(
+      'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+    )).filter((element) => element.getAttribute('aria-hidden') !== 'true');
+
+    const firstFocusable = getFocusable()[0];
+    (firstFocusable || panel).focus();
+
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        onClose();
+        return;
+      }
+      if (event.key !== 'Tab') return;
+      const focusable = getFocusable();
+      if (!focusable.length) {
+        event.preventDefault();
+        panel.focus();
+        return;
+      }
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && (document.activeElement === first || !panel.contains(document.activeElement))) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && (document.activeElement === last || !panel.contains(document.activeElement))) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+
     window.addEventListener('keydown', onKey);
-    return () => { document.body.style.overflow = prev; window.removeEventListener('keydown', onKey); };
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener('keydown', onKey);
+      const previous = restoreFocusRef.current;
+      if (previous?.isConnected) previous.focus();
+      restoreFocusRef.current = null;
+    };
   }, [mounted, onClose]);
 
   if (!mounted) return null;
@@ -88,7 +129,7 @@ function Sheet({
     <div className="fixed inset-0 z-40 lg:hidden">
       <div ref={overlayRef} className="absolute inset-0 bg-black/60" onClick={onClose} aria-hidden />
       <div
-        ref={panelRef} role="dialog" aria-modal="true" aria-label={label}
+        ref={panelRef} role="dialog" aria-modal="true" aria-label={label} tabIndex={-1}
         className={cn(
           'absolute inset-x-0 border bg-card shadow-2xl',
           side === 'bottom' ? 'bottom-0 rounded-t-3xl border-b-0' : 'top-0 rounded-b-3xl border-t-0',

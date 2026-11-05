@@ -38,7 +38,7 @@ function SectionMedia({ content }: { content: any }) {
 }
 function ResourceMedia({ items }: { items: SectionMedia[] }) {
   if (!items.length) return null;
-  return <div className={items.length > 1 ? "mt-4 grid grid-cols-2 gap-2" : "mt-4"}>{items.map((item) => <div key={item.id} className="overflow-hidden rounded-lg" style={{ borderRadius: `${item.radius}px` }}><MediaFrame item={{ id: item.id, kind: item.kind, url: item.url, ratio: item.ratio, layer: 'front', position: item.position, autoplay: item.autoplay, muted: item.muted, title: item.title }} /></div>)}</div>;
+  return <div className={items.length > 1 ? "grid grid-cols-2 gap-2" : ""}>{items.map((item) => <div key={item.id} className="overflow-hidden rounded-lg" style={{ borderRadius: `${item.radius}px` }}><MediaFrame item={{ id: item.id, kind: item.kind, url: item.url, ratio: item.ratio, layer: 'front', position: item.position, autoplay: item.autoplay, muted: item.muted, title: item.title }} /></div>)}</div>;
 }
 function resourceMediaFor(content: any, type: 'event' | 'group', id: number) {
   return normalizeMediaItems(content).filter((item) => item.resource_type === type && item.resource_id === id);

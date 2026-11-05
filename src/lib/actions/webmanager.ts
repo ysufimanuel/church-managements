@@ -67,7 +67,9 @@ export async function saveThemeDraft(theme: ThemeInput) {
   const currentDraft = current.draft && typeof current.draft === 'object' ? current.draft as Record<string, unknown> : {};
   // Preserve preset and any future Draft metadata when palette values are edited.
   const draft = { ...currentDraft, ...theme };
-  const { data, error } = await supabase.from('site_theme').update({ primary_color: theme.primary_color, font_family: theme.font_family, draft, state: 'draft' }).eq('id', 1).eq('church_id', profile.church_id).select('id').maybeSingle();
+  // Keep canonical columns unchanged while editing Draft. Public rendering falls back to these columns
+  // when no published JSON snapshot exists, so updating them here can leak unpublished changes.
+  const { data, error } = await supabase.from('site_theme').update({ draft, state: 'draft' }).eq('id', 1).eq('church_id', profile.church_id).select('id').maybeSingle();
   if (error) return { ok: false, error: error.message };
   if (!data) return { ok: false, error: 'Tema Draft tidak tersimpan untuk gereja ini' };
   revalidateWM(); return { ok: true };

@@ -121,7 +121,7 @@ export function WebManagerClient({ navItems, theme, sections, role, publicPath, 
 
   React.useEffect(() => { setThemeValues(theme?.draft || theme?.published || { primary_color: '#FFFFFF', secondary_color: '#1F2937', accent_color: '#22C55E', font_family: 'Inter' }); }, [theme]);
   const pages = React.useMemo(() => {
-    const set = new Set(['home', 'connect', 'grow', 'ministries', 'events', 'worship', 'about', 'tentang', 'kontak']);
+    const set = new Set(['home', 'connect', 'grow', 'ministries', 'events', 'worship', 'tentang', 'kontak']);
     navItems.forEach((n) => {
       const href = pageFromHref(n.draft?.href || n.href);
       if (href) set.add(href);

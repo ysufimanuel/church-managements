@@ -19,13 +19,11 @@ const config: Config = {
         muted: { DEFAULT: 'hsl(var(--muted))', foreground: 'hsl(var(--muted-foreground))' },
         accent: { DEFAULT: 'hsl(var(--accent))', foreground: 'hsl(var(--accent-foreground))' },
         card: { DEFAULT: 'hsl(var(--card))', foreground: 'hsl(var(--card-foreground))' },
-      },
-      colors: {
         bg: { DEFAULT: '#0F1117', deep: '#0B0D12' },
         surface: { DEFAULT: '#1A1D24', raised: '#1E222A' },
         line: '#2D3748',
         ink: { DEFAULT: '#FFFFFF', soft: '#CBD5E1', muted: '#A0AEC0', faint: '#8794A8' },
-        accent: { ink: '#0F1117' },
+        accent: { DEFAULT: 'hsl(var(--accent))', foreground: 'hsl(var(--accent-foreground))', ink: '#0F1117' },
         success: '#10B981',
       },
       fontSize: {
@@ -38,7 +36,6 @@ const config: Config = {
         nav: ['0.8125rem', { lineHeight: '1.2', letterSpacing: '0.06em', fontWeight: '600' }],
       },
       maxWidth: { container: '1200px', prose: '65ch' },
-      borderRadius: { chip: '10px', badge: '12px', card: '16px' },
       spacing: { 'section-sm': '56px', 'section-md': '72px', 'section-lg': '96px' },
       zIndex: { nav: '20', drawer: '30', modal: '50' },
       transitionTimingFunction: {
@@ -56,6 +53,7 @@ const config: Config = {
       },
       animation: { 'drawer-in': 'drawer-in 200ms cubic-bezier(0.32, 0.72, 0, 1) both' },
       borderRadius: {
+        chip: '10px', badge: '12px', card: '16px',
         lg: 'var(--radius)',
         md: 'calc(var(--radius) - 2px)',
         sm: 'calc(var(--radius) - 4px)',

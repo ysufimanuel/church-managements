@@ -8,6 +8,17 @@ import { canUseWebManager, canDelete, type Role } from '@/lib/rbac';
 async function guardWM() {
   return requireRole((r: Role) => canUseWebManager(r), 'Web Manager hanya untuk Admin/Superadmin');
 }
+function isSafeMediaUrl(value: unknown) {
+  const url = String(value || '').trim();
+  if (!url) return true;
+  if (url.startsWith('/') && !url.startsWith('//')) return true;
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
 function revalidateWM() { revalidatePath('/dashboard/web-manager'); revalidatePath('/'); revalidatePath('/site/[slug]', 'page'); }
 
 export type NavInput = { id?: number; label: string; href: string; visible: boolean; sort_order: number };
@@ -122,6 +133,15 @@ export async function saveSectionDraft(input: SectionInput) {
 
   const supabase = await createClient();
   const mediaItems = Array.isArray(input.content.media_items) ? input.content.media_items : [];
+  const cardItems = Array.isArray(input.content.cards) ? input.content.cards : [];
+  const mediaUrls = [
+    input.content.bg_image,
+    input.content.media_url,
+    input.content.maps_embed,
+    ...mediaItems.map((item: any) => item?.url),
+    ...cardItems.map((item: any) => item?.image_url),
+  ];
+  if (mediaUrls.some((url) => !isSafeMediaUrl(url))) return { ok: false, error: 'URL media harus menggunakan HTTP/HTTPS atau path lokal yang valid.' };
   const eventIds = new Set<number>();
   const groupIds = new Set<number>();
   for (const item of mediaItems) {

@@ -56,7 +56,7 @@ export function DashboardShell({
           <h1 className="text-sm font-bold">{t('cms-title')}</h1>
           <p className="text-xs text-muted-foreground">Gereja Digital</p>
         </div>
-        <button className="lg:hidden cursor-pointer p-2" onClick={() => setOpen(false)} aria-label="Tutup menu">
+        <button className="btn-fx btn-fx-ghost lg:hidden cursor-pointer p-2 rounded-md" onClick={() => setOpen(false)} aria-label="Tutup menu">
           <X className="h-5 w-5" />
         </button>
       </div>
@@ -81,7 +81,7 @@ export function DashboardShell({
       <div className="border-t p-3 space-y-3">
         <LangSwitcher />
         <form action={logoutAction}>
-          <button type="submit" className="flex min-h-[44px] w-full items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-destructive hover:bg-destructive/10 cursor-pointer">
+          <button type="submit" className="btn-fx btn-fx-row flex min-h-[44px] w-full items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-destructive hover:bg-destructive/10 cursor-pointer">
             <LogOut className="h-4 w-4" /> {t('logout')}
           </button>
         </form>
@@ -95,7 +95,7 @@ export function DashboardShell({
       {open && <div className="fixed inset-0 z-30 bg-black/60 lg:hidden" onClick={() => setOpen(false)} />}
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="sticky top-0 z-20 flex h-16 items-center gap-3 border-b bg-background/80 px-4 backdrop-blur">
-          <button className="lg:hidden cursor-pointer p-2" onClick={() => setOpen(true)} aria-label="Buka menu">
+          <button className="btn-fx btn-fx-ghost lg:hidden cursor-pointer p-2 rounded-md" onClick={() => setOpen(true)} aria-label="Buka menu">
             <Menu className="h-5 w-5" />
           </button>
           <div className="flex-1" />

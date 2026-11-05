@@ -34,7 +34,7 @@ export function LangSwitcher({ small }: { small?: boolean }) {
         <button
           key={l}
           onClick={() => setLang(l)}
-          className={`rounded px-2 py-1 text-xs font-medium transition-colors cursor-pointer min-h-[32px] ${
+          className={`btn-fx btn-fx-row rounded px-2 py-1 text-xs font-medium cursor-pointer min-h-[32px] ${
             lang === l ? 'bg-primary text-primary-foreground' : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
           }`}
         >

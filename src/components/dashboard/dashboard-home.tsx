@@ -49,7 +49,7 @@ function CountUp({ value, kind = 'int' }: { value: number; kind?: CountKind }) {
 
 // Target sentuh >= 44px untuk link "Lihat semua" di mobile.
 const viewAllClass =
-  'inline-flex min-h-[44px] items-center px-1 text-sm text-primary [@media(hover:hover)]:hover:underline';
+  'btn-fx btn-fx-row inline-flex min-h-[44px] items-center rounded-md px-1 text-sm text-primary [@media(hover:hover)]:hover:underline';
 
 // Awalnya tersembunyi lewat CSS; GSAP yang memunculkan. motion-reduce: langsung tampil.
 const animClass = 'opacity-0 motion-reduce:opacity-100';

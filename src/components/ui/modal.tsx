@@ -64,7 +64,7 @@ export function Tabs({
           key={t.id}
           onClick={() => onChange(t.id)}
           className={cn(
-            'rounded-md px-4 py-2 text-sm font-medium transition-colors min-h-[44px] md:min-h-0 cursor-pointer',
+            'btn-fx btn-fx-row rounded-md px-4 py-2 text-sm font-medium min-h-[44px] md:min-h-0 cursor-pointer',
             active === t.id ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'
           )}
         >

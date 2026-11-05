@@ -44,7 +44,8 @@ function SectionShell({ content, children, className = '' }: { content: any; chi
 export async function SectionRenderer({ page, churchId, basePath, preview = false, themePreset = 'cms' }: { page: string; churchId: string; basePath: string; preview?: boolean; themePreset?: 'cms' | 'default' }) {
   const useDefaultTheme = themePreset === 'default';
   const supabase = createAdminClient();
-  const { data: sections } = await supabase.from('site_sections').select('*').eq('church_id', churchId).eq('page', page).eq('enabled', true).order('sort_order');
+  const { data: allSections } = await supabase.from('site_sections').select('*').eq('church_id', churchId).eq('enabled', true).order('sort_order');
+  const sections = (allSections || []).filter((section) => (preview ? (section.draft_page || section.page) : section.page) === page);
   const { data: media } = await supabase.from('site_media').select('*').eq('church_id', churchId).eq('state', 'published').order('sort_order');
   const out: ReactNode[] = [];
   for (const s of sections || []) {

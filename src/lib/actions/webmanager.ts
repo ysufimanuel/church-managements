@@ -120,8 +120,35 @@ export async function saveSectionDraft(input: SectionInput) {
   if (!input.content || typeof input.content !== 'object' || Array.isArray(input.content)) return { ok: false, error: 'Konten section tidak valid' };
   if (JSON.stringify(input.content).length > 262144) return { ok: false, error: 'Konten section terlalu besar (maksimal 256 KB)' };
 
-  const sortOrder = Math.min(10000, Math.max(0, Math.trunc(Number(input.sort_order) || 0)));
   const supabase = await createClient();
+  const mediaItems = Array.isArray(input.content.media_items) ? input.content.media_items : [];
+  const eventIds = new Set<number>();
+  const groupIds = new Set<number>();
+  for (const item of mediaItems) {
+    const resourceType = item?.resource_type;
+    const rawResourceId = item?.resource_id;
+    if (!resourceType) {
+      if (rawResourceId !== undefined && rawResourceId !== null && rawResourceId !== '') return { ok: false, error: 'Jenis resource media belum dipilih.' };
+      continue;
+    }
+    const resourceId = Number(rawResourceId);
+    if ((resourceType !== 'event' && resourceType !== 'group') || !Number.isSafeInteger(resourceId) || resourceId <= 0) {
+      return { ok: false, error: 'Resource media tidak valid.' };
+    }
+    (resourceType === 'event' ? eventIds : groupIds).add(resourceId);
+  }
+  if (eventIds.size) {
+    const { data, error } = await supabase.from('events').select('id').eq('church_id', profile.church_id).in('id', Array.from(eventIds));
+    if (error) return { ok: false, error: error.message };
+    if ((data || []).length !== eventIds.size) return { ok: false, error: 'Event media tidak ditemukan pada gereja ini.' };
+  }
+  if (groupIds.size) {
+    const { data, error } = await supabase.from('groups').select('id').eq('church_id', profile.church_id).in('id', Array.from(groupIds));
+    if (error) return { ok: false, error: error.message };
+    if ((data || []).length !== groupIds.size) return { ok: false, error: 'Komunitas media tidak ditemukan pada gereja ini.' };
+  }
+
+  const sortOrder = Math.min(10000, Math.max(0, Math.trunc(Number(input.sort_order) || 0)));
   const payload = {
     draft_page: page,
     draft_type: input.type,

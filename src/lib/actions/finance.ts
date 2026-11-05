@@ -100,10 +100,10 @@ export async function deleteFinanceCategory(id: number) {
 }
 
 export async function updateSaldoAwal(saldo: number) {
-  const { denied } = await requireRole((r: Role) => canApprove(r), 'Hanya Superadmin');
+  const { profile, denied } = await requireRole((r: Role) => canApprove(r), 'Hanya Superadmin');
   if (denied) return { ok: false, error: denied };
   const supabase = await createClient();
-  const { error } = await supabase.from('finance_settings').update({ saldo_awal: saldo }).eq('id', 1);
+  const { error } = await supabase.from('finance_settings').update({ saldo_awal: saldo }).eq('id', 1).eq('church_id', profile.church_id);
   if (error) return { ok: false, error: error.message };
   revalidatePath('/dashboard/finance');
   return { ok: true };

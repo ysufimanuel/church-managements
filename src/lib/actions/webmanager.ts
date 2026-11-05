@@ -156,9 +156,10 @@ export async function saveSectionDraft(input: SectionInput) {
 }
 export async function publishSections(page: string) {
   const { denied } = await guardWM(); if (denied) return { ok: false, error: denied };
-  if (!page || !page.trim()) return { ok: false, error: 'Page tidak valid' };
+  const normalizedPage = String(page || '').trim().toLowerCase();
+  if (!/^[a-z0-9][a-z0-9_-]{0,79}$/.test(normalizedPage)) return { ok: false, error: 'Page tidak valid' };
   const supabase = await createClient();
-  const { data, error } = await supabase.rpc('publish_site_sections', { p_page: page });
+  const { data, error } = await supabase.rpc('publish_site_sections', { p_page: normalizedPage });
   if (error) return { ok: false, error: error.message };
   revalidateWM(); return { ok: true, data };
 }

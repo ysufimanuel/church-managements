@@ -95,14 +95,14 @@ export function WebManagerClient({ navItems, theme, sections, role, publicPath, 
       toast.error(result.error || 'Gagal menyimpan preferensi tema');
       return;
     }
-    if (enabled) setPreviewKey((k) => k + 1);
-    toast.success(enabled ? 'Default Theme berhasil dimasukkan ke Draft gereja' : 'Preview Default Theme dinonaktifkan untuk akun ini');
+    setPreviewKey((k) => k + 1);
+    toast.success(enabled ? 'Default Theme aktif untuk preview akun ini' : 'Tampilan Draft CMS dipulihkan untuk akun ini');
   }
 
   React.useEffect(() => { setThemeValues(theme?.draft || theme?.published || { primary_color: '#FFFFFF', secondary_color: '#1F2937', accent_color: '#22C55E', font_family: 'Inter' }); }, [theme]);
   const pages = React.useMemo(() => { const set = new Set(['home', 'events', 'tentang', 'kontak']); navItems.forEach((n) => { const href = String(n.draft?.href || n.href || '').replace(/^\//, '').split('/')[0]; if (href) set.add(href); }); sections.forEach((s) => s.page && set.add(s.page)); return Array.from(set); }, [navItems, sections]);
   const pageSections = sections.filter((s) => s.page === page).sort((a, b) => a.sort_order - b.sort_order);
-  const previewPath = publicPath ? `${publicPath}${page === 'home' ? '' : `/${page}`}?preview=draft` : null;
+  const previewPath = publicPath ? `${publicPath}${page === 'home' ? '' : `/${page}`}?preview=draft${defaultThemeEnabled ? '&theme=default' : ''}` : null;
   async function run(p: Promise<{ ok: boolean; error?: string }>, okMsg?: string) { const r = await p; if (r.ok) { toast.success(okMsg || t('save')); setPreviewKey((k) => k + 1); } else toast.error(r.error || 'Gagal menyimpan'); return r; }
 
   return <div className="space-y-4">
@@ -116,7 +116,7 @@ export function WebManagerClient({ navItems, theme, sections, role, publicPath, 
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="min-w-0">
             <p className="font-semibold">Default Theme · Preferensi Akun</p>
-            <p className="mt-1 text-xs text-muted-foreground">Saat diaktifkan, template Default Theme disalin ke Draft website gereja ini agar bisa diedit dan dipublish. Draft dipakai bersama oleh Admin/Superadmin dalam gereja yang sama; website publik tidak berubah sampai Anda menekan Publish. Mengaktifkan ulang akan mengganti Draft aktif dengan template awal.</p>
+            <p className="mt-1 text-xs text-muted-foreground">Saat diaktifkan, Default Theme hanya mengubah warna, tipografi, header, dan layout pada preview akun ini. Konten, halaman, serta media Draft gereja tidak diubah. Saat dinonaktifkan, preview kembali ke tampilan CMS terakhir. Website publik tetap tidak berubah sampai Publish.</p>
           </div>
           <div className="flex items-center gap-2"><span className="text-xs text-muted-foreground">{defaultThemeEnabled ? 'Aktif' : 'Nonaktif'}</span><Switch checked={defaultThemeEnabled} onCheckedChange={(checked) => void updateDefaultThemePreference(checked)} /></div>
         </div>

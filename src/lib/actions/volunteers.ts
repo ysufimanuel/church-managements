@@ -46,7 +46,7 @@ export interface AssignmentInput {
 }
 
 export async function saveAssignment(input: AssignmentInput) {
-  const { denied } = await requireRole((r: Role) => (input.id ? canEdit(r) : canAdd(r)));
+  const { profile, denied } = await requireRole((r: Role) => (input.id ? canEdit(r) : canAdd(r)));
   if (denied) return { ok: false, error: denied };
   const supabase = await createClient();
   const payload = {
@@ -55,18 +55,18 @@ export async function saveAssignment(input: AssignmentInput) {
     tugas: input.tugas, catatan: input.catatan, status: input.status ?? 'assigned',
   };
   let error;
-  if (input.id) ({ error } = await supabase.from('volunteer_assignments').update(payload).eq('id', input.id));
-  else ({ error } = await supabase.from('volunteer_assignments').insert(payload));
+  if (input.id) ({ error } = await supabase.from('volunteer_assignments').update(payload).eq('id', input.id).eq('church_id', profile.church_id));
+  else ({ error } = await supabase.from('volunteer_assignments').insert({ ...payload, church_id: profile.church_id }));
   if (error) return { ok: false, error: error.message };
   revalidatePath('/dashboard/volunteers');
   return { ok: true };
 }
 
 export async function deleteAssignment(id: number) {
-  const { denied } = await requireRole((r: Role) => canDelete(r), 'Hanya Superadmin yang dapat menghapus data');
+  const { profile, denied } = await requireRole((r: Role) => canDelete(r), 'Hanya Superadmin yang dapat menghapus data');
   if (denied) return { ok: false, error: denied };
   const supabase = await createClient();
-  const { error } = await supabase.from('volunteer_assignments').delete().eq('id', id);
+  const { error } = await supabase.from('volunteer_assignments').delete().eq('id', id).eq('church_id', profile.church_id);
   if (error) return { ok: false, error: error.message };
   revalidatePath('/dashboard/volunteers');
   return { ok: true };

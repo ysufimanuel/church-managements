@@ -173,7 +173,7 @@ export async function saveWebsiteThemePreference(theme: WebsiteThemePreference) 
     .maybeSingle();
   if (readError || !current) return { ok: false, error: readError?.message || 'Tema Draft tidak ditemukan' };
 
-  const baseDraft = current.draft && typeof current.draft === 'object'
+  const baseDraft: Record<string, unknown> = current.draft && typeof current.draft === 'object'
     ? current.draft as Record<string, unknown>
     : {
         primary_color: current.primary_color,
@@ -181,7 +181,7 @@ export async function saveWebsiteThemePreference(theme: WebsiteThemePreference) 
         accent_color: '#22C55E',
         font_family: current.font_family,
       };
-  const draft = { ...baseDraft };
+  const draft: Record<string, unknown> = { ...baseDraft };
   if (theme === 'default') draft.website_theme = 'default';
   else delete draft.website_theme;
 

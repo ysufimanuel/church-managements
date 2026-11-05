@@ -40,7 +40,7 @@ export default async function WebManagerPage() {
         sections={sections || []}
         role={profile!.role as Role}
         publicPath={publicPath}
-        websiteThemePreference={theme?.draft?.website_theme === 'default' ? 'default' : 'cms'}
+        websiteThemePreference={(theme?.draft as any)?.website_theme === 'default' ? 'default' : 'cms'}
       />
     </div>
   );

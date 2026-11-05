@@ -78,10 +78,40 @@ export async function deleteMedia(id: number) { const { denied } = await require
 
 export interface SectionInput { id?: number; page: string; type: string; sort_order: number; content: Record<string, any>; enabled: boolean; }
 export async function saveSectionDraft(input: SectionInput) {
-  const { denied } = await guardWM(); if (denied) return { ok: false, error: denied }; const supabase = await createClient();
-  const payload = { page: input.page, type: input.type, sort_order: input.sort_order, content: input.content, enabled: input.enabled, draft_deleted: false, updated_at: new Date().toISOString() };
-  const result = input.id ? await supabase.from('site_sections').update(payload).eq('id', input.id) : await supabase.from('site_sections').insert(payload);
-  if (result.error) return { ok: false, error: result.error.message }; revalidateWM(); return { ok: true };
+  const { profile, denied } = await guardWM();
+  if (denied) return { ok: false, error: denied };
+  const supabase = await createClient();
+  const payload = {
+    page: input.page,
+    type: input.type,
+    sort_order: Math.max(0, Math.trunc(Number(input.sort_order) || 0)),
+    content: input.content,
+    enabled: input.enabled,
+    draft_deleted: false,
+    updated_at: new Date().toISOString(),
+  };
+
+  if (input.id) {
+    const { data, error } = await supabase
+      .from('site_sections')
+      .update(payload)
+      .eq('id', input.id)
+      .eq('church_id', profile.church_id)
+      .select('id')
+      .maybeSingle();
+    if (error) return { ok: false, error: error.message };
+    if (!data) return { ok: false, error: 'Section tidak ditemukan atau tidak memiliki akses pada gereja ini. Urutan/posisi tidak disimpan.' };
+  } else {
+    const { data, error } = await supabase
+      .from('site_sections')
+      .insert({ ...payload, church_id: profile.church_id })
+      .select('id')
+      .maybeSingle();
+    if (error) return { ok: false, error: error.message };
+    if (!data) return { ok: false, error: 'Section baru gagal dibuat.' };
+  }
+  revalidateWM();
+  return { ok: true };
 }
 export async function publishSections(page: string) {
   const { denied } = await guardWM(); if (denied) return { ok: false, error: denied }; const supabase = await createClient();
@@ -121,12 +151,149 @@ export async function publishWebManager() {
 
 export type WebsiteThemePreference = 'cms' | 'default';
 
+const DEFAULT_THEME_DRAFT_SECTIONS: Array<Omit<SectionInput, 'id'>> = [
+  {
+    page: 'home', type: 'hero', sort_order: 0, enabled: true,
+    content: {
+      template_key: 'default-theme-v1',
+      title: 'Selamat datang di gereja Anda',
+      subtitle: 'Temukan komunitas, bertumbuh dalam iman, dan ambil bagian dalam pelayanan.',
+      cta_label: 'Tentang Kami', cta_href: '/tentang',
+      title_font_size: 48, subtitle_font_size: 20, overlay_opacity: 58,
+      media_items: [
+        { kind: 'image', url: 'https://i.ytimg.com/vi/hCgMpVA5Mfw/maxresdefault.jpg', ratio: '16:9', size: 100, radius: 16, position: 'center', layer: 'overlay', autoplay: false, muted: true, title: 'Foto utama' },
+      ],
+    },
+  },
+  {
+    page: 'home', type: 'richtext', sort_order: 1, enabled: true,
+    content: {
+      template_key: 'default-theme-v1',
+      title: 'Baru di gereja kami?',
+      body: '1. Datang beribadah dan kenali komunitas kami.\n2. Temukan kelompok yang sesuai dengan tahap hidup Anda.\n3. Ikuti kelas dan kegiatan untuk bertumbuh bersama.',
+      media_items: [
+        { kind: 'image', url: 'https://dq5pwpg1q8ru0.cloudfront.net/2026/08/19/01/14/11/e486dbb6-aeb8-43cf-9373-b6181d871e05/Sunday-Church-Service-Graphic.png', ratio: '16:9', size: 100, radius: 16, position: 'center', layer: 'front', autoplay: false, muted: true, title: 'Ibadah bersama' },
+      ],
+    },
+  },
+  {
+    page: 'home', type: 'richtext', sort_order: 2, enabled: true,
+    content: {
+      template_key: 'default-theme-v1',
+      title: 'Tentang gereja',
+      body: 'Tuliskan sejarah, visi, dan misi gereja di bagian ini. Konten ini adalah contoh awal dan dapat diubah sepenuhnya.',
+      media_items: [
+        { kind: 'image', url: 'https://i.ytimg.com/vi/PN_Qgzi04cg/maxresdefault.jpg', ratio: '16:9', size: 100, radius: 16, position: 'center', layer: 'front', autoplay: false, muted: true, title: 'Komunitas gereja' },
+      ],
+    },
+  },
+  {
+    page: 'home', type: 'richtext', sort_order: 3, enabled: true,
+    content: {
+      template_key: 'default-theme-v1',
+      title: 'Kepemimpinan',
+      body: 'Tambahkan foto, nama, dan jabatan pendeta atau pemimpin gereja di sini. Ganti seluruh contoh ini dengan informasi resmi.',
+      media_items: [
+        { kind: 'image', url: 'https://i.ytimg.com/vi/sXjqOVQu8PI/maxresdefault.jpg', ratio: '4:3', size: 100, radius: 16, position: 'center', layer: 'front', autoplay: false, muted: true, title: 'Tim pelayanan' },
+      ],
+    },
+  },
+  {
+    page: 'home', type: 'richtext', sort_order: 4, enabled: true,
+    content: {
+      template_key: 'default-theme-v1',
+      title: 'Connect · Komunitas',
+      body: 'Ceritakan kelompok kecil, komunitas, dan pelayanan yang tersedia. Sesuaikan nama dan deskripsi dengan program gereja.',
+      media_items: [
+        { kind: 'image', url: 'https://standrewswesley.com/wp-content/uploads/2022/02/Worship-Sunday-morn.jpg', ratio: '16:9', size: 100, radius: 16, position: 'center', layer: 'front', autoplay: false, muted: true, title: 'Komunitas' },
+      ],
+    },
+  },
+  {
+    page: 'home', type: 'event_feed', sort_order: 5, enabled: true,
+    content: { template_key: 'default-theme-v1', title: 'Kegiatan & acara mendatang', limit: 3 },
+  },
+  {
+    page: 'home', type: 'media', sort_order: 6, enabled: true,
+    content: {
+      template_key: 'default-theme-v1',
+      title: 'Khotbah & video',
+      media_items: [
+        { kind: 'video', url: 'https://youtu.be/5Le0txbJCxk', ratio: '16:9', size: 100, radius: 16, position: 'center', layer: 'front', autoplay: false, muted: true, title: 'Video 1' },
+        { kind: 'video', url: 'https://youtu.be/6CKCThJB5w0', ratio: '16:9', size: 100, radius: 16, position: 'center', layer: 'front', autoplay: false, muted: true, title: 'Video 2' },
+        { kind: 'video', url: 'https://youtu.be/nQWFzMvCfLE', ratio: '16:9', size: 100, radius: 16, position: 'center', layer: 'front', autoplay: false, muted: true, title: 'Video 3' },
+        { kind: 'video', url: 'https://youtu.be/Z32HiCoFzlU', ratio: '16:9', size: 100, radius: 16, position: 'center', layer: 'front', autoplay: false, muted: true, title: 'Video 4' },
+        { kind: 'video', url: 'https://youtu.be/iJCV_2H9xD0', ratio: '16:9', size: 100, radius: 16, position: 'center', layer: 'front', autoplay: false, muted: true, title: 'Video 5' },
+        { kind: 'video', url: 'https://youtu.be/o5sFvtPOdkg', ratio: '16:9', size: 100, radius: 16, position: 'center', layer: 'front', autoplay: false, muted: true, title: 'Video 6' },
+      ],
+    },
+  },
+  {
+    page: 'home', type: 'media', sort_order: 7, enabled: true,
+    content: {
+      template_key: 'default-theme-v1',
+      title: 'Galeri kegiatan',
+      media_items: [
+        { kind: 'image', url: 'https://i.ytimg.com/vi/hCgMpVA5Mfw/maxresdefault.jpg', ratio: '4:3', size: 100, radius: 16, position: 'center', layer: 'front', autoplay: false, muted: true, title: 'Galeri 1' },
+        { kind: 'image', url: 'https://dq5pwpg1q8ru0.cloudfront.net/2026/08/19/01/14/11/e486dbb6-aeb8-43cf-9373-b6181d871e05/Sunday-Church-Service-Graphic.png', ratio: '4:3', size: 100, radius: 16, position: 'center', layer: 'front', autoplay: false, muted: true, title: 'Galeri 2' },
+        { kind: 'image', url: 'https://i.ytimg.com/vi/PN_Qgzi04cg/maxresdefault.jpg', ratio: '4:3', size: 100, radius: 16, position: 'center', layer: 'front', autoplay: false, muted: true, title: 'Galeri 3' },
+        { kind: 'image', url: 'https://i.ytimg.com/vi/sXjqOVQu8PI/maxresdefault.jpg', ratio: '4:3', size: 100, radius: 16, position: 'center', layer: 'front', autoplay: false, muted: true, title: 'Galeri 4' },
+        { kind: 'image', url: 'https://standrewswesley.com/wp-content/uploads/2022/02/Worship-Sunday-morn.jpg', ratio: '4:3', size: 100, radius: 16, position: 'center', layer: 'front', autoplay: false, muted: true, title: 'Galeri 5' },
+      ],
+    },
+  },
+  {
+    page: 'home', type: 'info_lokasi', sort_order: 8, enabled: true,
+    content: {
+      template_key: 'default-theme-v1',
+      title: 'Jadwal ibadah & lokasi',
+      address: '[Isi alamat gereja]',
+      hours: '[Isi hari dan jam ibadah]',
+      maps_embed: '',
+      lat: null,
+      lng: null,
+    },
+  },
+  {
+    page: 'tentang', type: 'hero', sort_order: 0, enabled: true,
+    content: { template_key: 'default-theme-v1', title: 'Tentang gereja kami', subtitle: 'Kenali visi, misi, dan perjalanan komunitas kami.', cta_label: '', cta_href: '/tentang' },
+  },
+  {
+    page: 'tentang', type: 'richtext', sort_order: 1, enabled: true,
+    content: { template_key: 'default-theme-v1', title: 'Visi & Misi', body: 'Tuliskan visi, misi, dan nilai-nilai gereja di sini.' },
+  },
+];
+
 export async function saveWebsiteThemePreference(theme: WebsiteThemePreference) {
   const { profile, denied } = await guardWM();
   if (denied) return { ok: false, error: denied };
   if (theme !== 'cms' && theme !== 'default') return { ok: false, error: 'Pilihan tema tidak valid' };
 
   const supabase = await createClient();
+  if (theme === 'default') {
+    // Mengganti Draft aktif tenant ini, tetapi tidak mengubah snapshot Published.
+    const { error: archiveError } = await supabase
+      .from('site_sections')
+      .update({ draft_deleted: true, enabled: false, updated_at: new Date().toISOString() })
+      .eq('church_id', profile.church_id);
+    if (archiveError) return { ok: false, error: archiveError.message };
+
+    const rows = DEFAULT_THEME_DRAFT_SECTIONS.map((section) => ({
+      ...section,
+      church_id: profile.church_id,
+      content: { ...section.content, template_key: 'default-theme-v1' },
+      published: null,
+      draft_deleted: false,
+      updated_at: new Date().toISOString(),
+    }));
+    const { data: inserted, error: insertError } = await supabase
+      .from('site_sections')
+      .insert(rows)
+      .select('id');
+    if (insertError) return { ok: false, error: insertError.message };
+    if (inserted?.length !== rows.length) return { ok: false, error: 'Tidak semua section Default Theme berhasil dimasukkan ke Draft.' };
+  }
+
   const { data: existing, error: readError } = await supabase
     .from('user_preferences')
     .select('preferences')
@@ -146,5 +313,7 @@ export async function saveWebsiteThemePreference(theme: WebsiteThemePreference) 
 
   if (error) return { ok: false, error: error.message };
   revalidatePath('/dashboard/web-manager');
+  revalidatePath('/');
+  revalidatePath('/site/[slug]', 'page');
   return { ok: true };
 }

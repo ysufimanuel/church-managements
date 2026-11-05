@@ -13,40 +13,57 @@ function revalidateWM() { revalidatePath('/dashboard/web-manager'); revalidatePa
 export type NavInput = { id?: number; label: string; href: string; visible: boolean; sort_order: number };
 
 export async function saveNavItem(input: NavInput) {
-  const { denied } = await guardWM(); if (denied) return { ok: false, error: denied };
-  const supabase = await createClient(); const draft = { label: input.label, href: input.href, visible: input.visible, sort_order: input.sort_order };
-  const result = input.id ? await supabase.from('site_nav_items').update({ ...draft, draft, state: 'draft' }).eq('id', input.id) : await supabase.from('site_nav_items').insert({ ...draft, draft, published: null, state: 'draft' });
-  if (result.error) return { ok: false, error: result.error.message }; revalidateWM(); return { ok: true };
+  const { profile, denied } = await guardWM(); if (denied) return { ok: false, error: denied };
+  const supabase = await createClient();
+  const draft = { label: input.label, href: input.href, visible: input.visible, sort_order: input.sort_order };
+  const result = input.id
+    ? await supabase.from('site_nav_items').update({ ...draft, draft, state: 'draft' }).eq('id', input.id).eq('church_id', profile.church_id).select('id').maybeSingle()
+    : await supabase.from('site_nav_items').insert({ ...draft, draft, published: null, state: 'draft', church_id: profile.church_id }).select('id').maybeSingle();
+  if (result.error) return { ok: false, error: result.error.message };
+  if (!result.data) return { ok: false, error: 'Menu tidak ditemukan atau tidak memiliki akses pada gereja ini' };
+  revalidateWM(); return { ok: true };
 }
 
 export async function toggleNavVisibility(id: number, visible: boolean) {
-  const { denied } = await guardWM(); if (denied) return { ok: false, error: denied };
-  const supabase = await createClient(); const { data, error: readError } = await supabase.from('site_nav_items').select('label,href,sort_order,draft').eq('id', id).maybeSingle();
+  const { profile, denied } = await guardWM(); if (denied) return { ok: false, error: denied };
+  const supabase = await createClient();
+  const { data, error: readError } = await supabase.from('site_nav_items').select('label,href,sort_order,draft').eq('id', id).eq('church_id', profile.church_id).maybeSingle();
   if (readError || !data) return { ok: false, error: readError?.message || 'Menu tidak ditemukan' };
   const current = (data.draft || { label: data.label, href: data.href, sort_order: data.sort_order }) as NavInput;
   const draft = { label: current.label, href: current.href, visible, sort_order: current.sort_order };
-  const { error } = await supabase.from('site_nav_items').update({ ...draft, draft, state: 'draft' }).eq('id', id);
-  if (error) return { ok: false, error: error.message }; revalidateWM(); return { ok: true };
+  const { data: updated, error } = await supabase.from('site_nav_items').update({ ...draft, draft, state: 'draft' }).eq('id', id).eq('church_id', profile.church_id).select('id').maybeSingle();
+  if (error) return { ok: false, error: error.message };
+  if (!updated) return { ok: false, error: 'Menu tidak ditemukan atau tidak memiliki akses pada gereja ini' };
+  revalidateWM(); return { ok: true };
 }
 
 export async function deleteNavItem(id: number) {
-  const { denied } = await requireRole((r: Role) => canDelete(r), 'Hanya Superadmin'); if (denied) return { ok: false, error: denied };
-  const supabase = await createClient(); const { data, error: readError } = await supabase.from('site_nav_items').select('published').eq('id', id).maybeSingle();
+  const { profile, denied } = await requireRole((r: Role) => canDelete(r), 'Hanya Superadmin'); if (denied) return { ok: false, error: denied };
+  const supabase = await createClient();
+  const { data, error: readError } = await supabase.from('site_nav_items').select('published').eq('id', id).eq('church_id', profile.church_id).maybeSingle();
   if (readError || !data) return { ok: false, error: readError?.message || 'Menu tidak ditemukan' };
-  const result = data.published ? await supabase.from('site_nav_items').update({ draft: null, state: 'draft' }).eq('id', id) : await supabase.from('site_nav_items').delete().eq('id', id);
-  if (result.error) return { ok: false, error: result.error.message }; revalidateWM(); return { ok: true };
+  const result = data.published
+    ? await supabase.from('site_nav_items').update({ draft: null, state: 'draft' }).eq('id', id).eq('church_id', profile.church_id)
+    : await supabase.from('site_nav_items').delete().eq('id', id).eq('church_id', profile.church_id);
+  if (result.error) return { ok: false, error: result.error.message };
+  revalidateWM(); return { ok: true };
 }
 
 export async function publishNav() {
-  const { denied } = await guardWM(); if (denied) return { ok: false, error: denied };
-  const supabase = await createClient(); const { data: items, error } = await supabase.from('site_nav_items').select('*').order('sort_order').order('id');
+  const { profile, denied } = await guardWM(); if (denied) return { ok: false, error: denied };
+  const supabase = await createClient();
+  const { data: items, error } = await supabase.from('site_nav_items').select('*').eq('church_id', profile.church_id).order('sort_order').order('id');
   if (error) return { ok: false, error: error.message };
   for (const item of items || []) {
-    if (!item.draft) { const r = await supabase.from('site_nav_items').delete().eq('id', item.id); if (r.error) return { ok: false, error: r.error.message }; continue; }
+    if (!item.draft) {
+      const removed = await supabase.from('site_nav_items').delete().eq('id', item.id).eq('church_id', profile.church_id);
+      if (removed.error) return { ok: false, error: removed.error.message };
+      continue;
+    }
     const draft = item.draft as NavInput;
-    const r = await supabase.from('site_nav_items').update({ ...draft, published: draft, state: 'published' }).eq('id', item.id).select('id');
-    if (r.error) return { ok: false, error: r.error.message };
-    if (!r.data?.length) return { ok: false, error: `Gagal publish menu #${item.id}: tidak ada row yang ter-update` };
+    const updated = await supabase.from('site_nav_items').update({ ...draft, published: draft, state: 'published' }).eq('id', item.id).eq('church_id', profile.church_id).select('id');
+    if (updated.error) return { ok: false, error: updated.error.message };
+    if (!updated.data?.length) return { ok: false, error: `Gagal publish menu #${item.id}: tidak ada row yang ter-update` };
   }
   revalidateWM(); return { ok: true };
 }
@@ -76,12 +93,25 @@ export async function publishTheme() {
 
 export interface MediaInput { id?: number; kind: 'image' | 'video' | 'map'; url: string; ratio: string; layer: 'front' | 'overlay'; position: string; title?: string; lat?: number | null; lng?: number | null; sort_order?: number; }
 export async function saveMedia(input: MediaInput) {
-  const { denied } = await guardWM(); if (denied) return { ok: false, error: denied }; const supabase = await createClient();
+  const { profile, denied } = await guardWM(); if (denied) return { ok: false, error: denied };
+  const supabase = await createClient();
   const payload = { kind: input.kind, url: input.url, ratio: input.ratio, layer: input.layer, position: input.position, title: input.title, lat: input.lat ?? null, lng: input.lng ?? null, sort_order: input.sort_order ?? 0 };
-  const result = input.id ? await supabase.from('site_media').update(payload).eq('id', input.id) : await supabase.from('site_media').insert({ ...payload, state: 'published' });
-  if (result.error) return { ok: false, error: result.error.message }; revalidateWM(); return { ok: true };
+  const result = input.id
+    ? await supabase.from('site_media').update(payload).eq('id', input.id).eq('church_id', profile.church_id).select('id').maybeSingle()
+    : await supabase.from('site_media').insert({ ...payload, state: 'published', church_id: profile.church_id }).select('id').maybeSingle();
+  if (result.error) return { ok: false, error: result.error.message };
+  if (!result.data) return { ok: false, error: 'Media tidak ditemukan atau tidak memiliki akses pada gereja ini' };
+  revalidateWM(); return { ok: true };
 }
-export async function deleteMedia(id: number) { const { denied } = await requireRole((r: Role) => canDelete(r), 'Hanya Superadmin'); if (denied) return { ok: false, error: denied }; const supabase = await createClient(); const { error } = await supabase.from('site_media').delete().eq('id', id); if (error) return { ok: false, error: error.message }; revalidateWM(); return { ok: true }; }
+export async function deleteMedia(id: number) {
+  const { profile, denied } = await requireRole((r: Role) => canDelete(r), 'Hanya Superadmin');
+  if (denied) return { ok: false, error: denied };
+  const supabase = await createClient();
+  const { data, error } = await supabase.from('site_media').delete().eq('id', id).eq('church_id', profile.church_id).select('id').maybeSingle();
+  if (error) return { ok: false, error: error.message };
+  if (!data) return { ok: false, error: 'Media tidak ditemukan atau tidak memiliki akses pada gereja ini' };
+  revalidateWM(); return { ok: true };
+}
 
 export interface SectionInput { id?: number; page: string; type: string; sort_order: number; content: Record<string, any>; enabled: boolean; }
 export async function saveSectionDraft(input: SectionInput) {
@@ -121,38 +151,41 @@ export async function saveSectionDraft(input: SectionInput) {
   return { ok: true };
 }
 export async function publishSections(page: string) {
-  const { profile, denied } = await guardWM(); if (denied) return { ok: false, error: denied }; const supabase = await createClient();
-  const { data: sections, error } = await supabase.from('site_sections').select('id,page,draft_page,type,draft_type,sort_order,draft_sort_order,enabled,draft_enabled,content,draft_deleted').eq('church_id', profile.church_id).or(`page.eq.${page},draft_page.eq.${page}`); if (error) return { ok: false, error: error.message };
-  for (const s of sections || []) {
-    const result = s.draft_deleted
-      ? await supabase.from('site_sections').update({ page: s.draft_page || s.page, draft_page: s.draft_page || s.page, type: s.draft_type || 'richtext', draft_type: s.draft_type || 'richtext', sort_order: s.draft_sort_order ?? 0, draft_sort_order: s.draft_sort_order ?? 0, published: null, enabled: false, draft_enabled: false, draft_deleted: false }).eq('id', s.id).select('id')
-      : await supabase.from('site_sections').update({ page: s.draft_page || s.page, draft_page: s.draft_page || s.page, type: s.draft_type || s.type, draft_type: s.draft_type || s.type, sort_order: s.draft_sort_order ?? s.sort_order, draft_sort_order: s.draft_sort_order ?? s.sort_order, published: s.content, enabled: s.draft_enabled, draft_enabled: s.draft_enabled }).eq('id', s.id).select('id');
-    if (result.error) return { ok: false, error: result.error.message };
-    if (!result.data?.length) return { ok: false, error: `Gagal publish section #${s.id}: tidak ada row yang ter-update` };
-  }
-  revalidateWM(); return { ok: true };
+  const { denied } = await guardWM(); if (denied) return { ok: false, error: denied };
+  if (!page || !page.trim()) return { ok: false, error: 'Page tidak valid' };
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc('publish_site_sections', { p_page: page });
+  if (error) return { ok: false, error: error.message };
+  revalidateWM(); return { ok: true, data };
 }
 export async function publishAllSections() {
-  const { profile, denied } = await guardWM(); if (denied) return { ok: false, error: denied }; const supabase = await createClient();
-  const { data: sections, error } = await supabase.from('site_sections').select('id,page,draft_page,type,draft_type,sort_order,draft_sort_order,enabled,draft_enabled,content,draft_deleted').eq('church_id', profile.church_id).order('id'); if (error) return { ok: false, error: error.message };
-  for (const s of sections || []) {
-    const result = s.draft_deleted
-      ? await supabase.from('site_sections').update({ page: s.draft_page || s.page, draft_page: s.draft_page || s.page, type: s.draft_type || 'richtext', draft_type: s.draft_type || 'richtext', sort_order: s.draft_sort_order ?? 0, draft_sort_order: s.draft_sort_order ?? 0, published: null, enabled: false, draft_enabled: false, draft_deleted: false }).eq('id', s.id).select('id')
-      : await supabase.from('site_sections').update({ page: s.draft_page || s.page, draft_page: s.draft_page || s.page, type: s.draft_type || s.type, draft_type: s.draft_type || s.type, sort_order: s.draft_sort_order ?? s.sort_order, draft_sort_order: s.draft_sort_order ?? s.sort_order, published: s.content, enabled: s.draft_enabled, draft_enabled: s.draft_enabled }).eq('id', s.id).select('id');
-    if (result.error) return { ok: false, error: result.error.message };
-    if (!result.data?.length) return { ok: false, error: `Gagal publish section #${s.id}: tidak ada row yang ter-update` };
-  }
-  revalidateWM(); return { ok: true };
+  const { denied } = await guardWM(); if (denied) return { ok: false, error: denied };
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc('publish_site_sections', { p_page: null });
+  if (error) return { ok: false, error: error.message };
+  revalidateWM(); return { ok: true, data };
 }
 export async function deleteSection(id: number) {
-  const { denied } = await requireRole((r: Role) => canDelete(r), 'Hanya Superadmin'); if (denied) return { ok: false, error: denied }; const supabase = await createClient(); const { data, error: readError } = await supabase.from('site_sections').select('published').eq('id', id).maybeSingle(); if (readError || !data) return { ok: false, error: readError?.message || 'Section tidak ditemukan' };
-  const result = data.published ? await supabase.from('site_sections').update({ draft_deleted: true }).eq('id', id) : await supabase.from('site_sections').delete().eq('id', id);
-  if (result.error) return { ok: false, error: result.error.message }; revalidateWM(); return { ok: true };
+  const { profile, denied } = await requireRole((r: Role) => canDelete(r), 'Hanya Superadmin');
+  if (denied) return { ok: false, error: denied };
+  const supabase = await createClient();
+  const { data, error: readError } = await supabase.from('site_sections').select('published').eq('id', id).eq('church_id', profile.church_id).maybeSingle();
+  if (readError || !data) return { ok: false, error: readError?.message || 'Section tidak ditemukan' };
+  const result = data.published
+    ? await supabase.from('site_sections').update({ draft_deleted: true }).eq('id', id).eq('church_id', profile.church_id)
+    : await supabase.from('site_sections').delete().eq('id', id).eq('church_id', profile.church_id);
+  if (result.error) return { ok: false, error: result.error.message };
+  revalidateWM(); return { ok: true };
 }
 
 export async function publishWebManager() {
-  const { denied } = await guardWM(); if (denied) return { ok: false, error: denied };
-  const n = await publishNav(); if (!n.ok) return n; const t = await publishTheme(); if (!t.ok) return t; const s = await publishAllSections(); if (!s.ok) return s; revalidateWM(); return { ok: true };
+  const { denied } = await guardWM();
+  if (denied) return { ok: false, error: denied };
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc('publish_web_manager');
+  if (error) return { ok: false, error: error.message };
+  revalidateWM();
+  return { ok: true, data };
 }
 
 

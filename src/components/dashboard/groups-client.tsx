@@ -110,7 +110,7 @@ export function GroupsClient({ groups, members, groupMembers, role }: { groups: 
               {membersOf(memberModal.id).map((mid) => (
                 <li key={mid} className="flex items-center justify-between rounded-md border px-3 py-2 text-sm">
                   {memberName(mid)}
-                  {canEdit(role) && (
+                  {canDelete(role) && (
                     <Button variant="ghost" size="sm" onClick={async () => {
                       const r = await removeGroupMember(memberModal.id, mid);
                       r.ok ? toast.success(t('save')) : toast.error(r.error);

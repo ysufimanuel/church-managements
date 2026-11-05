@@ -8,7 +8,8 @@ type SectionMedia = { id: string | number; kind: 'image' | 'video'; url: string;
 
 function resolveHref(basePath: string, href?: string) {
   if (!href || href === '/' || href === '#home') return basePath;
-  if (/^https?:\/\//i.test(href)) return href;
+  if (/^(https?:\/\/|mailto:|tel:)/i.test(href)) return href;
+  if (/^[a-z][a-z\d+.-]*:/i.test(href) || href.startsWith('//')) return basePath;
   const route = href.startsWith('#') ? href.slice(1) : href;
   return `${basePath}${route.startsWith('/') ? route : `/${route}`}`;
 }

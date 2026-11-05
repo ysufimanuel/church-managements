@@ -90,10 +90,10 @@ export async function saveSectionDraft(input: SectionInput) {
   const supabase = await createClient();
   const payload = {
     draft_page: input.page,
-    type: input.type,
-    sort_order: Math.max(0, Math.trunc(Number(input.sort_order) || 0)),
+    draft_type: input.type,
+    draft_sort_order: Math.max(0, Math.trunc(Number(input.sort_order) || 0)),
     content: input.content,
-    enabled: input.enabled,
+    draft_enabled: input.enabled,
     draft_deleted: false,
     updated_at: new Date().toISOString(),
   };
@@ -111,7 +111,7 @@ export async function saveSectionDraft(input: SectionInput) {
   } else {
     const { data, error } = await supabase
       .from('site_sections')
-      .insert({ ...payload, page: input.page, church_id: profile.church_id })
+      .insert({ ...payload, page: input.page, type: input.type, sort_order: payload.draft_sort_order, enabled: false, church_id: profile.church_id })
       .select('id')
       .maybeSingle();
     if (error) return { ok: false, error: error.message };
@@ -125,8 +125,8 @@ export async function publishSections(page: string) {
   const { data: sections, error } = await supabase.from('site_sections').select('id,page,draft_page,content,draft_deleted').eq('church_id', profile.church_id).or(`page.eq.${page},draft_page.eq.${page}`); if (error) return { ok: false, error: error.message };
   for (const s of sections || []) {
     const result = s.draft_deleted
-      ? await supabase.from('site_sections').update({ page: s.draft_page || s.page, draft_page: s.draft_page || s.page, published: null, enabled: false, draft_deleted: false }).eq('id', s.id).select('id')
-      : await supabase.from('site_sections').update({ page: s.draft_page || s.page, draft_page: s.draft_page || s.page, published: s.content }).eq('id', s.id).select('id');
+      ? await supabase.from('site_sections').update({ page: s.draft_page || s.page, draft_page: s.draft_page || s.page, type: s.draft_type || 'richtext', draft_type: s.draft_type || 'richtext', sort_order: s.draft_sort_order ?? 0, draft_sort_order: s.draft_sort_order ?? 0, published: null, enabled: false, draft_enabled: false, draft_deleted: false }).eq('id', s.id).select('id')
+      : await supabase.from('site_sections').update({ page: s.draft_page || s.page, draft_page: s.draft_page || s.page, type: s.draft_type || s.type, draft_type: s.draft_type || s.type, sort_order: s.draft_sort_order ?? s.sort_order, draft_sort_order: s.draft_sort_order ?? s.sort_order, published: s.content, enabled: s.draft_enabled, draft_enabled: s.draft_enabled }).eq('id', s.id).select('id');
     if (result.error) return { ok: false, error: result.error.message };
     if (!result.data?.length) return { ok: false, error: `Gagal publish section #${s.id}: tidak ada row yang ter-update` };
   }

@@ -47,7 +47,7 @@ export async function addParticipant(eventId: number, memberId?: number, namaMan
 }
 
 export async function removeParticipant(id: number) {
-  const { denied } = await requireRole((r: Role) => canEdit(r));
+  const { denied } = await requireRole((r: Role) => canDelete(r), 'Hanya Superadmin yang dapat menghapus peserta event');
   if (denied) return { ok: false, error: denied };
   const supabase = await createClient();
   const { error } = await supabase.from('event_participants').delete().eq('id', id);

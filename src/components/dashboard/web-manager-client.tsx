@@ -2,6 +2,7 @@
 'use client';
 
 import * as React from 'react';
+import { useRouter } from 'next/navigation';
 import ColorPicker from 'react-best-gradient-color-picker';
 import { useLang } from '@/components/lang-context';
 import { Button } from '@/components/ui/button';
@@ -93,6 +94,7 @@ function ColorField({ label, value, onChange, id, hint }: { label: string; value
 
 export function WebManagerClient({ navItems, theme, sections, role, publicPath, websiteThemePreference }: { navItems: any[]; theme: any; media?: any[]; sections: any[]; role: Role; publicPath: string | null; websiteThemePreference: WebsiteThemePreference }) {
   const { t } = useLang();
+  const router = useRouter();
   const [tab, setTab] = React.useState('nav');
   const [navModal, setNavModal] = React.useState(false);
   const [navEditing, setNavEditing] = React.useState<any>(null);
@@ -124,12 +126,12 @@ export function WebManagerClient({ navItems, theme, sections, role, publicPath, 
       const href = pageFromHref(n.draft?.href || n.href);
       if (href) set.add(href);
     });
-    sections.forEach((s) => s.page && set.add(String(s.page).toLowerCase()));
+    sections.forEach((s) => { const draftPage = s.draft_page || s.page; if (draftPage) set.add(String(draftPage).toLowerCase()); });
     return Array.from(set);
   }, [navItems, sections]);
-  const pageSections = sections.filter((s) => (s.draft_page || s.page) === page).sort((a, b) => a.sort_order - b.sort_order);
+  const pageSections = sections.filter((s) => (s.draft_page || s.page) === page).sort((a, b) => (a.draft_sort_order ?? a.sort_order) - (b.draft_sort_order ?? b.sort_order));
   const previewPath = publicPath ? `${publicPath}${page === 'home' ? '' : `/${page}`}?preview=draft` : null;
-  async function run(p: Promise<{ ok: boolean; error?: string }>, okMsg?: string) { const r = await p; if (r.ok) { toast.success(okMsg || t('save')); setPreviewKey((k) => k + 1); } else toast.error(r.error || 'Gagal menyimpan'); return r; }
+  async function run(p: Promise<{ ok: boolean; error?: string }>, okMsg?: string) { const r = await p; if (r.ok) { toast.success(okMsg || t('save')); setPreviewKey((k) => k + 1); router.refresh(); } else toast.error(r.error || 'Gagal menyimpan'); return r; }
 
   return <div className="space-y-4">
     <div className="flex flex-wrap items-start justify-between gap-2"><div><h1 className="text-2xl font-bold">{t('web-manager')}</h1><p className="text-muted-foreground">Kelola header, tema, halaman, draft, dan preview website publik.</p></div><Button onClick={() => run(publishWebManager(), t('publish'))}><Rocket className="h-4 w-4" /> {t('wm-publish')}</Button></div>

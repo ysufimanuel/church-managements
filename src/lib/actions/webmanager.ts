@@ -54,7 +54,7 @@ export async function publishNav() {
 export type ThemeInput = { primary_color: string; secondary_color: string; accent_color: string; font_family: string };
 export async function saveThemeDraft(theme: ThemeInput) {
   const { profile, denied } = await guardWM(); if (denied) return { ok: false, error: denied }; const supabase = await createClient();
-  const { data: current, error: readError } = await supabase.from('site_theme').select('draft').eq('id', 1).eq('church_id', profile.church_id).maybeSingle();
+  const { data: current, error: readError } = await supabase.from('site_theme').select('draft,primary_color,font_family').eq('id', 1).eq('church_id', profile.church_id).maybeSingle();
   if (readError || !current) return { ok: false, error: readError?.message || 'Tema Draft tidak ditemukan' };
   const draft = { ...theme, ...((current.draft && typeof current.draft === 'object') ? { website_theme: current.draft.website_theme } : {}) };
   const { data, error } = await supabase.from('site_theme').update({ primary_color: theme.primary_color, font_family: theme.font_family, draft, state: 'draft' }).eq('id', 1).eq('church_id', profile.church_id).select('id').maybeSingle();
@@ -165,7 +165,7 @@ export async function saveWebsiteThemePreference(theme: WebsiteThemePreference) 
   const supabase = await createClient();
   const { data: current, error: readError } = await supabase
     .from('site_theme')
-    .select('draft,primary_color,secondary_color,accent_color,font_family')
+    .select('draft,primary_color,font_family')
     .eq('id', 1)
     .eq('church_id', profile.church_id)
     .maybeSingle();
@@ -175,8 +175,8 @@ export async function saveWebsiteThemePreference(theme: WebsiteThemePreference) 
     ? current.draft as Record<string, unknown>
     : {
         primary_color: current.primary_color,
-        secondary_color: current.secondary_color,
-        accent_color: current.accent_color,
+        secondary_color: '#1F2937',
+        accent_color: '#22C55E',
         font_family: current.font_family,
       };
   const draft = { ...baseDraft };

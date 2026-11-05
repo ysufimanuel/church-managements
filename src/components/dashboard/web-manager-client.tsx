@@ -134,7 +134,7 @@ export function WebManagerClient({ navItems, theme, sections, role, publicPath, 
     sections.forEach((s) => { const draftPage = s.draft_page || s.page; if (draftPage) set.add(String(draftPage).toLowerCase()); });
     return Array.from(set);
   }, [navItems, sections]);
-  const pageSections = sections.filter((s) => (s.draft_page || s.page) === page).sort((a, b) => (a.draft_sort_order ?? a.sort_order) - (b.draft_sort_order ?? b.sort_order));
+  const pageSections = sections.filter((s) => String(s.draft_page || s.page || '').trim().toLowerCase() === page).sort((a, b) => (a.draft_sort_order ?? a.sort_order) - (b.draft_sort_order ?? b.sort_order));
   const previewPath = publicPath ? `${publicPath}${page === 'home' ? '' : `/${page}`}?preview=draft` : null;
   async function run(p: Promise<{ ok: boolean; error?: string }>, okMsg?: string) { const r = await p; if (r.ok) { toast.success(okMsg || t('save')); setPreviewKey((k) => k + 1); router.refresh(); } else toast.error(r.error || 'Gagal menyimpan'); return r; }
 

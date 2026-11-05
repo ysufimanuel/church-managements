@@ -48,7 +48,18 @@ export function ratioToPadding(ratio: string) {
 
 /** Auto-render URL: normalisasi Google Drive / YouTube / Vimeo jadi embed-able */
 export function normalizeMediaUrl(url: string, kind: string) {
-  if (!url) return url;
+  const candidate = String(url || '').trim();
+  if (!candidate) return '';
+  // CMS media may be rendered in iframe src attributes; reject executable and non-web schemes.
+  if (candidate.startsWith('/') && !candidate.startsWith('//')) return candidate;
+  let parsed: URL;
+  try {
+    parsed = new URL(candidate);
+  } catch {
+    return '';
+  }
+  if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return '';
+  url = parsed.toString();
   if (kind === 'video') {
     const yt = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([\w-]{6,})/);
     if (yt) return `https://www.youtube.com/embed/${yt[1]}`;

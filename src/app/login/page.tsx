@@ -44,7 +44,7 @@ function LoginForm() {
           <div className="relative">
             <Input id="password" name="password" type={showPass ? 'text' : 'password'} placeholder="Masukkan password" required autoComplete="current-password" />
             <button type="button" onClick={() => setShowPass(!showPass)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer"
+              className="btn-fx btn-fx-ghost absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer"
               aria-label="Toggle password">
               {showPass ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             </button>

@@ -91,9 +91,11 @@ export function FinanceClient({ transactions, categories, settings, history, don
             {categories.filter((c) => c.tipe === tipe).map((c) => <option key={c.id} value={c.id}>{c.nama}</option>)}
           </Select>
           <Input type="month" value={filterMonth} onChange={(e) => setFilterMonth(e.target.value)} className="w-auto" />
-          <Button variant="secondary" onClick={() => exportCSV(rows.map((x) => ({ Tanggal: x.tanggal, Kategori: catName(x.kategori_id), Keterangan: x.keterangan, Jumlah: x.jumlah, Status: x.status })), tipe)}>
-            <Download className="h-4 w-4" /> {t('export')}
-          </Button>
+          {role !== 'user' && (
+            <Button variant="secondary" onClick={() => exportCSV(rows.map((x) => ({ Tanggal: x.tanggal, Kategori: catName(x.kategori_id), Keterangan: x.keterangan, Jumlah: x.jumlah, Status: x.status })), tipe)}>
+              <Download className="h-4 w-4" /> {t('export')}
+            </Button>
+          )}
           {canAdd(role) && <Button onClick={() => setModal({ tipe })}><Plus className="h-4 w-4" /> {tipe === 'pemasukan' ? t('add-income') : t('add-expense')}</Button>}
         </div>
         <Table>
@@ -186,9 +188,11 @@ export function FinanceClient({ transactions, categories, settings, history, don
 
       {tab === 'laporan' && (
         <div className="space-y-3">
-          <Button variant="secondary" onClick={() => printPDF(t('laporan-keuangan'), transactions.map((x) => ({ Tanggal: x.tanggal, Tipe: x.tipe, Kategori: catName(x.kategori_id), Keterangan: x.keterangan, Jumlah: x.jumlah, Status: x.status })))}>
-            <Download className="h-4 w-4" /> {t('export-report')}
-          </Button>
+          {role !== 'user' && (
+            <Button variant="secondary" onClick={() => printPDF(t('laporan-keuangan'), transactions.map((x) => ({ Tanggal: x.tanggal, Tipe: x.tipe, Kategori: catName(x.kategori_id), Keterangan: x.keterangan, Jumlah: x.jumlah, Status: x.status })))}>
+              <Download className="h-4 w-4" /> {t('export-report')}
+            </Button>
+          )}
           <Card><CardContent className="p-6 space-y-2">
             <h3 className="text-lg font-bold">{t('laporan-keuangan')}</h3>
             <p>{t('saldo-awal')}: <b>{formatRupiah(Number(settings?.saldo_awal || 0))}</b></p>

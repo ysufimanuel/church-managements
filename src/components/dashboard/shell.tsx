@@ -6,12 +6,13 @@ import { usePathname } from 'next/navigation';
 import {
   Church, LayoutDashboard, Users, Home, Boxes, CalendarDays, ClipboardCheck,
   HandHeart, Wallet, HandHelping, MessagesSquare, BarChart3, UserCog,
-  Globe2, LogOut, Menu, X,
+  Globe2, LogOut,
 } from 'lucide-react';
 import { useLang, LangSwitcher } from '@/components/lang-context';
 import { logoutAction } from '@/lib/actions/auth';
 import { roleLabel, canManageUsers, canUseWebManager, type Role } from '@/lib/rbac';
 import { NotificationBell, type Notif } from './notification-bell';
+import { MobileNav } from './mobile-nav';
 import { cn } from '@/lib/utils';
 
 const NAV = [
@@ -37,17 +38,13 @@ export function DashboardShell({
 }) {
   const { t } = useLang();
   const pathname = usePathname();
-  const [open, setOpen] = React.useState(false);
 
   const items = [...NAV];
   if (canUseWebManager(profile.role)) items.push({ href: '/dashboard/web-manager', key: 'web-manager', icon: Globe2 });
   if (canManageUsers(profile.role)) items.push({ href: '/dashboard/users', key: 'user-management', icon: UserCog });
 
   const sidebar = (
-    <aside className={cn(
-      'fixed inset-y-0 left-0 z-40 flex w-64 flex-col border-r bg-card transition-transform lg:static lg:translate-x-0',
-      open ? 'translate-x-0' : '-translate-x-full'
-    )}>
+    <aside className="hidden w-64 flex-col border-r bg-card lg:static lg:flex">
       <div className="flex h-16 items-center gap-3 border-b px-4">
         <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
           <Church className="h-5 w-5 text-primary" />
@@ -56,9 +53,6 @@ export function DashboardShell({
           <h1 className="text-sm font-bold">{t('cms-title')}</h1>
           <p className="text-xs text-muted-foreground">Gereja Digital</p>
         </div>
-        <button className="lg:hidden cursor-pointer p-2" onClick={() => setOpen(false)} aria-label="Tutup menu">
-          <X className="h-5 w-5" />
-        </button>
       </div>
       <nav className="flex-1 overflow-y-auto p-3">
         <ul className="space-y-1">
@@ -66,7 +60,7 @@ export function DashboardShell({
             const active = href === '/dashboard' ? pathname === href : pathname.startsWith(href);
             return (
               <li key={href}>
-                <Link href={href} onClick={() => setOpen(false)}
+                <Link href={href}
                   className={cn(
                     'flex min-h-[44px] items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
                     active ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
@@ -81,7 +75,7 @@ export function DashboardShell({
       <div className="border-t p-3 space-y-3">
         <LangSwitcher />
         <form action={logoutAction}>
-          <button type="submit" className="flex min-h-[44px] w-full items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-destructive hover:bg-destructive/10 cursor-pointer">
+          <button type="submit" className="btn-fx btn-fx-row flex min-h-[44px] w-full items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-destructive hover:bg-destructive/10 cursor-pointer">
             <LogOut className="h-4 w-4" /> {t('logout')}
           </button>
         </form>
@@ -92,12 +86,15 @@ export function DashboardShell({
   return (
     <div className="flex min-h-dvh">
       {sidebar}
-      {open && <div className="fixed inset-0 z-30 bg-black/60 lg:hidden" onClick={() => setOpen(false)} />}
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="sticky top-0 z-20 flex h-16 items-center gap-3 border-b bg-background/80 px-4 backdrop-blur">
-          <button className="lg:hidden cursor-pointer p-2" onClick={() => setOpen(true)} aria-label="Buka menu">
-            <Menu className="h-5 w-5" />
-          </button>
+          {/* Mobile: sidebar diganti bottom tab bar, brand pindah ke header */}
+          <Link href="/dashboard" className="flex min-w-0 items-center gap-2 lg:hidden">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10">
+              <Church className="h-5 w-5 text-primary" />
+            </span>
+            <span className="truncate text-sm font-bold">{t('cms-title')}</span>
+          </Link>
           <div className="flex-1" />
           <NotificationBell initial={notifications} userId={profile.id} />
           <div className="flex items-center gap-3">
@@ -111,8 +108,18 @@ export function DashboardShell({
             />
           </div>
         </header>
-        <main className="flex-1 p-4 md:p-6">{children}</main>
+        <main className="flex-1 p-4 md:p-6">
+          {children}
+          {/* ruang untuk bottom tab bar (mobile) */}
+          <div className="h-[calc(4.5rem+env(safe-area-inset-bottom))] lg:hidden" aria-hidden />
+        </main>
       </div>
+      <MobileNav
+        items={items}
+        canWebManager={canUseWebManager(profile.role)}
+        profile={{ nama: profile.nama }}
+        roleText={roleLabel(profile.role)}
+      />
     </div>
   );
 }

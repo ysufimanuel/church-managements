@@ -8,7 +8,7 @@
     --foreground: 0 0% 100%;
     --card: 222 18% 12%;             /* #1A1D24 */
     --card-foreground: 0 0% 100%;
-    --primary: 187 100% 50%;         /* #00E5FF cyan accent */
+    --primary: 187 100% 50%;         /* #00E5FF */
     --primary-foreground: 222 25% 7%;
     --secondary: 220 13% 20%;
     --secondary-foreground: 214 32% 91%;
@@ -31,17 +31,139 @@
   html { color-scheme: dark; }
 }
 
-/* Scrollbar halus */
 ::-webkit-scrollbar { width: 8px; height: 8px; }
 ::-webkit-scrollbar-thumb { background: hsl(var(--border)); border-radius: 4px; }
 
-/* Aspect ratio media dinamis */
-.media-frame { position: relative; width: 100%; overflow: hidden; border-radius: var(--radius); background: hsl(var(--card)); }
+/* Media frames stay transparent until real media is present. */
+.media-frame { position: relative; width: 100%; overflow: hidden; border-radius: var(--radius); background: transparent; }
 .media-frame > * { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 
-/* posisi media */
 .pos-top { object-position: top; }
 .pos-bottom { object-position: bottom; }
 .pos-left { object-position: left; }
 .pos-right { object-position: right; }
 .pos-center { object-position: center; }
+
+/* Default Theme is a preview-only presentation preset. It never changes CMS content. */
+.default-theme-site {
+  --site-primary: #0F1117;
+  --site-secondary: #FFFFFF;
+  --site-accent: #00E5FF;
+  background: #0F1117;
+  color: #FFFFFF;
+  color-scheme: dark;
+}
+.default-theme-site a { transition: color .2s ease, opacity .2s ease; }
+.default-theme-site a:hover { color: #00E5FF; }
+.default-theme-content { background: #0F1117; color: #FFFFFF; }
+.default-theme-content > section { border-bottom: 1px solid #2D3748; }
+.default-theme-content h1,
+.default-theme-content h2,
+.default-theme-content h3 { letter-spacing: -0.035em; }
+.default-theme-content .media-frame { border: 1px solid #2D3748; border-radius: 1rem; }
+
+/* ==========================================================================
+   Button motion
+   Dipakai <Button> (variant -> .btn-fx-<variant>) dan tombol mentah di dashboard.
+   - Hanya properti individual scale/rotate/translate/opacity (tidak bentrok dengan
+     class transform Tailwind seperti -translate-y-1/2 pada tombol absolut).
+   - Hover digating (hover:hover + pointer:fine); di layar sentuh feedback = :active.
+   - Tiap variant punya gerak khas; tiap ikon lucide punya gerak sendiri (lihat bawah).
+   - Reduced motion: semua gerak dimatikan.
+   ========================================================================== */
+:root { --ease-out-strong: cubic-bezier(0.23, 1, 0.32, 1); }
+
+:where(.btn-fx) { --fx: 0; -webkit-tap-highlight-color: transparent; }
+.btn-fx {
+  transition:
+    background-color .15s ease, border-color .15s ease, color .15s ease, box-shadow .2s ease,
+    scale .16s var(--ease-out-strong), translate .22s var(--ease-out-strong);
+}
+.btn-fx:active:not(:disabled) { scale: .96; --fx: 1; }
+.btn-fx-row:active:not(:disabled) { scale: .985; }
+@media (hover: hover) and (pointer: fine) {
+  .btn-fx:hover:not(:disabled) { --fx: 1; }
+}
+
+/* ---- Ikon: default = membesar sedikit; ikon tertentu punya gerak khas ---- */
+.btn-fx svg {
+  transition: scale .26s var(--ease-out-strong), rotate .32s var(--ease-out-strong), translate .26s var(--ease-out-strong);
+  scale: calc(1 + var(--fx) * .1);
+}
+.btn-fx svg[class*="lucide-plus"]         { rotate: calc(var(--fx) * 180deg); }
+.btn-fx svg[class*="lucide-x"]            { rotate: calc(var(--fx) * 90deg); scale: calc(1 + var(--fx) * .15); }
+.btn-fx svg[class*="lucide-pencil"]       { rotate: calc(var(--fx) * -18deg); translate: calc(var(--fx) * 1px) calc(var(--fx) * -1px); }
+.btn-fx svg[class*="lucide-search"]       { rotate: calc(var(--fx) * -12deg); scale: calc(1 + var(--fx) * .18); }
+.btn-fx svg[class*="lucide-send"],
+.btn-fx svg[class*="lucide-rocket"]       { translate: calc(var(--fx) * 3px) calc(var(--fx) * -3px); }
+.btn-fx svg[class*="lucide-refresh"]      { rotate: calc(var(--fx) * 180deg); scale: 1; }
+.btn-fx svg[class*="lucide-check"]        { scale: calc(1 + var(--fx) * .25); }
+.btn-fx svg[class*="lucide-user-plus"]    { translate: calc(var(--fx) * 2px) 0; }
+.btn-fx svg[class*="lucide-printer"]      { translate: 0 calc(var(--fx) * -2px); }
+.btn-fx svg[class*="lucide-qr-code"]      { rotate: calc(var(--fx) * 8deg); scale: calc(1 + var(--fx) * .2); }
+.btn-fx svg[class*="lucide-arrow-left"]   { translate: calc(var(--fx) * -3px) 0; }
+.btn-fx svg[class*="lucide-log-in"],
+.btn-fx svg[class*="lucide-log-out"]      { translate: calc(var(--fx) * 3px) 0; }
+.btn-fx svg[class*="lucide-chevron-down"] { translate: 0 calc(var(--fx) * 3px); }
+.btn-fx svg[class*="lucide-pin"]          { rotate: calc(var(--fx) * 25deg); }
+.btn-fx svg[class*="lucide-menu"]         { scale: calc(1 + var(--fx) * .15); }
+
+/* Gerak berbasis keyframe: lonceng berayun, trash bergoyang, download memantul, mata berkedip */
+@keyframes fx-ring   { 0%,100% { rotate: 0deg } 20% { rotate: 16deg } 40% { rotate: -14deg } 60% { rotate: 9deg } 80% { rotate: -5deg } }
+@keyframes fx-wiggle { 0%,100% { rotate: 0deg } 25% { rotate: -12deg } 50% { rotate: 10deg } 75% { rotate: -6deg } }
+@keyframes fx-drop   { 0%,100% { translate: 0 0 } 40% { translate: 0 3px } 70% { translate: 0 -1px } }
+@keyframes fx-blink  { 0%,100% { scale: 1 1 } 45% { scale: 1 .15 } }
+@keyframes fx-shake  { 0%,100% { translate: 0 0 } 20% { translate: -3px 0 } 40% { translate: 3px 0 } 60% { translate: -2px 0 } 80% { translate: 1px 0 } }
+
+.btn-fx:active:not(:disabled) svg[class*="lucide-bell"]     { animation: fx-ring .6s ease-in-out; transform-origin: 50% 0; }
+.btn-fx:active:not(:disabled) svg[class*="lucide-trash"]    { animation: fx-wiggle .4s ease-in-out; }
+.btn-fx:active:not(:disabled) svg[class*="lucide-download"] { animation: fx-drop .45s var(--ease-out-strong); }
+.btn-fx:active:not(:disabled) svg[class*="lucide-eye"]      { animation: fx-blink .3s ease-in-out; }
+@media (hover: hover) and (pointer: fine) {
+  .btn-fx:hover:not(:disabled) svg[class*="lucide-bell"]     { animation: fx-ring .6s ease-in-out; transform-origin: 50% 0; }
+  .btn-fx:hover:not(:disabled) svg[class*="lucide-trash"]    { animation: fx-wiggle .4s ease-in-out; }
+  .btn-fx:hover:not(:disabled) svg[class*="lucide-download"] { animation: fx-drop .45s var(--ease-out-strong); }
+  .btn-fx:hover:not(:disabled) svg[class*="lucide-eye"]      { animation: fx-blink .3s ease-in-out; }
+}
+
+/* ---- Gerak khas per variant ---- */
+:where(.btn-fx-default, .btn-fx-outline) { position: relative; overflow: hidden; isolation: isolate; }
+
+/* default: kilau cahaya menyapu */
+.btn-fx-default::after {
+  content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+  background: linear-gradient(105deg, transparent 35%, rgb(255 255 255 / .35) 50%, transparent 65%);
+  translate: -110% 0;
+}
+@media (hover: hover) and (pointer: fine) {
+  .btn-fx-default:hover:not(:disabled)::after { translate: 110% 0; transition: translate .7s var(--ease-out-strong); }
+}
+
+/* secondary: terangkat + bayangan */
+@media (hover: hover) and (pointer: fine) {
+  .btn-fx-secondary:hover:not(:disabled) { translate: 0 -1px; box-shadow: 0 6px 16px -6px rgb(0 0 0 / .6); }
+}
+.btn-fx-secondary:active:not(:disabled) { translate: 0 0; box-shadow: none; }
+
+/* destructive: bergetar sekali */
+@media (hover: hover) and (pointer: fine) {
+  .btn-fx-destructive:hover:not(:disabled) { animation: fx-shake .4s ease-in-out; }
+}
+
+/* outline: warna naik dari bawah + border menyala */
+.btn-fx-outline::before {
+  content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+  background: hsl(var(--secondary)); transform-origin: bottom; scale: 1 0;
+  transition: scale .28s var(--ease-out-strong);
+}
+@media (hover: hover) and (pointer: fine) {
+  .btn-fx-outline:hover:not(:disabled) { border-color: hsl(var(--primary) / .6); }
+  .btn-fx-outline:hover:not(:disabled)::before { scale: 1 1; }
+}
+.btn-fx-outline:active:not(:disabled)::before { scale: 1 1; }
+
+@media (prefers-reduced-motion: reduce) {
+  .btn-fx, .btn-fx svg, .btn-fx::before, .btn-fx::after { transition: none !important; animation: none !important; }
+  .btn-fx, .btn-fx svg { scale: none !important; rotate: none !important; translate: none !important; }
+  .btn-fx-default::after { display: none; }
+}

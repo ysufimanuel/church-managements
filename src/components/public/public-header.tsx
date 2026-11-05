@@ -25,7 +25,7 @@ export function PublicHeader({ nav, churchName }: { nav: { label: string; href: 
           ))}
           <Link href="/login" className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90">Login</Link>
         </nav>
-        <button className="p-2 md:hidden cursor-pointer" onClick={() => setOpen(!open)} aria-label="Menu">
+        <button className="btn-fx btn-fx-ghost p-2 md:hidden cursor-pointer" onClick={() => setOpen(!open)} aria-label="Menu">
           {open ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
         </button>
       </div>

@@ -85,7 +85,13 @@ export function FamiliesClient({ families, members, familyMembers, role }: { fam
             <div className="max-h-40 space-y-1 overflow-y-auto rounded-md border p-2">
               {members.map((m) => (
                 <label key={m.id} className="flex min-h-[36px] items-center gap-2 text-sm cursor-pointer">
-                  <input type="checkbox" name="anggota" value={m.id} defaultChecked={editing ? anggotaOf(editing.id).includes(m.id) : false} />
+                  <input
+                    type="checkbox"
+                    name="anggota"
+                    value={m.id}
+                    defaultChecked={editing ? anggotaOf(editing.id).includes(m.id) : false}
+                    disabled={role !== 'superadmin' && Boolean(editing && anggotaOf(editing.id).includes(m.id))}
+                  />
                   {m.nama}
                 </label>
               ))}

@@ -111,13 +111,23 @@ export interface SectionInput { id?: number; page: string; type: string; sort_or
 export async function saveSectionDraft(input: SectionInput) {
   const { profile, denied } = await guardWM();
   if (denied) return { ok: false, error: denied };
+
+  // Validate editor input at the server boundary; client-side controls are not a trust boundary.
+  const page = String(input.page || '').trim().toLowerCase();
+  const allowedTypes = new Set(['hero', 'card_grid', 'event_feed', 'group_feed', 'info_lokasi', 'media', 'map', 'richtext']);
+  if (!/^[a-z0-9][a-z0-9_-]{0,79}$/.test(page)) return { ok: false, error: 'Slug halaman tidak valid' };
+  if (!allowedTypes.has(input.type)) return { ok: false, error: 'Tipe section tidak valid' };
+  if (!input.content || typeof input.content !== 'object' || Array.isArray(input.content)) return { ok: false, error: 'Konten section tidak valid' };
+  if (JSON.stringify(input.content).length > 262144) return { ok: false, error: 'Konten section terlalu besar (maksimal 256 KB)' };
+
+  const sortOrder = Math.min(10000, Math.max(0, Math.trunc(Number(input.sort_order) || 0)));
   const supabase = await createClient();
   const payload = {
-    draft_page: input.page,
+    draft_page: page,
     draft_type: input.type,
-    draft_sort_order: Math.max(0, Math.trunc(Number(input.sort_order) || 0)),
+    draft_sort_order: sortOrder,
     content: input.content,
-    draft_enabled: input.enabled,
+    draft_enabled: Boolean(input.enabled),
     draft_deleted: false,
     updated_at: new Date().toISOString(),
   };
@@ -135,7 +145,7 @@ export async function saveSectionDraft(input: SectionInput) {
   } else {
     const { data, error } = await supabase
       .from('site_sections')
-      .insert({ ...payload, page: input.page, type: input.type, sort_order: payload.draft_sort_order, enabled: false, church_id: profile.church_id })
+      .insert({ ...payload, page, type: input.type, sort_order: payload.draft_sort_order, enabled: false, church_id: profile.church_id })
       .select('id')
       .maybeSingle();
     if (error) return { ok: false, error: error.message };

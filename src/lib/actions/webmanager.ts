@@ -117,3 +117,34 @@ export async function publishWebManager() {
   const { denied } = await guardWM(); if (denied) return { ok: false, error: denied };
   const n = await publishNav(); if (!n.ok) return n; const t = await publishTheme(); if (!t.ok) return t; const s = await publishAllSections(); if (!s.ok) return s; revalidateWM(); return { ok: true };
 }
+
+
+export type WebsiteThemePreference = 'cms' | 'default';
+
+export async function saveWebsiteThemePreference(theme: WebsiteThemePreference) {
+  const { profile, denied } = await guardWM();
+  if (denied) return { ok: false, error: denied };
+  if (theme !== 'cms' && theme !== 'default') return { ok: false, error: 'Pilihan tema tidak valid' };
+
+  const supabase = await createClient();
+  const { data: existing, error: readError } = await supabase
+    .from('user_preferences')
+    .select('preferences')
+    .eq('user_id', profile.id)
+    .maybeSingle();
+  if (readError) return { ok: false, error: readError.message };
+
+  const preferences = {
+    ...((existing?.preferences && typeof existing.preferences === 'object') ? existing.preferences : {}),
+    website_theme: theme,
+  };
+  const { error } = await supabase.from('user_preferences').upsert({
+    user_id: profile.id,
+    preferences,
+    updated_at: new Date().toISOString(),
+  }, { onConflict: 'user_id' });
+
+  if (error) return { ok: false, error: error.message };
+  revalidatePath('/dashboard/web-manager');
+  return { ok: true };
+}

@@ -25,6 +25,15 @@ create table public.profiles (
   created_at timestamptz not null default now()
 );
 
+-- Preferensi pribadi tiap akun (tidak memengaruhi akun atau website publik lain).
+create table public.user_preferences (
+  user_id uuid primary key references public.profiles(id) on delete cascade,
+  preferences jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  constraint user_preferences_object_check check (jsonb_typeof(preferences) = 'object')
+);
+
 -- Helper: role of current user (security definer to avoid RLS recursion)
 create or replace function public.my_role() returns app_role
 language sql stable security definer set search_path = public as $$
@@ -304,6 +313,7 @@ create table public.site_sections (
 -- ROW LEVEL SECURITY
 -- ============================================================
 alter table public.profiles enable row level security;
+alter table public.user_preferences enable row level security;
 alter table public.church_profile enable row level security;
 alter table public.members enable row level security;
 alter table public.families enable row level security;
@@ -333,6 +343,15 @@ alter table public.site_sections enable row level security;
 
 -- profiles: semua user login bisa lihat nama user lain (fitur communication)
 create policy "profiles read" on public.profiles for select to authenticated using (true);
+
+create policy user_preferences_select_own on public.user_preferences
+  for select to authenticated using ((select auth.uid()) = user_id);
+create policy user_preferences_insert_own on public.user_preferences
+  for insert to authenticated with check ((select auth.uid()) = user_id);
+create policy user_preferences_update_own on public.user_preferences
+  for update to authenticated using ((select auth.uid()) = user_id)
+  with check ((select auth.uid()) = user_id);
+grant select, insert, update on public.user_preferences to authenticated;
 create policy "profiles self update" on public.profiles for update to authenticated
   using (id = auth.uid()) with check (id = auth.uid() and role = public.my_role());
 create policy "profiles superadmin all" on public.profiles for all to authenticated

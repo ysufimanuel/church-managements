@@ -10,12 +10,13 @@ export default async function WebManagerPage() {
   const profile = await getCurrentProfile();
   if (!canUseWebManager(profile?.role as Role)) redirect('/dashboard');
   const supabase = await createClient();
-  const [{ data: navItems }, { data: theme }, { data: media }, { data: sections }, { data: church }] = await Promise.all([
+  const [{ data: navItems }, { data: theme }, { data: media }, { data: sections }, { data: church }, { data: userPreference }] = await Promise.all([
     supabase.from('site_nav_items').select('*').order('sort_order'),
     supabase.from('site_theme').select('*').eq('id', 1).maybeSingle(),
     supabase.from('site_media').select('*').order('sort_order'),
     supabase.from('site_sections').select('*').order('sort_order'),
     supabase.from('churches').select('slug').eq('id', profile!.church_id).maybeSingle(),
+    supabase.from('user_preferences').select('preferences').eq('user_id', profile!.id).maybeSingle(),
   ]);
   const publicPath = church ? `/site/${church.slug}` : null;
   const publicOrigin = process.env.NEXT_PUBLIC_SITE_URL || 'https://church-managements-system.vercel.app';
@@ -40,6 +41,7 @@ export default async function WebManagerPage() {
         sections={sections || []}
         role={profile!.role as Role}
         publicPath={publicPath}
+        websiteThemePreference={userPreference?.preferences?.website_theme === 'default' ? 'default' : 'cms'}
       />
     </div>
   );

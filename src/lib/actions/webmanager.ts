@@ -271,12 +271,12 @@ export async function saveWebsiteThemePreference(theme: WebsiteThemePreference) 
 
   const supabase = await createClient();
   if (theme === 'default') {
-    // Mengganti Draft aktif tenant ini, tetapi tidak mengubah snapshot Published.
-    const { error: archiveError } = await supabase
+    // Ambil ID Draft lama lebih dulu. Snapshot Published tidak disentuh.
+    const { data: previousSections, error: previousError } = await supabase
       .from('site_sections')
-      .update({ draft_deleted: true, enabled: false, updated_at: new Date().toISOString() })
+      .select('id')
       .eq('church_id', profile.church_id);
-    if (archiveError) return { ok: false, error: archiveError.message };
+    if (previousError) return { ok: false, error: previousError.message };
 
     const rows = DEFAULT_THEME_DRAFT_SECTIONS.map((section) => ({
       ...section,
@@ -292,6 +292,16 @@ export async function saveWebsiteThemePreference(theme: WebsiteThemePreference) 
       .select('id');
     if (insertError) return { ok: false, error: insertError.message };
     if (inserted?.length !== rows.length) return { ok: false, error: 'Tidak semua section Default Theme berhasil dimasukkan ke Draft.' };
+
+    const previousIds = (previousSections || []).map((section) => section.id);
+    if (previousIds.length) {
+      const { error: archiveError } = await supabase
+        .from('site_sections')
+        .update({ draft_deleted: true, enabled: false, updated_at: new Date().toISOString() })
+        .eq('church_id', profile.church_id)
+        .in('id', previousIds);
+      if (archiveError) return { ok: false, error: archiveError.message };
+    }
   }
 
   const { data: existing, error: readError } = await supabase

@@ -9,8 +9,7 @@ type SectionMedia = { id: string | number; kind: 'image' | 'video'; url: string;
 function resolveHref(basePath: string, href?: string) {
   if (!href || href === '/' || href === '#home') return basePath;
   if (/^https?:\/\//i.test(href)) return href;
-  if (href.startsWith('#')) return `${basePath}${href}`;
-  const route = href;
+  const route = href.startsWith('#') ? href.slice(1) : href;
   return `${basePath}${route.startsWith('/') ? route : `/${route}`}`;
 }
 function mediaPositionClass(position: string) { if (position === 'left') return 'items-center justify-start'; if (position === 'right') return 'items-center justify-end'; if (position === 'top') return 'items-start justify-center'; if (position === 'bottom') return 'items-end justify-center'; return 'items-center justify-center'; }

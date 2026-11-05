@@ -33,7 +33,7 @@ export default async function PublicChurchPage({ params, searchParams }: Props) 
     if (!version) return null;
     return { ...item, ...(version as Record<string, unknown>) };
   }).filter(Boolean).filter((item: any) => item.visible !== false);
-  const base = `/site/${church.slug}`; const page = params.path?.[0] || 'home';
+  const base = `/site/${church.slug}`; const page = (params.path?.[0] || 'home').trim().toLowerCase();
   const themeValues: any = preview ? (theme?.draft || theme || {}) : (theme?.published || theme || {});
   const defaultTheme = themeValues?.website_theme === 'default';
   const primary = defaultTheme ? '#0F1117' : (themeValues?.primary_color || '#FFFFFF');

@@ -44,7 +44,7 @@ const DEFAULT_COLORS = {
 
 function pageFromHref(href: unknown) {
   const value = String(href || '').trim();
-  if (!value || /^https?:\/\//i.test(value)) return '';
+  if (!value || /^(https?:\/\/|mailto:|tel:)/i.test(value) || /^[a-z][a-z\d+.-]*:/i.test(value) || value.startsWith('//')) return '';
   return value.replace(/^[/#]+/, '').split(/[?#/]/)[0].toLowerCase();
 }
 

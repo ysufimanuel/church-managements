@@ -12,7 +12,12 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 export const fetchCache = 'force-no-store';
 type Props = { params: { slug: string; path?: string[] }; searchParams?: { preview?: string; theme?: string; v?: string } };
-function publicHref(base: string, href: string) { if (!href || href === '/') return base; if (/^https?:\/\//i.test(href)) return href; return `${base}${href.startsWith('/') ? href : `/${href}`}`; }
+function publicHref(base: string, href: string) {
+  if (!href || href === '/' || href === '#home') return base;
+  if (/^https?:\/\//i.test(href)) return href;
+  const route = href.startsWith('#') ? href.slice(1) : href;
+  return `${base}${route.startsWith('/') ? route : `/${route}`}`;
+}
 async function getChurch(slug: string) { const admin = createAdminClient(); const { data } = await admin.from('churches').select('id,slug,nama,alamat,kota,telepon,email').eq('slug', slug).maybeSingle(); return data; }
 export async function generateMetadata({ params }: Props): Promise<Metadata> { const church = await getChurch(params.slug); if (!church) return { title: 'Gereja tidak ditemukan' }; return { title: church.nama, description: `Website resmi ${church.nama}` }; }
 

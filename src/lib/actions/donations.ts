@@ -11,47 +11,47 @@ export interface DonationInput {
 }
 
 export async function saveDonation(input: DonationInput) {
-  const { denied } = await requireRole((r: Role) => (input.id ? canEdit(r) : canAdd(r)));
+  const { profile, denied } = await requireRole((r: Role) => (input.id ? canEdit(r) : canAdd(r)));
   if (denied) return { ok: false, error: denied };
   const supabase = await createClient();
   const payload = { ...input, id: undefined };
   delete (payload as any).id;
   let error;
-  if (input.id) ({ error } = await supabase.from('donations').update(payload).eq('id', input.id));
-  else ({ error } = await supabase.from('donations').insert(payload));
+  if (input.id) ({ error } = await supabase.from('donations').update(payload).eq('id', input.id).eq('church_id', profile.church_id));
+  else ({ error } = await supabase.from('donations').insert({ ...payload, church_id: profile.church_id }));
   if (error) return { ok: false, error: error.message };
 
   // update agregat donatur (seperti base-code)
   if (input.donor_id) {
     const { data: sums } = await supabase.from('donations').select('jumlah, tanggal')
-      .eq('donor_id', input.donor_id);
+      .eq('donor_id', input.donor_id).eq('church_id', profile.church_id);
     const total = (sums || []).reduce((s, d) => s + Number(d.jumlah), 0);
     const last = (sums || []).map((d) => d.tanggal).sort().pop();
     await supabase.from('donors').update({ total_donasi: total, terakhir_donasi: last })
-      .eq('id', input.donor_id);
+      .eq('id', input.donor_id).eq('church_id', profile.church_id);
   }
   revalidatePath('/dashboard/donations');
   return { ok: true };
 }
 
 export async function deleteDonation(id: number) {
-  const { denied } = await requireRole((r: Role) => canDelete(r), 'Hanya Superadmin yang dapat menghapus data');
+  const { profile, denied } = await requireRole((r: Role) => canDelete(r), 'Hanya Superadmin yang dapat menghapus data');
   if (denied) return { ok: false, error: denied };
   const supabase = await createClient();
-  const { error } = await supabase.from('donations').delete().eq('id', id);
+  const { error } = await supabase.from('donations').delete().eq('id', id).eq('church_id', profile.church_id);
   if (error) return { ok: false, error: error.message };
   revalidatePath('/dashboard/donations');
   return { ok: true };
 }
 
 export async function saveDonor(input: { id?: number; nama: string; email?: string; telepon?: string }) {
-  const { denied } = await requireRole((r: Role) => canAdd(r));
+  const { profile, denied } = await requireRole((r: Role) => canAdd(r));
   if (denied) return { ok: false, error: denied };
   const supabase = await createClient();
   const payload = { nama: input.nama, email: input.email, telepon: input.telepon };
   let error;
-  if (input.id) ({ error } = await supabase.from('donors').update(payload).eq('id', input.id));
-  else ({ error } = await supabase.from('donors').insert(payload));
+  if (input.id) ({ error } = await supabase.from('donors').update(payload).eq('id', input.id).eq('church_id', profile.church_id));
+  else ({ error } = await supabase.from('donors').insert({ ...payload, church_id: profile.church_id }));
   if (error) return { ok: false, error: error.message };
   revalidatePath('/dashboard/donations');
   return { ok: true };

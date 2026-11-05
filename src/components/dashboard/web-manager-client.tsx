@@ -97,7 +97,7 @@ function ColorField({ label, value, onChange, id, hint }: { label: string; value
   </details>;
 }
 
-export function WebManagerClient({ navItems, theme, sections, role, publicPath, websiteThemePreference, events, groups }: { navItems: any[]; theme: any; media?: any[]; sections: any[]; events: ResourceOption[]; groups: ResourceOption[]; role: Role; publicPath: string | null; websiteThemePreference: WebsiteThemePreference }) {
+export function WebManagerClient({ navItems, theme, sections, role, publicPath, websiteThemePreference, events, groups }: { navItems: any[]; theme: any; sections: any[]; events: ResourceOption[]; groups: ResourceOption[]; role: Role; publicPath: string | null; websiteThemePreference: WebsiteThemePreference }) {
   const { t } = useLang();
   const router = useRouter();
   const [tab, setTab] = React.useState('nav');

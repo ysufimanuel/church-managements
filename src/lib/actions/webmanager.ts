@@ -121,8 +121,8 @@ export async function saveSectionDraft(input: SectionInput) {
   return { ok: true };
 }
 export async function publishSections(page: string) {
-  const { denied } = await guardWM(); if (denied) return { ok: false, error: denied }; const supabase = await createClient();
-  const { data: sections, error } = await supabase.from('site_sections').select('id,page,draft_page,content,draft_deleted').eq('church_id', (await guardWM()).profile?.church_id).or(`page.eq.${page},draft_page.eq.${page}`); if (error) return { ok: false, error: error.message };
+  const { profile, denied } = await guardWM(); if (denied) return { ok: false, error: denied }; const supabase = await createClient();
+  const { data: sections, error } = await supabase.from('site_sections').select('id,page,draft_page,content,draft_deleted').eq('church_id', profile.church_id).or(`page.eq.${page},draft_page.eq.${page}`); if (error) return { ok: false, error: error.message };
   for (const s of sections || []) {
     const result = s.draft_deleted
       ? await supabase.from('site_sections').update({ page: s.draft_page || s.page, draft_page: s.draft_page || s.page, published: null, enabled: false, draft_deleted: false }).eq('id', s.id).select('id')
@@ -133,12 +133,12 @@ export async function publishSections(page: string) {
   revalidateWM(); return { ok: true };
 }
 export async function publishAllSections() {
-  const { denied } = await guardWM(); if (denied) return { ok: false, error: denied }; const supabase = await createClient();
-  const { profile } = await guardWM(); const { data: sections, error } = await supabase.from('site_sections').select('id,page,draft_page,content,draft_deleted').eq('church_id', profile!.church_id).order('id'); if (error) return { ok: false, error: error.message };
+  const { profile, denied } = await guardWM(); if (denied) return { ok: false, error: denied }; const supabase = await createClient();
+  const { data: sections, error } = await supabase.from('site_sections').select('id,page,draft_page,content,draft_deleted').eq('church_id', profile.church_id).order('id'); if (error) return { ok: false, error: error.message };
   for (const s of sections || []) {
     const result = s.draft_deleted
-      ? await supabase.from('site_sections').update({ published: null, enabled: false, draft_deleted: false }).eq('id', s.id).select('id')
-      : await supabase.from('site_sections').update({ published: s.content }).eq('id', s.id).select('id');
+      ? await supabase.from('site_sections').update({ page: s.draft_page || s.page, draft_page: s.draft_page || s.page, published: null, enabled: false, draft_deleted: false }).eq('id', s.id).select('id')
+      : await supabase.from('site_sections').update({ page: s.draft_page || s.page, draft_page: s.draft_page || s.page, published: s.content }).eq('id', s.id).select('id');
     if (result.error) return { ok: false, error: result.error.message };
     if (!result.data?.length) return { ok: false, error: `Gagal publish section #${s.id}: tidak ada row yang ter-update` };
   }

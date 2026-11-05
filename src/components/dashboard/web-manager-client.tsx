@@ -95,7 +95,8 @@ export function WebManagerClient({ navItems, theme, sections, role, publicPath, 
       toast.error(result.error || 'Gagal menyimpan preferensi tema');
       return;
     }
-    toast.success(enabled ? 'Default Theme aktif untuk akun ini' : 'Tema CMS dipilih untuk akun ini');
+    if (enabled) setPreviewKey((k) => k + 1);
+    toast.success(enabled ? 'Default Theme berhasil dimasukkan ke Draft gereja' : 'Preview Default Theme dinonaktifkan untuk akun ini');
   }
 
   React.useEffect(() => { setThemeValues(theme?.draft || theme?.published || { primary_color: '#FFFFFF', secondary_color: '#1F2937', accent_color: '#22C55E', font_family: 'Inter' }); }, [theme]);
@@ -115,12 +116,12 @@ export function WebManagerClient({ navItems, theme, sections, role, publicPath, 
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="min-w-0">
             <p className="font-semibold">Default Theme · Preferensi Akun</p>
-            <p className="mt-1 text-xs text-muted-foreground">Aktifkan untuk menampilkan preview template Default Theme di Web Manager akun ini. Pengaturan ini tersimpan per akun dan tidak mengubah website publik atau akun lain.</p>
+            <p className="mt-1 text-xs text-muted-foreground">Saat diaktifkan, template Default Theme disalin ke Draft website gereja ini agar bisa diedit dan dipublish. Draft dipakai bersama oleh Admin/Superadmin dalam gereja yang sama; website publik tidak berubah sampai Anda menekan Publish. Mengaktifkan ulang akan mengganti Draft aktif dengan template awal.</p>
           </div>
           <div className="flex items-center gap-2"><span className="text-xs text-muted-foreground">{defaultThemeEnabled ? 'Aktif' : 'Nonaktif'}</span><Switch checked={defaultThemeEnabled} onCheckedChange={(checked) => void updateDefaultThemePreference(checked)} /></div>
         </div>
         {defaultThemeEnabled ? <div className="space-y-2">
-          <div className="flex items-center justify-between gap-2"><p className="text-sm font-medium">Preview Default Theme</p><a href="/default-web" target="_blank" rel="noreferrer" className="text-xs font-medium text-primary underline underline-offset-4">Buka penuh</a></div>
+          <div className="flex items-center justify-between gap-2"><p className="text-sm font-medium">Default Theme · Acuan Draft</p><a href="/default-web" target="_blank" rel="noreferrer" className="text-xs font-medium text-primary underline underline-offset-4">Buka penuh</a></div>
           <iframe src="/default-web" title="Default Theme Preview" className="h-[620px] w-full rounded-lg border bg-[#0F1117]" loading="lazy" />
         </div> : <div className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">Default Theme sedang nonaktif untuk akun ini. Aktifkan toggle untuk membuka preview.</div>}
       </div>

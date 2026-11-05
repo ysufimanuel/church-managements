@@ -1,0 +1,28 @@
+/* Styles scoped to the imported Vite design. Keep CMS-wide styles untouched. */
+.default-web-site {
+  min-height: 100vh;
+  overflow-x: clip;
+  background: #0F1117;
+  color: #FFFFFF;
+  font-family: "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+.default-web-site h1,
+.default-web-site h2,
+.default-web-site h3 {
+  margin: 0;
+  text-wrap: balance;
+}
+.default-web-site p { margin: 0; }
+.default-web-site section[id] { scroll-margin-top: 72px; }
+.default-web-site a { text-decoration: none; }
+@media (prefers-reduced-motion: no-preference) {
+  html:has(.default-web-site) { scroll-behavior: smooth; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .default-web-site *, .default-web-site *::before, .default-web-site *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

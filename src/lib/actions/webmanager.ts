@@ -137,6 +137,8 @@ export async function saveSectionDraft(input: SectionInput) {
     }
     (resourceType === 'event' ? eventIds : groupIds).add(resourceId);
   }
+  if (eventIds.size && input.type !== 'event_feed') return { ok: false, error: 'Media event hanya dapat ditautkan pada section Event.' };
+  if (groupIds.size && input.type !== 'group_feed') return { ok: false, error: 'Media komunitas hanya dapat ditautkan pada section Komunitas.' };
   if (eventIds.size) {
     const { data, error } = await supabase.from('events').select('id').eq('church_id', profile.church_id).in('id', Array.from(eventIds));
     if (error) return { ok: false, error: error.message };

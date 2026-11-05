@@ -50,22 +50,13 @@ export async function deleteNavItem(id: number) {
 }
 
 export async function publishNav() {
-  const { profile, denied } = await guardWM(); if (denied) return { ok: false, error: denied };
+  const { denied } = await guardWM();
+  if (denied) return { ok: false, error: denied };
   const supabase = await createClient();
-  const { data: items, error } = await supabase.from('site_nav_items').select('*').eq('church_id', profile.church_id).order('sort_order').order('id');
+  const { data, error } = await supabase.rpc('publish_site_navigation');
   if (error) return { ok: false, error: error.message };
-  for (const item of items || []) {
-    if (!item.draft) {
-      const removed = await supabase.from('site_nav_items').delete().eq('id', item.id).eq('church_id', profile.church_id);
-      if (removed.error) return { ok: false, error: removed.error.message };
-      continue;
-    }
-    const draft = item.draft as NavInput;
-    const updated = await supabase.from('site_nav_items').update({ ...draft, published: draft, state: 'published' }).eq('id', item.id).eq('church_id', profile.church_id).select('id');
-    if (updated.error) return { ok: false, error: updated.error.message };
-    if (!updated.data?.length) return { ok: false, error: `Gagal publish menu #${item.id}: tidak ada row yang ter-update` };
-  }
-  revalidateWM(); return { ok: true };
+  revalidateWM();
+  return { ok: true, data };
 }
 
 export type ThemeInput = { primary_color: string; secondary_color: string; accent_color: string; font_family: string };

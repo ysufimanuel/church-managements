@@ -44,8 +44,8 @@ const DEFAULT_COLORS = {
 
 function pageFromHref(href: unknown) {
   const value = String(href || '').trim();
-  if (!value || /^(https?:\/\/|mailto:|tel:)/i.test(value) || /^[a-z][a-z\d+.-]*:/i.test(value) || value.startsWith('//')) return '';
-  return value.replace(/^[/#]+/, '').split(/[?#/]/)[0].toLowerCase();
+  if (!value || value.startsWith('#') || /^(https?:\/\/|mailto:|tel:)/i.test(value) || /^[a-z][a-z\d+.-]*:/i.test(value) || value.startsWith('//')) return '';
+  return value.replace(/^\/+/, '').split(/[?#/]/)[0].toLowerCase();
 }
 
 function normalizeCards(content: any): SectionCardItem[] {

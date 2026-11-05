@@ -109,17 +109,15 @@ export function Tabs({
     if (prev === null || prev === activeIndex || !root) return;
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
-    const els: HTMLElement[] = [];
-    for (let el = root.nextElementSibling as HTMLElement | null; el; el = el.nextElementSibling as HTMLElement | null) {
-      if (getComputedStyle(el).position !== 'fixed') els.push(el); // lewati modal/overlay
-    }
-    if (!els.length) return;
+    // Animasi hanya panel konten tepat setelah Tabs, bukan semua sibling di halaman.
+    const content = root.nextElementSibling as HTMLElement | null;
+    if (!content || getComputedStyle(content).position === 'fixed') return;
 
     const host = root.parentElement;
     const prevClip = host?.style.overflowX ?? '';
     if (host) host.style.overflowX = 'clip'; // cegah scroll horizontal sesaat di mobile
     const dir = activeIndex > prev ? 1 : -1;
-    gsap.fromTo(els, { x: dir * 28, opacity: 0 }, {
+    gsap.fromTo(content, { x: dir * 28, opacity: 0 }, {
       x: 0, opacity: 1, duration: 0.4, ease: 'outStrong', overwrite: 'auto',
       clearProps: 'transform,opacity',
       onComplete: () => { if (host) host.style.overflowX = prevClip; },

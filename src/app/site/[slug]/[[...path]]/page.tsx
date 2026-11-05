@@ -15,7 +15,8 @@ type Props = { params: { slug: string; path?: string[] }; searchParams?: { previ
 function publicHref(base: string, href: string) {
   if (!href || href === '/' || href === '#home') return base;
   if (/^https?:\/\//i.test(href)) return href;
-  const route = href.startsWith('#') ? href.slice(1) : href;
+  if (href.startsWith('#')) return `${base}${href}`;
+  const route = href;
   return `${base}${route.startsWith('/') ? route : `/${route}`}`;
 }
 async function getChurch(slug: string) { const admin = createAdminClient(); const { data } = await admin.from('churches').select('id,slug,nama,alamat,kota,telepon,email').eq('slug', slug).maybeSingle(); return data; }

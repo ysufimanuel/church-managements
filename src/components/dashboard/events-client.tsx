@@ -142,7 +142,7 @@ export function EventsClient({ events, members, participants, role }: { events: 
                   <span>{p.member_id ? memberName(p.member_id) : p.nama_manual}</span>
                   <span className="flex items-center gap-2 text-xs text-muted-foreground">
                     {formatDateTime(p.registered_at)}
-                    {canEdit(role) && <Button variant="ghost" size="sm" onClick={async () => { const r = await removeParticipant(p.id); r.ok ? toast.success(t('save')) : toast.error(r.error); }}><Trash2 className="h-3 w-3 text-destructive" /></Button>}
+                    {canDelete(role) && <Button variant="ghost" size="sm" onClick={async () => { const r = await removeParticipant(p.id); r.ok ? toast.success(t('save')) : toast.error(r.error); }}><Trash2 className="h-3 w-3 text-destructive" /></Button>}
                   </span>
                 </li>
               ))}

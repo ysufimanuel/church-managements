@@ -28,7 +28,11 @@ export default async function PublicChurchPage({ params, searchParams }: Props) 
   if (previewRequested) { const profile = await getCurrentProfile(); if (!profile || profile.church_id !== church.id || !canUseWebManager(profile.role as Role)) notFound(); preview = true; }
   const admin = createAdminClient();
   const [{ data: theme }, { data: rawNav }] = await Promise.all([admin.from('site_theme').select('*').eq('church_id', church.id).eq('id', 1).maybeSingle(), admin.from('site_nav_items').select('*').eq('church_id', church.id).order('sort_order').order('id')]);
-  const navItems = (rawNav || []).map((item) => { if (!preview) { const p = item.published || { label: item.label, href: item.href, visible: item.visible, sort_order: item.sort_order }; return { ...item, ...p }; } if (!item.draft) return null; return { ...item, ...(item.draft as Record<string, unknown>) }; }).filter(Boolean).filter((item: any) => item.visible !== false);
+  const navItems = (rawNav || []).map((item) => {
+    const version = preview ? item.draft : item.published;
+    if (!version) return null;
+    return { ...item, ...(version as Record<string, unknown>) };
+  }).filter(Boolean).filter((item: any) => item.visible !== false);
   const base = `/site/${church.slug}`; const page = params.path?.[0] || 'home';
   const themeValues: any = preview ? (theme?.draft || theme || {}) : (theme?.published || theme || {});
   const defaultTheme = themeValues?.website_theme === 'default';

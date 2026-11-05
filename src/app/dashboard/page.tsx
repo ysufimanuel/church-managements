@@ -18,14 +18,13 @@ export default async function DashboardPage() {
   const chartStartDate = new Date(now);
   chartStartDate.setDate(chartStartDate.getDate() - 6);
   const chartStartKey = toDateKey(chartStartDate);
-  const weekAgo = new Date(now.getTime() - 7 * 864e5).toISOString().slice(0, 10);
   const monthStart = now.toISOString().slice(0, 8) + '01';
   // awal bulan, 5 bulan lalu (total 6 bulan termasuk bulan ini) — untuk chart tren donasi
   const trendStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 5, 1)).toISOString().slice(0, 10);
 
   const [members, attendanceWeek, donationsMonth, events, groups, volunteers, activities, upcoming, recentDonations, attendanceChartRows, donationsTrend] = await Promise.all([
     supabase.from('members').select('id, jk, status', { count: 'exact' }),
-    supabase.from('attendance').select('id, tanggal').gte('tanggal', weekAgo),
+    supabase.from('attendance').select('id, tanggal').gte('tanggal', chartStartKey).lte('tanggal', todayKey),
     supabase.from('donations').select('jumlah').gte('tanggal', monthStart),
     supabase.from('events').select('id, status'),
     supabase.from('groups').select('id'),

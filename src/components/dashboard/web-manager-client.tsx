@@ -16,7 +16,9 @@ import { canDelete, type Role } from '@/lib/rbac';
 
 const RATIOS = ['19:9', '16:9', '1:1', '4:3', '4:5', '2:3', '9:16', '2:9', '32:9'];
 const FONTS = ['Poppins', 'Inter', 'Roboto', 'Montserrat'];
-const SECTION_TYPES = ['hero', 'event_feed', 'info_lokasi', 'media', 'map', 'richtext'];
+const SECTION_TYPES = ['hero', 'card_grid', 'event_feed', 'info_lokasi', 'media', 'map', 'richtext'];
+
+type SectionCardItem = { id: string; title: string; body: string; image_url: string; href: string };
 const POSITIONS = ['center', 'top', 'bottom', 'left', 'right'];
 
 type SectionMediaItem = {
@@ -43,6 +45,16 @@ function pageFromHref(href: unknown) {
   const value = String(href || '').trim();
   if (!value || /^https?:\/\//i.test(value)) return '';
   return value.replace(/^[/#]+/, '').split(/[?#/]/)[0].toLowerCase();
+}
+
+function normalizeCards(content: any): SectionCardItem[] {
+  return Array.isArray(content?.cards) ? content.cards.map((card: any, index: number) => ({
+    id: String(card.id || `card-${index + 1}`),
+    title: card.title || '',
+    body: card.body || '',
+    image_url: card.image_url || '',
+    href: card.href || '',
+  })) : [];
 }
 
 function normalizeMediaItems(content: any): SectionMediaItem[] {
@@ -155,6 +167,8 @@ function SectionForm({ initial, page, pages, onSave, onCancel }: { initial: any;
   const [title, setTitle] = React.useState(c.title || ''); const [subtitle, setSubtitle] = React.useState(c.subtitle || ''); const [body, setBody] = React.useState(c.body || '');
   const [ctaLabel, setCtaLabel] = React.useState(c.cta_label || ''); const [ctaHref, setCtaHref] = React.useState(c.cta_href || '/tentang');
   const [mediaItems, setMediaItems] = React.useState<SectionMediaItem[]>(() => normalizeMediaItems(c)); const [bgImage, setBgImage] = React.useState(c.bg_image || '');
+  const [cards, setCards] = React.useState<SectionCardItem[]>(() => normalizeCards(c));
+  const [gridColumns, setGridColumns] = React.useState(String(c.grid_columns || 3));
   const [titleSize, setTitleSize] = React.useState(Number(c.title_font_size || 40)); const [subtitleSize, setSubtitleSize] = React.useState(Number(c.subtitle_font_size || 20)); const [bodySize, setBodySize] = React.useState(Number(c.body_font_size || 16)); const [ctaSize, setCtaSize] = React.useState(Number(c.cta_font_size || 16));
   const [contentWidth, setContentWidth] = React.useState(String(c.content_width || '1200'));
   const [mediaLayout, setMediaLayout] = React.useState(c.media_layout || 'stack');
@@ -164,14 +178,18 @@ function SectionForm({ initial, page, pages, onSave, onCancel }: { initial: any;
   function updateMedia(id: string, patch: Partial<SectionMediaItem>) { setMediaItems((items) => items.map((m) => m.id === id ? { ...m, ...patch } : m)); }
   function addMedia() { setMediaItems((items) => [...items, { id: `media-${Date.now()}-${items.length + 1}`, kind: 'image', url: '', ratio: '16:9', size: 100, radius: 16, position: 'center', layer: 'front', autoplay: false, muted: true, title: '' }]); }
   function removeMedia(id: string) { setMediaItems((items) => items.filter((m) => m.id !== id)); }
+  function updateCard(id: string, patch: Partial<SectionCardItem>) { setCards((items) => items.map((card) => card.id === id ? { ...card, ...patch } : card)); }
+  function addCard() { setCards((items) => [...items, { id: `card-${Date.now()}-${items.length + 1}`, title: '', body: '', image_url: '', href: '' }]); }
+  function removeCard(id: string) { setCards((items) => items.filter((card) => card.id !== id)); }
   function setColor(key: string, value: string) { setColors((x) => ({ ...x, [key]: value })); }
-  const content = { ...c, title, subtitle, body, cta_label: ctaLabel, cta_href: ctaHref, media_items: mediaItems.map(({ id, ...m }) => m), bg_image: bgImage, title_font_size: titleSize, subtitle_font_size: subtitleSize, body_font_size: bodySize, cta_font_size: ctaSize, content_width: contentWidth, media_layout: mediaLayout, limit, address, hours, maps_embed: mapsEmbed, lat: lat === '' ? null : Number(lat), lng: lng === '' ? null : Number(lng), ...colors };
+  const content = { ...c, title, subtitle, body, cta_label: ctaLabel, cta_href: ctaHref, media_items: mediaItems.map(({ id, ...m }) => m), bg_image: bgImage, title_font_size: titleSize, subtitle_font_size: subtitleSize, body_font_size: bodySize, cta_font_size: ctaSize, content_width: contentWidth, media_layout: mediaLayout, grid_columns: Number(gridColumns), cards: cards.map(({ id, ...card }) => card), limit, address, hours, maps_embed: mapsEmbed, lat: lat === '' ? null : Number(lat), lng: lng === '' ? null : Number(lng), ...colors };
 
   return <div className="grid gap-6 md:grid-cols-2">
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-3"><Label>Halaman tujuan<Select value={sectionPage} onChange={(e) => setSectionPage(e.target.value)}>{pages.map((p) => <option key={p} value={p}>{p}</option>)}</Select></Label><Label>Tipe<Select value={type} onChange={(e) => setType(e.target.value)}>{SECTION_TYPES.map((x) => <option key={x} value={x}>{x}</option>)}</Select></Label><Label>Urutan<Input type="number" value={sortOrder} onChange={(e) => setSortOrder(Number(e.target.value))} /></Label></div>
       {type !== 'map' && type !== 'event_feed' && <Label>Judul<Input value={title} onChange={(e) => setTitle(e.target.value)} /></Label>}
       {type === 'hero' && <><Label>Subtitle<Input value={subtitle} onChange={(e) => setSubtitle(e.target.value)} /></Label><div className="grid grid-cols-2 gap-2"><Input value={ctaLabel} onChange={(e) => setCtaLabel(e.target.value)} placeholder="CTA label" /><Input value={ctaHref} onChange={(e) => setCtaHref(e.target.value)} placeholder="/tentang" /></div><Label>Background image URL<Input value={bgImage} onChange={(e) => setBgImage(e.target.value)} /></Label></>}
+      {type === 'card_grid' && <div className="space-y-3 rounded-xl border p-4"><div className="flex items-center justify-between gap-3"><p className="font-semibold">Konten kartu</p><Button type="button" size="sm" onClick={addCard}><Plus className="h-4 w-4" /> Tambah kartu</Button></div><Label>Jumlah kolom<Select value={gridColumns} onChange={(e) => setGridColumns(e.target.value)}><option value="2">2 kolom</option><option value="3">3 kolom</option><option value="4">4 kolom</option></Select></Label>{cards.length === 0 && <p className="rounded-lg border border-dashed p-4 text-center text-sm text-muted-foreground">Belum ada kartu.</p>}{cards.map((card, index) => <div key={card.id} className="space-y-2 rounded-lg border p-3"><div className="flex items-center justify-between"><b className="text-sm">Kartu #{index + 1}</b><Button type="button" size="icon" variant="ghost" onClick={() => removeCard(card.id)}><X className="h-4 w-4 text-destructive" /></Button></div><Label>Judul<Input value={card.title} onChange={(e) => updateCard(card.id, { title: e.target.value })} /></Label><Label>Deskripsi<textarea className="min-h-20 w-full rounded-md border bg-background p-3 text-sm" value={card.body} onChange={(e) => updateCard(card.id, { body: e.target.value })} /></Label><Label>URL gambar (opsional)<Input value={card.image_url} onChange={(e) => updateCard(card.id, { image_url: e.target.value })} placeholder="https://..." /></Label><Label>Link tujuan (opsional)<Input value={card.href} onChange={(e) => updateCard(card.id, { href: e.target.value })} placeholder="/connect" /></Label></div>)}</div>}
       {type === 'richtext' && <Label>Isi<textarea className="min-h-40 w-full rounded-md border bg-background p-3 text-sm" value={body} onChange={(e) => setBody(e.target.value)} /></Label>}
       {type === 'event_feed' && <Label>Jumlah event<Input type="number" min="1" max="12" value={limit} onChange={(e) => setLimit(Number(e.target.value))} /></Label>}
       {type === 'info_lokasi' && <><Label>Alamat<Input value={address} onChange={(e) => setAddress(e.target.value)} /></Label><Label>Jam ibadah<Input value={hours} onChange={(e) => setHours(e.target.value)} /></Label><div className="grid grid-cols-2 gap-2"><Input value={lat} onChange={(e) => setLat(e.target.value)} placeholder="Latitude" /><Input value={lng} onChange={(e) => setLng(e.target.value)} placeholder="Longitude" /></div></>}

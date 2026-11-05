@@ -52,7 +52,6 @@ export async function SectionRenderer({ page, churchId, basePath, preview = fals
     .sort((a, b) => preview
       ? (a.draft_sort_order ?? a.sort_order) - (b.draft_sort_order ?? b.sort_order)
       : a.sort_order - b.sort_order);
-  const { data: media } = await supabase.from('site_media').select('*').eq('church_id', churchId).eq('state', 'published').order('sort_order');
   const out: ReactNode[] = [];
   for (const s of sections || []) {
     if (preview && s.draft_deleted) continue;

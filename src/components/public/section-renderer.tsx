@@ -6,7 +6,12 @@ import { MapPin, Clock } from 'lucide-react';
 
 type SectionMedia = { id: string | number; kind: 'image' | 'video'; url: string; ratio: string; size: number; radius: number; position: string; layer: 'front' | 'overlay'; autoplay?: boolean; muted?: boolean; title?: string };
 
-function resolveHref(basePath: string, href?: string) { if (!href || href === '/') return basePath; if (/^https?:\/\//i.test(href)) return href; return `${basePath}${href.startsWith('/') ? href : `/${href}`}`; }
+function resolveHref(basePath: string, href?: string) {
+  if (!href || href === '/' || href === '#home') return basePath;
+  if (/^https?:\/\//i.test(href)) return href;
+  const route = href.startsWith('#') ? href.slice(1) : href;
+  return `${basePath}${route.startsWith('/') ? route : `/${route}`}`;
+}
 function mediaPositionClass(position: string) { if (position === 'left') return 'items-center justify-start'; if (position === 'right') return 'items-center justify-end'; if (position === 'top') return 'items-start justify-center'; if (position === 'bottom') return 'items-end justify-center'; return 'items-center justify-center'; }
 function px(value: unknown, fallback: number, min: number, max: number) { return Math.min(max, Math.max(min, Number(value ?? fallback))); }
 function normalizeMediaItems(content: any): SectionMedia[] {
@@ -19,17 +24,21 @@ function SectionMedia({ content }: { content: any }) {
   const front = items.filter((m) => m.layer === 'front');
   const overlay = items.filter((m) => m.layer === 'overlay');
   if (!items.length) return null;
-  const frame = (m: SectionMedia) => <div key={m.id} style={{ width: `${m.size}%`, borderRadius: `${m.radius}px`, overflow: 'hidden' }}><MediaFrame item={{ id: m.id, kind: m.kind, url: m.url, ratio: m.ratio, layer: m.layer, position: m.position, autoplay: m.autoplay, muted: m.muted, title: m.title }} /></div>;
+  const layout = content.media_layout || 'stack';
+  const gridClass = layout === 'grid-3' ? 'grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3' : layout === 'grid-2' ? 'grid grid-cols-1 gap-5 sm:grid-cols-2' : 'flex flex-col gap-5';
+  const width = content.content_width === 'full' ? '100%' : `${px(content.content_width, 1200, 320, 1800)}px`;
+  const frame = (m: SectionMedia) => <div key={m.id} style={{ width: layout === 'stack' ? `${m.size}%` : '100%', borderRadius: `${m.radius}px`, overflow: 'hidden' }}><MediaFrame item={{ id: m.id, kind: m.kind, url: m.url, ratio: m.ratio, layer: m.layer, position: m.position, autoplay: m.autoplay, muted: m.muted, title: m.title }} /></div>;
   return <>
     {overlay.length > 0 && <div className="pointer-events-none absolute inset-0 z-0 flex flex-col gap-3 px-4 py-8">{overlay.map((m) => <div key={m.id} className={`flex min-h-0 flex-1 ${mediaPositionClass(m.position)}`}>{frame(m)}</div>)}</div>}
-    {front.length > 0 && <div className="relative z-10 flex w-full flex-col gap-5">{front.map(frame)}</div>}
+    {front.length > 0 && <div className={`relative z-10 mx-auto w-full px-4 ${gridClass}`} style={{ maxWidth: width }}>{front.map(frame)}</div>}
   </>;
 }
 function SectionShell({ content, children, className = '' }: { content: any; children: ReactNode; className?: string }) {
   const overlayItems = normalizeMediaItems(content).some((m) => m.layer === 'overlay');
   const overlayColor = content.overlay_color || 'var(--site-primary)';
   const overlayOpacity = px(content.overlay_opacity, 70, 0, 100) / 100;
-  return <section className={`relative overflow-hidden ${className}`}><SectionMedia content={content} />{overlayItems && <div className="pointer-events-none absolute inset-0 z-[1]" style={{ background: overlayColor, opacity: overlayOpacity }} />}<div className="relative z-10">{children}</div></section>;
+  const contentWidth = content.content_width === 'full' ? '100%' : `${px(content.content_width, 1200, 320, 1800)}px`;
+  return <section className={`relative overflow-hidden ${className}`}><SectionMedia content={content} />{overlayItems && <div className="pointer-events-none absolute inset-0 z-[1]" style={{ background: overlayColor, opacity: overlayOpacity }} />}<div className="relative z-10 mx-auto w-full" style={{ maxWidth: contentWidth }}>{children}</div></section>;
 }
 
 export async function SectionRenderer({ page, churchId, basePath, preview = false, themePreset = 'cms' }: { page: string; churchId: string; basePath: string; preview?: boolean; themePreset?: 'cms' | 'default' }) {

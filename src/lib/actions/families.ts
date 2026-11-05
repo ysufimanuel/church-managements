@@ -34,12 +34,14 @@ export async function saveFamily(input: FamilyInput) {
     .from('family_members').select('member_id').eq('family_id', familyId!).eq('church_id', profile.church_id);
   if (readError) return { ok: false, error: readError.message };
 
-  const existingIds = new Set((existing || []).map((row) => row.member_id));
-  const requestedIds = Array.from(new Set(anggota.filter((id) => Number.isSafeInteger(id) && id > 0)));
+  const existingIds = (existing || []).map((row) => row.member_id);
+  const requestedIds = anggota.filter((id, index) =>
+    Number.isSafeInteger(id) && id > 0 && anggota.indexOf(id) === index
+  );
 
-  const additions = requestedIds.filter((memberId) => !existingIds.has(memberId));
+  const additions = requestedIds.filter((memberId) => !existingIds.includes(memberId));
   if (profile.role === 'superadmin') {
-    const removals = Array.from(existingIds).filter((memberId) => !requestedIds.includes(memberId));
+    const removals = existingIds.filter((memberId) => !requestedIds.includes(memberId));
     if (removals.length) {
       const { error: deleteError } = await supabase.from('family_members')
         .delete().eq('family_id', familyId!).eq('church_id', profile.church_id).in('member_id', removals);

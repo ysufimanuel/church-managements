@@ -114,14 +114,19 @@ export function WebManagerClient({ navItems, theme, sections, role, publicPath, 
   async function updateDefaultThemePreference(enabled: boolean) {
     const previous = defaultThemeEnabled;
     setDefaultThemeEnabled(enabled);
-    const result = await saveWebsiteThemePreference(enabled ? 'default' : 'cms');
-    if (!result.ok) {
+    try {
+      const result = await saveWebsiteThemePreference(enabled ? 'default' : 'cms');
+      if (!result.ok) {
+        setDefaultThemeEnabled(previous);
+        toast.error(result.error || 'Gagal menyimpan preferensi tema');
+        return;
+      }
+      setPreviewKey((k) => k + 1);
+      toast.success(enabled ? 'Default Theme aktif pada Draft gereja' : 'Tampilan Draft CMS dipulihkan');
+    } catch (error) {
       setDefaultThemeEnabled(previous);
-      toast.error(result.error || 'Gagal menyimpan preferensi tema');
-      return;
+      toast.error(error instanceof Error ? error.message : 'Gagal menyimpan preferensi tema.');
     }
-    setPreviewKey((k) => k + 1);
-    toast.success(enabled ? 'Default Theme aktif pada Draft gereja' : 'Tampilan Draft CMS dipulihkan');
   }
 
   React.useEffect(() => { setThemeValues(theme?.draft || theme?.published || { primary_color: '#FFFFFF', secondary_color: '#1F2937', accent_color: '#22C55E', font_family: 'Inter' }); }, [theme]);

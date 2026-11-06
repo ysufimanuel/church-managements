@@ -122,7 +122,8 @@ export function WebManagerClient({ navItems, theme, sections, role, publicPath, 
         return;
       }
       setPreviewKey((k) => k + 1);
-      toast.success(enabled ? 'Default Theme aktif pada Draft gereja' : 'Tampilan Draft CMS dipulihkan');
+      toast.success(enabled ? 'Default Theme aktif untuk preview akun ini' : 'Tema CMS dipakai untuk preview akun ini');
+      router.refresh();
     } catch (error) {
       setDefaultThemeEnabled(previous);
       toast.error(error instanceof Error ? error.message : 'Gagal menyimpan preferensi tema.');
@@ -140,7 +141,7 @@ export function WebManagerClient({ navItems, theme, sections, role, publicPath, 
     return Array.from(set);
   }, [navItems, sections]);
   const pageSections = sections.filter((s) => String(s.draft_page || s.page || '').trim().toLowerCase() === page).sort((a, b) => (a.draft_sort_order ?? a.sort_order) - (b.draft_sort_order ?? b.sort_order));
-  const previewPath = publicPath ? `${publicPath}${page === 'home' ? '' : `/${page}`}?preview=draft` : null;
+  const previewPath = publicPath ? `${publicPath}${page === 'home' ? '' : `/${page}`}?preview=draft${defaultThemeEnabled ? '&theme=default' : ''}` : null;
   async function run(p: Promise<{ ok: boolean; error?: string }>, okMsg?: string) {
     try {
       const result = await p;
@@ -169,15 +170,15 @@ export function WebManagerClient({ navItems, theme, sections, role, publicPath, 
       <div className="space-y-3 rounded-xl border p-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="min-w-0">
-            <p className="font-semibold">Default Theme · Tema Draft Gereja</p>
-            <p className="mt-1 text-xs text-muted-foreground">Saat diaktifkan, Default Theme mengubah warna, tipografi, header, dan layout Draft gereja tanpa mengganti konten, halaman, atau media. Saat dinonaktifkan, pengaturan visual CMS sebelumnya dipakai kembali. Website publik mengikuti tema ini setelah Publish.</p>
+            <p className="font-semibold">Default Theme · Preview per Akun</p>
+            <p className="mt-1 text-xs text-muted-foreground">Saat diaktifkan, hanya preview Draft untuk akun ini yang memakai warna, tipografi, header, dan gaya layout Default Theme. Preferensi ini tidak mengubah konten, halaman, media, palette CMS, atau website publik. Nonaktifkan untuk kembali melihat Draft dengan tema CMS. Publish tetap manual.</p>
           </div>
           <div className="flex items-center gap-2"><span className="text-xs text-muted-foreground">{defaultThemeEnabled ? 'Aktif' : 'Nonaktif'}</span><Switch checked={defaultThemeEnabled} onCheckedChange={(checked) => void updateDefaultThemePreference(checked)} /></div>
         </div>
-        {defaultThemeEnabled ? <div className="space-y-2">
-          <div className="flex items-center justify-between gap-2"><p className="text-sm font-medium">Preview Draft Default Theme</p><a href={previewPath || '/default-web'} target="_blank" rel="noreferrer" className="text-xs font-medium text-primary underline underline-offset-4">Buka preview Draft</a></div>
-          <iframe key={`default-draft-${previewKey}`} src={previewPath || '/default-web'} title="Preview Draft Default Theme" className="h-[620px] w-full rounded-lg border bg-[#0F1117]" loading="lazy" />
-        </div> : <div className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">Default Theme sedang nonaktif untuk akun ini. Aktifkan toggle untuk membuka preview.</div>}
+        {defaultThemeEnabled ? (previewPath ? <div className="space-y-2">
+          <div className="flex items-center justify-between gap-2"><p className="text-sm font-medium">Preview Draft Default Theme</p><a href={previewPath} target="_blank" rel="noreferrer" className="text-xs font-medium text-primary underline underline-offset-4">Buka preview Draft</a></div>
+          <iframe key={`default-draft-${previewKey}`} src={previewPath} title="Preview Draft Default Theme" className="h-[620px] w-full rounded-lg border bg-[#0F1117]" loading="lazy" />
+        </div> : <div className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">Website gereja belum tersedia, sehingga preview belum dapat dibuka.</div>) : <div className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">Default Theme sedang nonaktif untuk akun ini. Aktifkan toggle untuk membuka preview.</div>}
       </div>
     </CardContent></Card>}
 

@@ -10,14 +10,18 @@ export default async function WebManagerPage() {
   const profile = await getCurrentProfile();
   if (!canUseWebManager(profile?.role as Role)) redirect('/dashboard');
   const supabase = await createClient();
-  const [{ data: navItems }, { data: theme }, { data: sections }, { data: church }, { data: events }, { data: groups }] = await Promise.all([
+  const [{ data: navItems }, { data: theme }, { data: sections }, { data: church }, { data: events }, { data: groups }, { data: preferenceRow }] = await Promise.all([
     supabase.from('site_nav_items').select('*').eq('church_id', profile!.church_id).order('sort_order'),
     supabase.from('site_theme').select('*').eq('church_id', profile!.church_id).eq('id', 1).maybeSingle(),
     supabase.from('site_sections').select('*').eq('church_id', profile!.church_id).order('sort_order'),
     supabase.from('churches').select('slug').eq('id', profile!.church_id).maybeSingle(),
     supabase.from('events').select('id,nama').eq('church_id', profile!.church_id).order('nama'),
     supabase.from('groups').select('id,nama').eq('church_id', profile!.church_id).order('nama'),
+    supabase.from('user_preferences').select('preferences').eq('user_id', profile!.id).maybeSingle(),
   ]);
+  const accountPreferences = preferenceRow?.preferences && typeof preferenceRow.preferences === 'object' && !Array.isArray(preferenceRow.preferences)
+    ? preferenceRow.preferences as Record<string, unknown>
+    : {};
   const publicPath = church ? `/site/${church.slug}` : null;
   const publicOrigin = process.env.NEXT_PUBLIC_SITE_URL || 'https://church-managements-system.vercel.app';
   const publicUrl = publicPath ? `${publicOrigin}${publicPath}` : null;
@@ -42,7 +46,7 @@ export default async function WebManagerPage() {
         groups={groups || []}
         role={profile!.role as Role}
         publicPath={publicPath}
-        websiteThemePreference={(theme?.draft as any)?.website_theme === 'default' ? 'default' : 'cms'}
+        websiteThemePreference={accountPreferences.website_theme === 'default' ? 'default' : 'cms'}
       />
     </div>
   );

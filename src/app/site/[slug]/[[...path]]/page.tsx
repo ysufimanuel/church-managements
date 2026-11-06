@@ -37,7 +37,10 @@ export default async function PublicChurchPage({ params, searchParams }: Props) 
   }).filter(Boolean).filter((item: any) => item.visible !== false);
   const base = `/site/${church.slug}`; const page = (params.path?.[0] || 'home').trim().toLowerCase();
   const themeValues: any = preview ? (theme?.draft || theme || {}) : (theme?.published || theme || {});
-  const defaultTheme = themeValues?.website_theme === 'default';
+  // Preview selection is per-account; the public site keeps its existing published theme.
+  const defaultTheme = preview
+    ? searchParams?.theme === 'default'
+    : themeValues?.website_theme === 'default';
   const primary = defaultTheme ? '#0F1117' : (themeValues?.primary_color || '#FFFFFF');
   const secondary = defaultTheme ? '#FFFFFF' : (themeValues?.secondary_color || '#1F2937');
   const accent = defaultTheme ? '#00E5FF' : (themeValues?.accent_color || '#22C55E');

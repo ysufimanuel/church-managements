@@ -250,37 +250,34 @@ export async function saveWebsiteThemePreference(theme: WebsiteThemePreference) 
   if (denied) return { ok: false, error: denied };
   if (theme !== 'cms' && theme !== 'default') return { ok: false, error: 'Pilihan tema tidak valid' };
 
-  // Store the presentation preset in the church Draft theme. Preserve all existing palette settings.
+  // Preferences belong to the signed-in account, not the shared church Draft.
+  // The existing user_preferences table is protected by own-user RLS policies.
   const supabase = await createClient();
   const { data: current, error: readError } = await supabase
-    .from('site_theme')
-    .select('draft,primary_color,font_family')
-    .eq('id', 1)
-    .eq('church_id', profile.church_id)
+    .from('user_preferences')
+    .select('preferences')
+    .eq('user_id', profile.id)
     .maybeSingle();
-  if (readError || !current) return { ok: false, error: readError?.message || 'Tema Draft tidak ditemukan' };
+  if (readError) return { ok: false, error: readError.message };
 
-  const baseDraft: Record<string, unknown> = current.draft && typeof current.draft === 'object'
-    ? current.draft as Record<string, unknown>
-    : {
-        primary_color: current.primary_color,
-        secondary_color: '#1F2937',
-        accent_color: '#22C55E',
-        font_family: current.font_family,
-      };
-  const draft: Record<string, unknown> = { ...baseDraft };
-  if (theme === 'default') draft.website_theme = 'default';
-  else delete draft.website_theme;
+  const basePreferences = current?.preferences && typeof current.preferences === 'object' && !Array.isArray(current.preferences)
+    ? current.preferences as Record<string, unknown>
+    : {};
+  const preferences: Record<string, unknown> = { ...basePreferences };
+  if (theme === 'default') preferences.website_theme = 'default';
+  else delete preferences.website_theme;
 
   const { data, error } = await supabase
-    .from('site_theme')
-    .update({ draft, state: 'draft' })
-    .eq('id', 1)
-    .eq('church_id', profile.church_id)
-    .select('id')
+    .from('user_preferences')
+    .upsert({
+      user_id: profile.id,
+      preferences,
+      updated_at: new Date().toISOString(),
+    }, { onConflict: 'user_id' })
+    .select('user_id')
     .maybeSingle();
   if (error) return { ok: false, error: error.message };
-  if (!data) return { ok: false, error: 'Preferensi tema Draft tidak tersimpan untuk gereja ini' };
+  if (!data) return { ok: false, error: 'Preferensi tema akun gagal disimpan' };
 
   revalidateWM();
   return { ok: true };

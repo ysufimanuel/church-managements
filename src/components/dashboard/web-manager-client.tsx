@@ -13,6 +13,7 @@ import { Plus, Pencil, Trash2, Rocket, Eye, Image as ImageIcon, X, GripVertical,
 import { saveNavItem, toggleNavVisibility, deleteNavItem, publishNav, saveThemeDraft, publishTheme, saveSectionDraft, publishSections, publishWebManager, deleteSection, saveWebsiteThemePreference, type ThemeInput, type WebsiteThemePreference } from '@/lib/actions/webmanager';
 import { toast } from 'sonner';
 import { MediaFrame } from '@/components/public/media-frame';
+import { VisualEditor } from '@/components/dashboard/visual-editor';
 import { canDelete, type Role } from '@/lib/rbac';
 
 const RATIOS = ['19:9', '16:9', '1:1', '4:3', '4:5', '2:3', '9:16', '2:9', '32:9'];
@@ -100,7 +101,7 @@ function ColorField({ label, value, onChange, id, hint }: { label: string; value
 export function WebManagerClient({ navItems, theme, sections, role, publicPath, websiteThemePreference, events, groups }: { navItems: any[]; theme: any; sections: any[]; events: ResourceOption[]; groups: ResourceOption[]; role: Role; publicPath: string | null; websiteThemePreference: WebsiteThemePreference }) {
   const { t } = useLang();
   const router = useRouter();
-  const [tab, setTab] = React.useState('nav');
+  const [tab, setTab] = React.useState('visual');
   const [navModal, setNavModal] = React.useState(false);
   const [navEditing, setNavEditing] = React.useState<any>(null);
   const [themeValues, setThemeValues] = React.useState<ThemeInput>(() => theme?.draft || theme?.published || { primary_color: '#FFFFFF', secondary_color: '#1F2937', accent_color: '#22C55E', font_family: 'Inter' });
@@ -161,7 +162,8 @@ export function WebManagerClient({ navItems, theme, sections, role, publicPath, 
 
   return <div className="space-y-4">
     <div className="flex flex-wrap items-start justify-between gap-2"><div><h1 className="text-2xl font-bold">{t('web-manager')}</h1><p className="text-muted-foreground">Kelola header, tema, halaman, draft, dan preview website publik.</p></div><Button onClick={() => run(publishWebManager(), t('publish'))}><Rocket className="h-4 w-4" /> {t('wm-publish')}</Button></div>
-    <Tabs active={tab} onChange={setTab} tabs={[{ id: 'nav', label: t('wm-header-nav') }, { id: 'theme', label: t('wm-theming') }, { id: 'sections', label: t('wm-sections') }]} />
+    <Tabs active={tab} onChange={setTab} tabs={[{ id: 'visual', label: 'Editor Visual' }, { id: 'nav', label: t('wm-header-nav') }, { id: 'theme', label: t('wm-theming') }, { id: 'sections', label: `${t('wm-sections')} (Lanjutan)` }]} />
+    {tab === 'visual' && <VisualEditor sections={sections} pages={pages} theme={theme} role={role} publicPath={publicPath} />}
 
     {tab === 'nav' && <Card><CardHeader className="flex-row items-center justify-between"><CardTitle>Header & Navigasi</CardTitle><div className="flex gap-2"><Button variant="secondary" onClick={() => run(publishNav(), t('publish'))}><Rocket className="h-4 w-4" /> Publish Menu</Button><Button onClick={() => { setNavEditing(null); setNavModal(true); }}><Plus className="h-4 w-4" /> Menu Baru</Button></div></CardHeader><CardContent className="space-y-2">{navItems.slice().sort((a, b) => a.sort_order - b.sort_order).map((n) => <div key={n.id} className="flex flex-wrap items-center gap-3 rounded-md border p-3"><div className="min-w-0 flex-1"><p className="font-medium">{n.draft?.label || n.label}</p><p className="truncate text-xs text-muted-foreground">{n.draft?.href || n.href} · order #{n.draft?.sort_order ?? n.sort_order}</p></div><Badge variant={n.state === 'draft' ? 'warning' : 'success'}>{n.state === 'draft' ? 'Draft' : 'Published'}</Badge><div className="flex items-center gap-2"><span className="text-xs text-muted-foreground">{(n.draft?.visible ?? n.visible) ? 'On' : 'Off'}</span><Switch checked={Boolean(n.draft?.visible ?? n.visible)} onCheckedChange={(v) => run(toggleNavVisibility(n.id, v))} /></div><Button variant="ghost" size="icon" onClick={() => { setNavEditing(n); setNavModal(true); }}><Pencil className="h-4 w-4" /></Button>{canDelete(role) && <Button variant="ghost" size="icon" onClick={() => confirm(t('confirmation')) && run(deleteNavItem(n.id))}><Trash2 className="h-4 w-4 text-destructive" /></Button>}</div>)}{navItems.length === 0 && <p className="text-sm text-muted-foreground">Belum ada menu.</p>}</CardContent></Card>}
 

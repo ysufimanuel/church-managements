@@ -308,9 +308,10 @@ export async function deleteSection(id: number) {
   const { data, error: readError } = await supabase.from('site_sections').select('published').eq('id', id).eq('church_id', profile.church_id).maybeSingle();
   if (readError || !data) return { ok: false, error: readError?.message || 'Section tidak ditemukan' };
   const result = data.published
-    ? await supabase.from('site_sections').update({ draft_deleted: true }).eq('id', id).eq('church_id', profile.church_id)
-    : await supabase.from('site_sections').delete().eq('id', id).eq('church_id', profile.church_id);
+    ? await supabase.from('site_sections').update({ draft_deleted: true }).eq('id', id).eq('church_id', profile.church_id).select('id').maybeSingle()
+    : await supabase.from('site_sections').delete().eq('id', id).eq('church_id', profile.church_id).select('id').maybeSingle();
   if (result.error) return { ok: false, error: result.error.message };
+  if (!result.data) return { ok: false, error: 'Section tidak ditemukan atau tidak memiliki akses pada gereja ini' };
   revalidateWM(); return { ok: true };
 }
 

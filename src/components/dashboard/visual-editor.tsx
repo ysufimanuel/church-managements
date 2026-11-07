@@ -79,7 +79,7 @@ export function VisualEditor({ sections, pages, theme, role, publicPath }: { sec
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [baseKey, override]);
 
-  const selected = selectedId == null ? null : sections.find((s) => s.id === selectedId) || null;
+  const selected = selectedId == null ? null : sections.find((s) => s.id === selectedId && !effective(s).deleted) || null;
   const localHas = (s: any) => hasUnpublished(s.id === selectedId ? { ...s, content } : s);
   const unpublishedCount = sections.filter((s) => effective(s).page === page && localHas(s)).length;
   const previewSrc = publicPath ? `${publicPath}${page === 'home' ? '' : `/${page}`}?preview=draft&edit=1` : null;
@@ -128,6 +128,24 @@ export function VisualEditor({ sections, pages, theme, role, publicPath }: { sec
     timerRef.current = setTimeout(() => { void flush(); }, AUTOSAVE_MS);
   }, [flush]);
 
+  // If a custom page disappears from Draft navigation and has no active sections,
+  // move the editor back to a valid page instead of leaving a dead select value.
+  React.useEffect(() => {
+    if (pages.includes(page)) return;
+    let cancelled = false;
+    void (async () => {
+      await flush();
+      if (cancelled) return;
+      selectedIdRef.current = null;
+      setSelectedId(null);
+      setSaveState('idle');
+      setOverride(null);
+      setFrameLoading(true);
+      setPage(pages.includes('home') ? 'home' : (pages[0] || 'home'));
+    })();
+    return () => { cancelled = true; };
+  }, [pages, page, flush]);
+
   const updateContent = React.useCallback((patch: Record<string, any>) => {
     const id = selectedIdRef.current;
     if (id == null) return;
@@ -149,7 +167,7 @@ export function VisualEditor({ sections, pages, theme, role, publicPath }: { sec
     setMobileView('edit');
     if (id === selectedIdRef.current) return;
     await flush();
-    const s = sectionsRef.current.find((x) => x.id === id);
+    const s = sectionsRef.current.find((x) => x.id === id && !effective(x).deleted);
     if (!s) return;
     const next = clone(cacheRef.current.get(id) ?? s.content ?? {});
     selectedIdRef.current = id;
@@ -185,11 +203,11 @@ export function VisualEditor({ sections, pages, theme, role, publicPath }: { sec
 
   React.useEffect(() => {
     const id = pendingSelectRef.current;
-    if (id != null && sections.some((s) => s.id === id)) { pendingSelectRef.current = null; void selectSection(id); }
+    if (id != null && sections.some((s) => s.id === id && !effective(s).deleted)) { pendingSelectRef.current = null; void selectSection(id); }
   }, [sections, selectSection]);
 
   React.useEffect(() => {
-    if (selectedId != null && !sections.some((s) => s.id === selectedId)) { selectedIdRef.current = null; setSelectedId(null); }
+    if (selectedId != null && !sections.some((s) => s.id === selectedId && !effective(s).deleted)) { selectedIdRef.current = null; setSelectedId(null); }
   }, [sections, selectedId]);
 
   async function changePage(slug: string) {

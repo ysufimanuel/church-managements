@@ -54,9 +54,10 @@ export async function deleteNavItem(id: number) {
   const { data, error: readError } = await supabase.from('site_nav_items').select('published').eq('id', id).eq('church_id', profile.church_id).maybeSingle();
   if (readError || !data) return { ok: false, error: readError?.message || 'Menu tidak ditemukan' };
   const result = data.published
-    ? await supabase.from('site_nav_items').update({ draft: null, state: 'draft' }).eq('id', id).eq('church_id', profile.church_id)
-    : await supabase.from('site_nav_items').delete().eq('id', id).eq('church_id', profile.church_id);
+    ? await supabase.from('site_nav_items').update({ draft: null, state: 'draft' }).eq('id', id).eq('church_id', profile.church_id).select('id').maybeSingle()
+    : await supabase.from('site_nav_items').delete().eq('id', id).eq('church_id', profile.church_id).select('id').maybeSingle();
   if (result.error) return { ok: false, error: result.error.message };
+  if (!result.data) return { ok: false, error: 'Menu tidak ditemukan atau tidak memiliki akses pada gereja ini' };
   revalidateWM(); return { ok: true };
 }
 

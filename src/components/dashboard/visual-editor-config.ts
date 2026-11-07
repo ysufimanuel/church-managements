@@ -93,7 +93,10 @@ export function effective(s: any) {
 
 /** True jika Draft berbeda dari versi yang sedang tayang di website publik. */
 export function hasUnpublished(s: any) {
-  if (s.draft_deleted || !s.published) return true;
+  // A tombstone is pending until Publish clears its public snapshot. Keep the
+  // deletion marker afterward so the section cannot reappear in the editor.
+  if (s.draft_deleted) return s.published != null || Boolean(s.enabled) || Boolean(s.draft_enabled);
+  if (!s.published) return true;
   const e = effective(s);
   if (e.page !== String(s.page || '').trim().toLowerCase()) return true;
   if (e.type !== String(s.type || '')) return true;

@@ -134,7 +134,7 @@ export function WebManagerClient({ navItems, theme, sections, role, publicPath, 
   // A published nav row with a null Draft is a pending deletion. Keep it out of
   // every Draft editor surface, while the public site continues using its published snapshot.
   const activeNavItems = React.useMemo(
-    () => navItems.filter((item) => !(item.state === 'draft' && item.draft == null && item.published != null)),
+    () => navItems.filter((item) => !(item.state === 'draft' && item.draft == null)),
     [navItems],
   );
   // Deleted sections remain in the database only until their page is published.

@@ -49,9 +49,12 @@ export default async function PublicChurchPage({ params, searchParams }: Props) 
   const themeValues: any = preview
     ? { ...publishedThemeValues, ...draftThemeValues }
     : publishedThemeValues;
+  const previewThemePreset = Object.prototype.hasOwnProperty.call(draftThemeValues, 'website_theme')
+    ? draftThemeValues.website_theme
+    : publishedThemeValues?.website_theme;
   const defaultTheme = preview
     ? searchParams?.theme === 'default'
-      || (searchParams?.theme !== 'cms' && publishedThemeValues?.website_theme === 'default')
+      || (searchParams?.theme !== 'cms' && previewThemePreset === 'default')
     : publishedThemeValues?.website_theme === 'default';
   const primary = defaultTheme ? '#0F1117' : (themeValues?.primary_color || '#FFFFFF');
   const secondary = defaultTheme ? '#FFFFFF' : (themeValues?.secondary_color || '#1F2937');

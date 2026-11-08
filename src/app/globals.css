@@ -95,10 +95,10 @@
 /* ---- Search: wipe kiri→kanan, baris berurutan atas→bawah ---- */
 @keyframes sx-wipe { from { clip-path: inset(0 100% 0 0); opacity: .4; } to { clip-path: inset(0 0 0 0); opacity: 1; } }
 .sx-wipe { animation: sx-wipe .55s var(--ease-out-strong) both; }
-.sx-row { clip-path: inset(0 100% 0 0); }
+/* GSAP mengatur clip-path saat entrance dan membersihkan inline style setelah selesai.
+   Jangan beri .sx-row clip-path permanen di CSS: itu akan menyembunyikan hasil lagi. */
 @media (prefers-reduced-motion: reduce) {
   .sx-wipe { animation: none; }
-  .sx-row { clip-path: none; }
 }
 mark.sx-hit { background: hsl(var(--primary) / .28); color: inherit; border-radius: 3px; padding: 0 1px; }
 

@@ -13,12 +13,13 @@ import { toast } from 'sonner';
 import { timeAgo } from '@/lib/utils';
 import { createClient } from '@/lib/supabase/client';
 import { canAdd, canEdit, canDelete, type Role } from '@/lib/rbac';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 export function CommunicationClient({ profile, users, groups, messages, announcements, role }: { profile: { id: string }; users: any[]; groups: any[]; messages: any[]; announcements: any[]; role: Role }) {
-  const { t } = useLang(); const router = useRouter(); const [contactSearch, setContactSearch] = useUrlQuery(); const [tab, setTab] = React.useState(() => contactSearch ? 'messages' : canAdd(role) ? 'broadcast' : 'messages'); const [annModal, setAnnModal] = React.useState(false); const [annEditing, setAnnEditing] = React.useState<any>(null); const [important, setImportant] = React.useState(false);
+  const { t } = useLang(); const router = useRouter(); const searchParams = useSearchParams(); const contactId = searchParams.get('contact'); const [contactSearch, setContactSearch] = useUrlQuery(); const [tab, setTab] = React.useState(() => contactSearch ? 'messages' : canAdd(role) ? 'broadcast' : 'messages'); const [annModal, setAnnModal] = React.useState(false); const [annEditing, setAnnEditing] = React.useState<any>(null); const [important, setImportant] = React.useState(false);
   const [activeChat, setActiveChat] = React.useState<any>(null); const [chatMessages, setChatMessages] = React.useState<any[]>(messages); const [text, setText] = React.useState(''); const chatEndRef = React.useRef<HTMLDivElement>(null);
-  const contacts = users.filter((u) => u.id !== profile.id && u.nama.toLowerCase().includes(contactSearch.toLowerCase())); const conversation = activeChat ? chatMessages.filter((m) => (m.sender_id === profile.id && m.receiver_id === activeChat.id) || (m.sender_id === activeChat.id && m.receiver_id === profile.id)) : [];
+  const contacts = users.filter((u) => u.id !== profile.id && u.nama.toLowerCase().includes(contactSearch.toLowerCase()));
+  React.useEffect(() => { if (!contactId) return; const target = users.find((u) => u.id === contactId); if (target) { setTab('messages'); setActiveChat(target); } }, [contactId, users]); const conversation = activeChat ? chatMessages.filter((m) => (m.sender_id === profile.id && m.receiver_id === activeChat.id) || (m.sender_id === activeChat.id && m.receiver_id === profile.id)) : [];
   React.useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [conversation.length]);
   React.useEffect(() => { const supabase = createClient(); const channel = supabase.channel(`chat-realtime-${profile.id}`).on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, (payload) => { const m = payload.new as any; if (m.sender_id === profile.id || m.receiver_id === profile.id) { setChatMessages((prev) => prev.some((x) => x.id === m.id) ? prev : [...prev, m]); if (m.receiver_id === profile.id) markMessageRead(m.id); } }).subscribe(); return () => { supabase.removeChannel(channel); }; }, [profile.id]);
   async function handleSend() { if (!text.trim() || !activeChat) return; const r = await sendMessage(activeChat.id, text.trim()); if (r.ok) setText(''); else toast.error(r.error); }

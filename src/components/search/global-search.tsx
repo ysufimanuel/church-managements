@@ -27,9 +27,9 @@ type Props = {
 
 const TEXT = {
   id: { ph: 'Cari apa saja di web ini...', phDash: 'Cari anggota, acara, donasi, fitur...', none: 'Tidak ada hasil', hint: 'Ketik minimal 2 huruf', open: 'Cari', close: 'Tutup', features: 'Fitur', error: 'Pencarian gagal, coba lagi', searching: 'Mencari…',
-    g: { page: 'Halaman', menu: 'Menu', members: 'Jemaat', families: 'Keluarga', groups: 'Kelompok', events: 'Acara', donations: 'Donasi', finance: 'Keuangan', volunteers: 'Relawan', communication: 'Komunikasi', 'web-manager': 'Web Manager', 'user-management': 'Pengguna', contacts: 'Kontak chat' } as Record<string, string> },
+    g: { page: 'Halaman', menu: 'Menu', members: 'Jemaat', families: 'Keluarga', groups: 'Kelompok', events: 'Acara', donations: 'Donasi', finance: 'Keuangan', volunteers: 'Relawan', communication: 'Komunikasi', messages: 'Pesan chat', 'web-manager': 'Web Manager', 'user-management': 'Pengguna', contacts: 'Kontak chat' } as Record<string, string> },
   en: { ph: 'Search everything on this site...', phDash: 'Search members, events, donations, features...', none: 'No results', hint: 'Type at least 2 characters', open: 'Search', close: 'Close', features: 'Features', error: 'Search failed, try again', searching: 'Searching…',
-    g: { page: 'Pages', menu: 'Menu', members: 'Members', families: 'Families', groups: 'Groups', events: 'Events', donations: 'Donations', finance: 'Finance', volunteers: 'Volunteers', communication: 'Communication', 'web-manager': 'Web Manager', 'user-management': 'Users', contacts: 'Chat contacts' } as Record<string, string> },
+    g: { page: 'Pages', menu: 'Menu', members: 'Members', families: 'Families', groups: 'Groups', events: 'Events', donations: 'Donations', finance: 'Finance', volunteers: 'Volunteers', communication: 'Communication', messages: 'Chat messages', 'web-manager': 'Web Manager', 'user-management': 'Users', contacts: 'Chat contacts' } as Record<string, string> },
 };
 
 const reduced = () => typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;

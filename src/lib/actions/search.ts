@@ -58,6 +58,10 @@ export async function searchDashboard(rawQuery: string): Promise<SearchResult> {
       id: `dr${r.id}`, title: r.nama, subtitle: [r.telepon,r.email].filter(Boolean).join(' · '),
       href: `/dashboard/donations?q=${encodeURIComponent(q)}`,
     })),
+    run('finance', 'finance_categories', 'id,nama,tipe,deskripsi', ['nama','deskripsi'], (r) => ({
+      id: `fc${r.id}`, title: r.nama, subtitle: [r.tipe,r.deskripsi].filter(Boolean).join(' · '),
+      href: `/dashboard/finance?q=${encodeURIComponent(q)}`,
+    })),
     run('finance', 'finance_transactions', 'id,keterangan,tipe,tanggal,jumlah,status', ['keterangan'], (r) => ({
       id: `t${r.id}`, title: r.keterangan || (r.tipe === 'pemasukan' ? 'Pemasukan' : 'Pengeluaran'),
       subtitle: [r.tipe,r.tanggal,r.status, r.jumlah != null ? `Rp ${Number(r.jumlah).toLocaleString('id-ID')}` : ''].filter(Boolean).join(' · '),

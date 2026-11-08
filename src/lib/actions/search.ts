@@ -76,9 +76,9 @@ export async function searchDashboard(rawQuery: string): Promise<SearchResult> {
       id: `a${r.id}`, title: r.judul, subtitle: snippet(r.konten || '', q),
       href: `/dashboard/communication?tab=announcements&q=${encodeURIComponent(q)}`,
     })),
-    run('communication', 'volunteer_assignments, 'id,tempat,tugas,catatan,status,tanggal', ['tempat','tugas','catatan','status'], (r) => ({
+    run('volunteers', 'volunteer_assignments', 'id,tempat,tugas,catatan,status,tanggal', ['tempat','tugas','catatan','status'], (r) => ({
       id: `va${r.id}`, title: r.tugas || r.tempat, subtitle: [r.tempat,r.tanggal,r.status].filter(Boolean).join(' · '),
-      href: `/dashboard/volunteers?q=${encodeURIComponent(q)}`,
+      href: `/dashboard/volunteers?tab=assignment&q=${encodeURIComponent(q)}`,
     })),
   ];
 

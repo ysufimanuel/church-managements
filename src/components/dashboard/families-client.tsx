@@ -19,7 +19,7 @@ export function FamiliesClient({ families, members, familyMembers, role }: { fam
   const [editing, setEditing] = React.useState<any>(null);
 
   const query = search.trim().toLocaleLowerCase('id-ID');
-  const filtered = families.filter((f) => [f.nama,f.alamat,f.kota,memberName(f.kepala_id)].some((v) => String(v || '').toLocaleLowerCase('id-ID').includes(query)));
+  const filtered = families.filter((f) => [f.nama,f.alamat,f.kota].some((v) => String(v || '').toLocaleLowerCase('id-ID').includes(query)));
   const anggotaOf = (fid: number) => familyMembers.filter((fm) => fm.family_id === fid).map((fm) => fm.member_id);
   const memberName = (id: number | null) => members.find((m) => m.id === id)?.nama || '-';
 

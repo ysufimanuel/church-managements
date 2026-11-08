@@ -123,7 +123,7 @@ export function WebManagerClient({ navItems, theme, sections, role, publicPath, 
         return;
       }
       setPreviewKey((k) => k + 1);
-      toast.success(enabled ? 'Default Theme aktif pada Draft gereja' : 'Tampilan Draft CMS dipulihkan');
+      toast.success(enabled ? 'Default Theme aktif pada Draft gereja' : 'Draft mengikuti tema yang sudah dipublikasikan');
     } catch (error) {
       setDefaultThemeEnabled(previous);
       toast.error(error instanceof Error ? error.message : 'Gagal menyimpan preferensi tema.');
@@ -183,7 +183,7 @@ export function WebManagerClient({ navItems, theme, sections, role, publicPath, 
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="min-w-0">
             <p className="font-semibold">Default Theme · Tema Draft Gereja</p>
-            <p className="mt-1 text-xs text-muted-foreground">Saat diaktifkan, Default Theme mengubah warna, tipografi, header, dan layout Draft gereja tanpa mengganti konten, halaman, atau media. Saat dinonaktifkan, pengaturan visual CMS sebelumnya dipakai kembali. Website publik mengikuti tema ini setelah Publish.</p>
+            <p className="mt-1 text-xs text-muted-foreground">Saat diaktifkan, Default Theme mengubah warna, tipografi, header, dan layout Draft gereja tanpa mengganti konten, halaman, atau media. Saat dinonaktifkan, Draft mengikuti tema yang sudah dipublikasikan. Jika Default Theme sudah dipublish, tema default tetap tampil. Website publik mengikuti tema ini setelah Publish.</p>
           </div>
           <div className="flex items-center gap-2"><span className="text-xs text-muted-foreground">{defaultThemeEnabled ? 'Aktif' : 'Nonaktif'}</span><Switch checked={defaultThemeEnabled} onCheckedChange={(checked) => void updateDefaultThemePreference(checked)} /></div>
         </div>

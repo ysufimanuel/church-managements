@@ -187,10 +187,10 @@ export function WebManagerClient({ navItems, theme, sections, role, publicPath, 
           </div>
           <div className="flex items-center gap-2"><span className="text-xs text-muted-foreground">{defaultThemeEnabled ? 'Aktif' : 'Nonaktif'}</span><Switch checked={defaultThemeEnabled} onCheckedChange={(checked) => void updateDefaultThemePreference(checked)} /></div>
         </div>
-        {defaultThemeEnabled ? <div className="space-y-2">
-          <div className="flex items-center justify-between gap-2"><p className="text-sm font-medium">Preview Draft Default Theme</p><a href={previewPath || '/default-web'} target="_blank" rel="noreferrer" className="text-xs font-medium text-primary underline underline-offset-4">Buka preview Draft</a></div>
-          <iframe key={`default-draft-${previewKey}`} src={previewPath || '/default-web'} title="Preview Draft Default Theme" className="h-[620px] w-full rounded-lg border bg-[#0F1117]" loading="lazy" />
-        </div> : <div className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">Default Theme sedang nonaktif untuk akun ini. Aktifkan toggle untuk membuka preview.</div>}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between gap-2"><p className="text-sm font-medium">{defaultThemeEnabled ? 'Preview Draft Default Theme' : 'Preview Tema yang Dipublikasikan'}</p><a href={previewPath || '/default-web'} target="_blank" rel="noreferrer" className="text-xs font-medium text-primary underline underline-offset-4">Buka preview</a></div>
+          <iframe key={`default-draft-${previewKey}`} src={previewPath || '/default-web'} title={defaultThemeEnabled ? "Preview Draft Default Theme" : "Preview Tema yang Dipublikasikan"} className="h-[620px] w-full rounded-lg border bg-[#0F1117]" loading="lazy" />
+        </div>
       </div>
     </CardContent></Card>}
 

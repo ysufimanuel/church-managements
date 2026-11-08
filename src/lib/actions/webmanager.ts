@@ -54,9 +54,10 @@ export async function deleteNavItem(id: number) {
   const { data, error: readError } = await supabase.from('site_nav_items').select('published').eq('id', id).eq('church_id', profile.church_id).maybeSingle();
   if (readError || !data) return { ok: false, error: readError?.message || 'Menu tidak ditemukan' };
   const result = data.published
-    ? await supabase.from('site_nav_items').update({ draft: null, state: 'draft' }).eq('id', id).eq('church_id', profile.church_id)
-    : await supabase.from('site_nav_items').delete().eq('id', id).eq('church_id', profile.church_id);
+    ? await supabase.from('site_nav_items').update({ draft: null, state: 'draft' }).eq('id', id).eq('church_id', profile.church_id).select('id').maybeSingle()
+    : await supabase.from('site_nav_items').delete().eq('id', id).eq('church_id', profile.church_id).select('id').maybeSingle();
   if (result.error) return { ok: false, error: result.error.message };
+  if (!result.data) return { ok: false, error: 'Menu tidak ditemukan atau tidak memiliki akses pada gereja ini' };
   revalidateWM(); return { ok: true };
 }
 
@@ -86,14 +87,57 @@ export async function saveThemeDraft(theme: ThemeInput) {
   revalidateWM(); return { ok: true };
 }
 export async function publishTheme() {
-  const { profile, denied } = await guardWM(); if (denied) return { ok: false, error: denied }; const supabase = await createClient();
-  const { data: theme, error: readError } = await supabase.from('site_theme').select('*').eq('id', 1).eq('church_id', profile.church_id).single();
-  if (readError || !theme) return { ok: false, error: readError?.message || 'Tema tidak ditemukan' };
-  const published = (theme.draft || theme.published || { primary_color: theme.primary_color, secondary_color: '#1F2937', accent_color: '#22C55E', font_family: theme.font_family }) as ThemeInput & { website_theme?: string };
-  const result = await supabase.from('site_theme').update({ primary_color: published.primary_color, font_family: published.font_family, published, draft: published, state: 'published' }).eq('id', 1).eq('church_id', profile.church_id).select('id');
+  const { profile, denied } = await guardWM();
+  if (denied) return { ok: false, error: denied };
+  const supabase = await createClient();
+  const [{ data: theme, error: themeError }, { data: preferenceRow, error: preferenceError }] = await Promise.all([
+    supabase.from('site_theme').select('*').eq('id', 1).eq('church_id', profile.church_id).maybeSingle(),
+    supabase.from('user_preferences').select('preferences').eq('user_id', profile.id).maybeSingle(),
+  ]);
+  if (themeError || !theme) return { ok: false, error: themeError?.message || 'Tema tidak ditemukan' };
+  if (preferenceError) return { ok: false, error: preferenceError.message };
+
+  const existingPublished = theme.published && typeof theme.published === 'object'
+    ? theme.published as Record<string, unknown>
+    : {};
+  const draftValues = theme.draft && typeof theme.draft === 'object'
+    ? theme.draft as Record<string, unknown>
+    : {};
+  const fallbackValues = {
+    primary_color: theme.primary_color,
+    secondary_color: '#1F2937',
+    accent_color: '#22C55E',
+    font_family: theme.font_family,
+  };
+  const published: Record<string, unknown> = { ...fallbackValues, ...existingPublished, ...draftValues };
+  const accountPreferences = preferenceRow?.preferences && typeof preferenceRow.preferences === 'object' && !Array.isArray(preferenceRow.preferences)
+    ? preferenceRow.preferences as Record<string, unknown>
+    : {};
+
+  // The toggle controls this editor's preview. Publishing while it is enabled
+  // makes Default Theme public. Turning it off later must not erase that
+  // published preset.
+  if (accountPreferences.website_theme === 'default' || existingPublished.website_theme === 'default') {
+    published.website_theme = 'default';
+  } else {
+    delete published.website_theme;
+  }
+
+  const result = await supabase.from('site_theme')
+    .update({
+      primary_color: String(published.primary_color || theme.primary_color),
+      font_family: String(published.font_family || theme.font_family),
+      published,
+      draft: published,
+      state: 'published',
+    })
+    .eq('id', 1)
+    .eq('church_id', profile.church_id)
+    .select('id');
   if (result.error) return { ok: false, error: result.error.message };
   if (!result.data?.length) return { ok: false, error: 'Gagal publish tema: tidak ada row yang ter-update' };
-  revalidateWM(); return { ok: true };
+  revalidateWM();
+  return { ok: true };
 }
 
 export interface MediaInput { id?: number; kind: 'image' | 'video' | 'map'; url: string; ratio: string; layer: 'front' | 'overlay'; position: string; title?: string; lat?: number | null; lng?: number | null; sort_order?: number; }
@@ -119,56 +163,67 @@ export async function deleteMedia(id: number) {
 }
 
 export interface SectionInput { id?: number; page: string; type: string; sort_order: number; content: Record<string, any>; enabled: boolean; }
-export async function saveSectionDraft(input: SectionInput) {
-  const { profile, denied } = await guardWM();
-  if (denied) return { ok: false, error: denied };
 
-  // Validate editor input at the server boundary; client-side controls are not a trust boundary.
-  const page = String(input.page || '').trim().toLowerCase();
-  const allowedTypes = new Set(['hero', 'card_grid', 'event_feed', 'group_feed', 'info_lokasi', 'media', 'map', 'richtext']);
-  if (!/^[a-z0-9][a-z0-9_-]{0,79}$/.test(page)) return { ok: false, error: 'Slug halaman tidak valid' };
-  if (!allowedTypes.has(input.type)) return { ok: false, error: 'Tipe section tidak valid' };
-  if (!input.content || typeof input.content !== 'object' || Array.isArray(input.content)) return { ok: false, error: 'Konten section tidak valid' };
-  if (JSON.stringify(input.content).length > 262144) return { ok: false, error: 'Konten section terlalu besar (maksimal 256 KB)' };
+const SECTION_TYPES = new Set(['hero', 'card_grid', 'event_feed', 'group_feed', 'info_lokasi', 'media', 'map', 'richtext']);
 
-  const supabase = await createClient();
-  const mediaItems = Array.isArray(input.content.media_items) ? input.content.media_items : [];
-  const cardItems = Array.isArray(input.content.cards) ? input.content.cards : [];
+/** Validasi konten section di batas server; kontrol di client bukan trust boundary. Mengembalikan pesan error atau null. */
+async function validateSectionContent(supabase: Awaited<ReturnType<typeof createClient>>, churchId: string, type: string, content: unknown): Promise<string | null> {
+  if (!SECTION_TYPES.has(type)) return 'Tipe section tidak valid';
+  if (!content || typeof content !== 'object' || Array.isArray(content)) return 'Konten section tidak valid';
+  const body = content as Record<string, any>;
+  if (JSON.stringify(body).length > 262144) return 'Konten section terlalu besar (maksimal 256 KB)';
+
+  const mediaItems = Array.isArray(body.media_items) ? body.media_items : [];
+  const cardItems = Array.isArray(body.cards) ? body.cards : [];
   const mediaUrls = [
-    input.content.bg_image,
-    input.content.media_url,
-    input.content.maps_embed,
+    body.bg_image,
+    body.media_url,
+    body.maps_embed,
     ...mediaItems.map((item: any) => item?.url),
     ...cardItems.map((item: any) => item?.image_url),
   ];
-  if (mediaUrls.some((url) => !isSafeMediaUrl(url))) return { ok: false, error: 'URL media harus menggunakan HTTP/HTTPS atau path lokal yang valid.' };
+  if (mediaUrls.some((url) => !isSafeMediaUrl(url))) return 'URL media harus menggunakan HTTP/HTTPS atau path lokal yang valid.';
+
   const eventIds = new Set<number>();
   const groupIds = new Set<number>();
   for (const item of mediaItems) {
     const resourceType = item?.resource_type;
     const rawResourceId = item?.resource_id;
     if (!resourceType) {
-      if (rawResourceId !== undefined && rawResourceId !== null && rawResourceId !== '') return { ok: false, error: 'Jenis resource media belum dipilih.' };
+      if (rawResourceId !== undefined && rawResourceId !== null && rawResourceId !== '') return 'Jenis resource media belum dipilih.';
       continue;
     }
     const resourceId = Number(rawResourceId);
     if ((resourceType !== 'event' && resourceType !== 'group') || !Number.isSafeInteger(resourceId) || resourceId <= 0) {
-      return { ok: false, error: 'Resource media tidak valid.' };
+      return 'Resource media tidak valid.';
     }
     (resourceType === 'event' ? eventIds : groupIds).add(resourceId);
   }
-  if (eventIds.size && input.type !== 'event_feed') return { ok: false, error: 'Media event hanya dapat ditautkan pada section Event.' };
-  if (groupIds.size && input.type !== 'group_feed') return { ok: false, error: 'Media komunitas hanya dapat ditautkan pada section Komunitas.' };
+  if (eventIds.size && type !== 'event_feed') return 'Media event hanya dapat ditautkan pada section Event.';
+  if (groupIds.size && type !== 'group_feed') return 'Media komunitas hanya dapat ditautkan pada section Komunitas.';
   if (eventIds.size) {
-    const { data, error } = await supabase.from('events').select('id').eq('church_id', profile.church_id).in('id', Array.from(eventIds));
-    if (error) return { ok: false, error: error.message };
-    if ((data || []).length !== eventIds.size) return { ok: false, error: 'Event media tidak ditemukan pada gereja ini.' };
+    const { data, error } = await supabase.from('events').select('id').eq('church_id', churchId).in('id', Array.from(eventIds));
+    if (error) return error.message;
+    if ((data || []).length !== eventIds.size) return 'Event media tidak ditemukan pada gereja ini.';
   }
   if (groupIds.size) {
-    const { data, error } = await supabase.from('groups').select('id').eq('church_id', profile.church_id).in('id', Array.from(groupIds));
-    if (error) return { ok: false, error: error.message };
-    if ((data || []).length !== groupIds.size) return { ok: false, error: 'Komunitas media tidak ditemukan pada gereja ini.' };
+    const { data, error } = await supabase.from('groups').select('id').eq('church_id', churchId).in('id', Array.from(groupIds));
+    if (error) return error.message;
+    if ((data || []).length !== groupIds.size) return 'Komunitas media tidak ditemukan pada gereja ini.';
   }
+  return null;
+}
+
+export async function saveSectionDraft(input: SectionInput) {
+  const { profile, denied } = await guardWM();
+  if (denied) return { ok: false, error: denied };
+
+  const page = String(input.page || '').trim().toLowerCase();
+  if (!/^[a-z0-9][a-z0-9_-]{0,79}$/.test(page)) return { ok: false, error: 'Slug halaman tidak valid' };
+
+  const supabase = await createClient();
+  const invalid = await validateSectionContent(supabase, profile.church_id, input.type, input.content);
+  if (invalid) return { ok: false, error: invalid };
 
   const sortOrder = Math.min(10000, Math.max(0, Math.trunc(Number(input.sort_order) || 0)));
   const payload = {
@@ -191,15 +246,85 @@ export async function saveSectionDraft(input: SectionInput) {
       .maybeSingle();
     if (error) return { ok: false, error: error.message };
     if (!data) return { ok: false, error: 'Section tidak ditemukan atau tidak memiliki akses pada gereja ini. Urutan/posisi tidak disimpan.' };
-  } else {
+    revalidateWM();
+    return { ok: true, id: data.id as number };
+  }
+
+  const { data, error } = await supabase
+    .from('site_sections')
+    .insert({ ...payload, page, type: input.type, sort_order: payload.draft_sort_order, enabled: false, church_id: profile.church_id })
+    .select('id')
+    .maybeSingle();
+  if (error) return { ok: false, error: error.message };
+  if (!data) return { ok: false, error: 'Section baru gagal dibuat.' };
+  revalidateWM();
+  return { ok: true, id: data.id as number };
+}
+
+/** Autosave Visual Editor: hanya mengubah konten Draft. Urutan, status tampil, halaman, dan tipe tidak disentuh. */
+export async function saveSectionContent(id: number, content: Record<string, any>) {
+  const { profile, denied } = await guardWM();
+  if (denied) return { ok: false, error: denied };
+  if (!Number.isSafeInteger(id) || id <= 0) return { ok: false, error: 'Section tidak valid' };
+
+  const supabase = await createClient();
+  const { data: row, error: readError } = await supabase.from('site_sections').select('type,draft_type').eq('id', id).eq('church_id', profile.church_id).maybeSingle();
+  if (readError || !row) return { ok: false, error: readError?.message || 'Section tidak ditemukan' };
+
+  const invalid = await validateSectionContent(supabase, profile.church_id, String(row.draft_type || row.type), content);
+  if (invalid) return { ok: false, error: invalid };
+
+  const { data, error } = await supabase
+    .from('site_sections')
+    .update({ content, updated_at: new Date().toISOString() })
+    .eq('id', id)
+    .eq('church_id', profile.church_id)
+    .select('id')
+    .maybeSingle();
+  if (error) return { ok: false, error: error.message };
+  if (!data) return { ok: false, error: 'Section tidak ditemukan atau tidak memiliki akses pada gereja ini' };
+  revalidateWM();
+  return { ok: true };
+}
+
+/** Atur urutan Draft sesuai daftar id (urutan pertama = paling atas). */
+export async function reorderSections(ids: number[]) {
+  const { profile, denied } = await guardWM();
+  if (denied) return { ok: false, error: denied };
+  if (!Array.isArray(ids) || ids.length === 0 || ids.length > 200 || ids.some((id) => !Number.isSafeInteger(id) || id <= 0) || new Set(ids).size !== ids.length) {
+    return { ok: false, error: 'Daftar urutan tidak valid' };
+  }
+  const supabase = await createClient();
+  for (let i = 0; i < ids.length; i++) {
     const { data, error } = await supabase
       .from('site_sections')
-      .insert({ ...payload, page, type: input.type, sort_order: payload.draft_sort_order, enabled: false, church_id: profile.church_id })
+      .update({ draft_sort_order: (i + 1) * 10, updated_at: new Date().toISOString() })
+      .eq('id', ids[i])
+      .eq('church_id', profile.church_id)
       .select('id')
       .maybeSingle();
     if (error) return { ok: false, error: error.message };
-    if (!data) return { ok: false, error: 'Section baru gagal dibuat.' };
+    if (!data) return { ok: false, error: 'Ada bagian yang tidak ditemukan pada gereja ini. Urutan tidak lengkap, coba muat ulang.' };
   }
+  revalidateWM();
+  return { ok: true };
+}
+
+/** Tampilkan / sembunyikan section di Draft tanpa menyentuh konten. */
+export async function setSectionEnabled(id: number, enabled: boolean) {
+  const { profile, denied } = await guardWM();
+  if (denied) return { ok: false, error: denied };
+  if (!Number.isSafeInteger(id) || id <= 0) return { ok: false, error: 'Section tidak valid' };
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from('site_sections')
+    .update({ draft_enabled: Boolean(enabled), updated_at: new Date().toISOString() })
+    .eq('id', id)
+    .eq('church_id', profile.church_id)
+    .select('id')
+    .maybeSingle();
+  if (error) return { ok: false, error: error.message };
+  if (!data) return { ok: false, error: 'Section tidak ditemukan atau tidak memiliki akses pada gereja ini' };
   revalidateWM();
   return { ok: true };
 }
@@ -226,9 +351,10 @@ export async function deleteSection(id: number) {
   const { data, error: readError } = await supabase.from('site_sections').select('published').eq('id', id).eq('church_id', profile.church_id).maybeSingle();
   if (readError || !data) return { ok: false, error: readError?.message || 'Section tidak ditemukan' };
   const result = data.published
-    ? await supabase.from('site_sections').update({ draft_deleted: true }).eq('id', id).eq('church_id', profile.church_id)
-    : await supabase.from('site_sections').delete().eq('id', id).eq('church_id', profile.church_id);
+    ? await supabase.from('site_sections').update({ draft_deleted: true }).eq('id', id).eq('church_id', profile.church_id).select('id').maybeSingle()
+    : await supabase.from('site_sections').delete().eq('id', id).eq('church_id', profile.church_id).select('id').maybeSingle();
   if (result.error) return { ok: false, error: result.error.message };
+  if (!result.data) return { ok: false, error: 'Section tidak ditemukan atau tidak memiliki akses pada gereja ini' };
   revalidateWM(); return { ok: true };
 }
 

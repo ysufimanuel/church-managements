@@ -25,7 +25,8 @@ export function MembersClient({ members, groups, role }: { members: any[]; group
   const [editing, setEditing] = React.useState<Partial<MemberInput>>({});
   const [exportOpen, setExportOpen] = React.useState(false);
 
-  const filtered = members.filter((m) => m.nama.toLowerCase().includes(search.toLowerCase()) && (!filterStatus || m.status === filterStatus) && (!filterGender || m.jk === filterGender));
+  const query = search.trim().toLocaleLowerCase('id-ID');
+  const filtered = members.filter((m) => [m.nama,m.email,m.telepon,m.alamat,m.kota,m.kodepos,m.status,m.jk].some((v) => String(v || '').toLocaleLowerCase('id-ID').includes(query)) && (!filterStatus || m.status === filterStatus) && (!filterGender || m.jk === filterGender));
   const groupName = (id: number | null) => groups.find((g) => g.id === id)?.nama || '-';
 
   async function handleSave(e: React.FormEvent<HTMLFormElement>) {

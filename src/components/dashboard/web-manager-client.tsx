@@ -153,7 +153,7 @@ export function WebManagerClient({ navItems, theme, sections, role, publicPath, 
     if (!pages.includes(page)) setPage('home');
   }, [pages, page]);
   const pageSections = activeSections.filter((s) => String(s.draft_page || s.page || '').trim().toLowerCase() === page).sort((a, b) => (a.draft_sort_order ?? a.sort_order) - (b.draft_sort_order ?? b.sort_order));
-  const previewPath = publicPath ? `${publicPath}${page === 'home' ? '' : `/${page}`}?preview=draft${defaultThemeEnabled ? '&theme=default' : ''}` : null;
+  const previewPath = publicPath ? `${publicPath}${page === 'home' ? '' : `/${page}`}?preview=draft&theme=${defaultThemeEnabled ? 'default' : 'published'}` : null;
   async function run(p: Promise<{ ok: boolean; error?: string }>, okMsg?: string) {
     try {
       const result = await p;
@@ -190,7 +190,10 @@ export function WebManagerClient({ navItems, theme, sections, role, publicPath, 
         </div>
         <div className="flex flex-wrap items-center justify-between gap-2">
           <p className="text-xs text-muted-foreground">Pulihkan hanya konfigurasi tema. Isi halaman, navigasi, dan media tetap aman.</p>
-          <Button type="button" variant="secondary" onClick={() => run(restoreDefaultThemeDraft(), 'Draft Default Theme dipulihkan')}>
+          <Button type="button" variant="secondary" onClick={async () => {
+            const result = await run(restoreDefaultThemeDraft(), 'Draft Default Theme dipulihkan');
+            if (result.ok) await updateDefaultThemePreference(true);
+          }}>
             <RotateCcw className="h-4 w-4" /> Pulihkan Default Theme
           </Button>
         </div>

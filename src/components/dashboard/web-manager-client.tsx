@@ -189,7 +189,7 @@ export function WebManagerClient({ navItems, theme, sections, role, publicPath, 
           <div className="flex items-center gap-2"><span className="text-xs text-muted-foreground">{defaultThemeEnabled ? 'Aktif' : 'Nonaktif'}</span><Switch checked={defaultThemeEnabled} onCheckedChange={(checked) => void updateDefaultThemePreference(checked)} /></div>
         </div>
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <p className="text-xs text-muted-foreground">Pulihkan hanya konfigurasi tema. Isi halaman, navigasi, dan media tetap aman.</p>
+          <p className="text-xs text-muted-foreground">Pulihkan hanya konfigurasi Draft tema. Isi halaman, navigasi, dan media tetap aman. Perubahan belum tayang sampai kamu klik Publish Tema.</p>
           <Button type="button" variant="secondary" onClick={async () => {
             const result = await run(restoreDefaultThemeDraft(), 'Draft Default Theme dipulihkan');
             if (result.ok) await updateDefaultThemePreference(true);

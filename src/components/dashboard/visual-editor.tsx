@@ -343,7 +343,7 @@ export function VisualEditor({ sections, pages, theme, role, publicPath }: { sec
   return (
     <div className="space-y-3">
       {/* Bilah atas */}
-      <div className="flex flex-wrap items-center gap-2 rounded-xl border bg-card p-3">
+      <div className="flex flex-wrap items-center gap-2 glass rounded-xl p-3">
         <div className="min-w-[10rem] flex-1 sm:flex-none">
           <Select aria-label="Pilih halaman" value={page} onChange={(e) => void changePage(e.target.value)} className="font-medium">
             {pageOptions.map((p) => <option key={p.slug} value={p.slug}>Halaman: {p.label}</option>)}
@@ -378,7 +378,7 @@ export function VisualEditor({ sections, pages, theme, role, publicPath }: { sec
 
       <div className="grid gap-3 lg:h-[calc(100vh-17rem)] lg:min-h-[620px] lg:grid-cols-[290px_minmax(0,1fr)_380px]">
         {/* Daftar bagian */}
-        <aside className={cn('flex-col overflow-hidden rounded-xl border bg-card', mobileView === 'list' ? 'flex' : 'hidden', 'lg:flex')}>
+        <aside className={cn('flex-col overflow-hidden glass rounded-xl', mobileView === 'list' ? 'flex' : 'hidden', 'lg:flex')}>
           <div className="flex items-center justify-between gap-2 border-b p-3">
             <div><p className="text-sm font-semibold">Isi Halaman</p><p className="text-xs text-muted-foreground">Seret untuk mengubah urutan</p></div>
             <Button size="sm" onClick={() => setAddOpen(true)} disabled={busy}><Plus className="h-4 w-4" /> Tambah</Button>
@@ -449,7 +449,7 @@ export function VisualEditor({ sections, pages, theme, role, publicPath }: { sec
 
         {/* Pratinjau */}
         <section className={cn('min-h-0 flex-col overflow-hidden rounded-xl border bg-muted/30', mobileView === 'preview' ? 'flex' : 'hidden', 'lg:flex')}>
-          <div className="flex items-center justify-between gap-2 border-b bg-card px-3 py-2">
+          <div className="flex items-center justify-between gap-2 border-b border-white/10 px-3 py-2">
             <p className="flex items-center gap-1.5 text-xs text-muted-foreground"><MousePointerClick className="h-3.5 w-3.5" /> {selected ? 'Bagian yang sedang diedit ditandai dengan garis biru.' : 'Klik bagian mana pun di pratinjau untuk mengeditnya.'}</p>
             {frameLoading && previewSrc && <span className="flex items-center gap-1.5 text-xs text-muted-foreground"><span className="h-3 w-3 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" /> Memperbarui…</span>}
           </div>
@@ -471,7 +471,7 @@ export function VisualEditor({ sections, pages, theme, role, publicPath }: { sec
         </section>
 
         {/* Panel edit */}
-        <aside className={cn('min-h-0 flex-col overflow-hidden rounded-xl border bg-card', mobileView === 'edit' ? 'flex' : 'hidden', 'lg:flex')}>
+        <aside className={cn('min-h-0 flex-col overflow-hidden glass rounded-xl', mobileView === 'edit' ? 'flex' : 'hidden', 'lg:flex')}>
           {selected && selectedMeta ? (
             <>
               <div className="flex items-start justify-between gap-2 border-b p-3">

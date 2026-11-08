@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import gsap from 'gsap';
 import { CustomEase } from 'gsap/CustomEase';
 import { Globe2, LayoutDashboard, LogOut, Search, Settings, Wallet, type LucideIcon } from 'lucide-react';
@@ -127,11 +127,11 @@ function Sheet({
   if (!mounted) return null;
   return (
     <div className="fixed inset-0 z-40 lg:hidden">
-      <div ref={overlayRef} className="absolute inset-0 bg-black/60" onClick={onClose} aria-hidden />
+      <div ref={overlayRef} className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} aria-hidden />
       <div
         ref={panelRef} role="dialog" aria-modal="true" aria-label={label} tabIndex={-1}
         className={cn(
-          'absolute inset-x-0 border bg-card shadow-2xl',
+          'glass-strong absolute inset-x-0',
           side === 'bottom' ? 'bottom-0 rounded-t-3xl border-b-0' : 'top-0 rounded-b-3xl border-t-0',
           className,
         )}
@@ -155,9 +155,7 @@ export function MobileNav({
 }) {
   const { t } = useLang();
   const pathname = usePathname();
-  const router = useRouter();
-  const [sheet, setSheet] = React.useState<null | 'search' | 'menu'>(null);
-  const [query, setQuery] = React.useState('');
+    const [sheet, setSheet] = React.useState<null | 'menu'>(null);
 
   const tabs: Tab[] = [
     { id: 'dashboard', icon: LayoutDashboard, label: t('dashboard'), href: '/dashboard' },
@@ -177,7 +175,7 @@ export function MobileNav({
   const activeId: TabId | null = sheet ?? routeTab;
 
   const closeSheet = React.useCallback(() => setSheet(null), []);
-  React.useEffect(() => { setSheet(null); setQuery(''); }, [pathname]);
+  React.useEffect(() => { setSheet(null); }, [pathname]);
 
   /* ---- indikator geser ---- */
   const barRef = React.useRef<HTMLDivElement>(null);
@@ -221,13 +219,8 @@ export function MobileNav({
     gsap.fromTo(icon, fx.from, { ...fx.to, overwrite: 'auto', clearProps: 'transform' });
   }, [activeId]);
 
-  const q = query.trim().toLowerCase();
-  const results = q
-    ? items.filter((i) => t(i.key).toLowerCase().includes(q) || i.href.split('/').pop()!.includes(q))
-    : items;
-
   const tabClass = (id: TabId) => cn(
-    'relative z-10 flex min-h-[56px] flex-col items-center justify-center gap-0.5 py-1.5 text-[10px] font-medium',
+    'relative z-10 flex min-h-[52px] flex-col items-center justify-center gap-0.5 py-1.5 text-[10px] font-medium',
     'transition-colors duration-200 active:scale-[0.92] [transition-property:color,transform]',
     activeId === id ? 'text-primary' : 'text-muted-foreground',
   );
@@ -255,9 +248,9 @@ export function MobileNav({
               return (
                 <li key={href} data-sheet-item>
                   <Link href={href} className={cn(
-                    'flex min-h-[80px] flex-col items-center justify-center gap-2 rounded-2xl border px-1 py-3 text-center text-xs font-medium',
+                    'flex min-h-[68px] flex-col items-center justify-center gap-1.5 rounded-2xl border px-1 py-2 text-center text-xs font-medium',
                     'transition-colors active:scale-[0.95] [transition-property:color,background-color,transform]',
-                    active ? 'border-primary/40 bg-primary/10 text-primary' : 'bg-secondary/40 text-foreground',
+                    active ? 'border-primary/40 bg-primary/15 text-primary' : 'border-white/10 bg-white/5 text-foreground',
                   )}>
                     <Icon className="h-5 w-5" />
                     <span className="line-clamp-2 leading-tight">{t(key)}</span>
@@ -274,35 +267,9 @@ export function MobileNav({
         </div>
       </Sheet>
 
-      <Sheet open={sheet === 'search'} onClose={closeSheet} side="top" label={t('nav-search')}
-        className="max-h-[80dvh] overflow-y-auto pt-[env(safe-area-inset-top)]">
-        <div className="space-y-3 p-4">
-          <div data-sheet-item className="relative">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <input
-              autoFocus value={query} onChange={(e) => setQuery(e.target.value)}
-              onKeyDown={(e) => { if (e.key === 'Enter' && results[0]) router.push(results[0].href); }}
-              placeholder={t('search-feature')} enterKeyHint="go"
-              className="h-12 w-full rounded-xl border bg-background pl-10 pr-3 text-base outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            />
-          </div>
-          <ul className="space-y-1">
-            {results.length === 0 && <li className="px-2 py-4 text-sm text-muted-foreground">{t('none')}</li>}
-            {results.map(({ href, key, icon: Icon }) => (
-              <li key={href} data-sheet-item>
-                <Link href={href} className="flex min-h-[48px] items-center gap-3 rounded-xl px-3 text-sm font-medium transition-colors active:scale-[0.98] active:bg-secondary [transition-property:background-color,transform]">
-                  <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary"><Icon className="h-4 w-4" /></span>
-                  {t(key)}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </div>
-      </Sheet>
-
       <nav
         aria-label="Navigasi utama"
-        className="fixed inset-x-0 bottom-0 z-50 border-t bg-card/90 pb-[env(safe-area-inset-bottom)] backdrop-blur lg:hidden"
+        className="glass-strong fixed inset-x-3 bottom-[max(0.5rem,env(safe-area-inset-bottom))] z-50 rounded-3xl lg:hidden"
       >
         <div ref={barRef} className="relative grid auto-cols-fr grid-flow-col px-1">
           <div
@@ -321,8 +288,8 @@ export function MobileNav({
               <Link key={id} ref={ref} href={href} aria-current={routeTab === id && !sheet ? 'page' : undefined} className={tabClass(id)}>{inner}</Link>
             ) : (
               <button
-                key={id} ref={ref} type="button" aria-expanded={sheet === id} aria-haspopup="dialog"
-                onClick={() => setSheet((s) => (s === id ? null : (id as 'search' | 'menu')))}
+                key={id} ref={ref} type="button" aria-expanded={id === 'menu' ? sheet === 'menu' : undefined} aria-haspopup="dialog"
+                onClick={() => (id === 'search' ? window.dispatchEvent(new Event('wkc:open-search')) : setSheet((s) => (s === id ? null : 'menu')))}
                 className={tabClass(id)}
               >{inner}</button>
             );

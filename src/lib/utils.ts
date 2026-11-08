@@ -9,6 +9,17 @@ export function formatRupiah(amount: number) {
   return 'Rp ' + new Intl.NumberFormat('id-ID').format(amount);
 }
 
+/** Rupiah ringkas untuk layar kecil: Rp 1,2 jt / Rp 350 rb / Rp 2,5 M */
+export function formatRupiahCompact(amount: number) {
+  const n = Math.abs(amount);
+  const f = (v: number) => new Intl.NumberFormat('id-ID', { maximumFractionDigits: 1 }).format(v);
+  const sign = amount < 0 ? '-' : '';
+  if (n >= 1e9) return `${sign}Rp ${f(n / 1e9)} M`;
+  if (n >= 1e6) return `${sign}Rp ${f(n / 1e6)} jt`;
+  if (n >= 1e3) return `${sign}Rp ${f(n / 1e3)} rb`;
+  return `${sign}Rp ${f(n)}`;
+}
+
 export function formatDate(d?: string | Date | null) {
   if (!d) return '-';
   return new Date(d).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });

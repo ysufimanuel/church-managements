@@ -54,7 +54,7 @@ export function NotificationBell({ initial, userId }: { initial: Notif[]; userId
         )}
       </button>
       {open && (
-        <div className="absolute right-0 z-50 mt-2 w-80 max-w-[90vw] rounded-lg border bg-card shadow-xl">
+        <div className="absolute right-0 z-50 mt-2 w-80 max-w-[90vw] glass-strong rounded-lg shadow-xl">
           <div className="flex items-center justify-between border-b px-4 py-3">
             <h3 className="font-semibold">{t('notifications')}</h3>
             <button onClick={async () => { await markAllNotificationsRead(); setItems((p) => p.map((i) => ({ ...i, read: true }))); }}

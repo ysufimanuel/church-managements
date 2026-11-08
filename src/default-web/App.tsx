@@ -1,5 +1,6 @@
 'use client'
 
+import { GlobalSearch } from '@/components/search/global-search'
 import { About } from './components/sections/About'
 import { Connect } from './components/sections/Connect'
 import { Footer } from './components/sections/Footer'
@@ -15,6 +16,7 @@ export default function App() {
   return (
     <div className="default-web-site">
       <Navbar />
+      <GlobalSearch mode="static" scanDom showTrigger className="fixed bottom-4 right-4 z-40" />
       <main>
         <Hero />
         <NewToWkc />

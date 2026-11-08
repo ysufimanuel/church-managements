@@ -1,5 +1,6 @@
 'use client';
 
+import { useUrlQuery } from '@/lib/search/use-url-query';
 import * as React from 'react';
 import { useLang } from '@/components/lang-context';
 import { Button } from '@/components/ui/button';
@@ -16,7 +17,7 @@ const TYPES = ['ibadah', 'seminar', 'retret', 'sosial', 'lainnya'];
 
 export function EventsClient({ events, members, participants, role }: { events: any[]; members: any[]; participants: any[]; role: Role }) {
   const { t } = useLang();
-  const [search, setSearch] = React.useState('');
+  const [search, setSearch] = useUrlQuery();
   const [filterStatus, setFilterStatus] = React.useState('');
   const [modal, setModal] = React.useState(false);
   const [editing, setEditing] = React.useState<any>(null);

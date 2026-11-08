@@ -10,7 +10,7 @@ export function AttendanceBarChart({ data }: { data: { label: string; total: num
       <BarChart data={data}>
         <XAxis dataKey="label" stroke="#A0AEC0" fontSize={12} />
         <YAxis stroke="#A0AEC0" fontSize={12} allowDecimals={false} />
-        <Tooltip contentStyle={{ background: '#1A1D24', border: '1px solid #2D3748', borderRadius: 8 }} />
+        <Tooltip contentStyle={{ background: 'rgba(20,23,30,.85)', border: '1px solid rgba(255,255,255,.16)', borderRadius: 8 }} />
         <Bar dataKey="total" fill="#00E5FF" radius={[4, 4, 0, 0]} />
       </BarChart>
     </ResponsiveContainer>
@@ -24,7 +24,7 @@ export function MemberPieChart({ data }: { data: { name: string; value: number }
         <Pie data={data} dataKey="value" nameKey="name" innerRadius={50} outerRadius={80} label>
           {data.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
         </Pie>
-        <Tooltip contentStyle={{ background: '#1A1D24', border: '1px solid #2D3748', borderRadius: 8 }} />
+        <Tooltip contentStyle={{ background: 'rgba(20,23,30,.85)', border: '1px solid rgba(255,255,255,.16)', borderRadius: 8 }} />
         <Legend />
       </PieChart>
     </ResponsiveContainer>
@@ -37,7 +37,7 @@ export function FinanceLineChart({ data }: { data: { label: string; pemasukan: n
       <LineChart data={data}>
         <XAxis dataKey="label" stroke="#A0AEC0" fontSize={12} />
         <YAxis stroke="#A0AEC0" fontSize={12} />
-        <Tooltip contentStyle={{ background: '#1A1D24', border: '1px solid #2D3748', borderRadius: 8 }} />
+        <Tooltip contentStyle={{ background: 'rgba(20,23,30,.85)', border: '1px solid rgba(255,255,255,.16)', borderRadius: 8 }} />
         <Legend />
         <Line type="monotone" dataKey="pemasukan" stroke="#10B981" strokeWidth={2} dot={false} />
         <Line type="monotone" dataKey="pengeluaran" stroke="#EF4444" strokeWidth={2} dot={false} />

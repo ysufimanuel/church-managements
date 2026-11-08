@@ -7,7 +7,7 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { CustomEase } from 'gsap/CustomEase';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useLang } from '@/components/lang-context';
-import { cn, formatRupiah, formatDate, timeAgo } from '@/lib/utils';
+import { cn, formatRupiah, formatRupiahCompact, formatDate, timeAgo } from '@/lib/utils';
 import {
   Users, ClipboardCheck, HandHeart, CalendarDays, Boxes, HandHelping, History, Calendar, TrendingUp,
 } from 'lucide-react';
@@ -22,7 +22,9 @@ if (typeof window !== 'undefined') {
 }
 
 type CountKind = 'int' | 'rupiah';
-const formatCount = (kind: CountKind, n: number) => (kind === 'rupiah' ? formatRupiah(Math.round(n)) : String(Math.round(n)));
+const isNarrow = () => typeof window !== 'undefined' && window.matchMedia('(max-width: 639px)').matches;
+const formatCount = (kind: CountKind, n: number) =>
+  kind === 'rupiah' ? (isNarrow() ? formatRupiahCompact(Math.round(n)) : formatRupiah(Math.round(n))) : String(Math.round(n));
 
 /**
  * Angka naik dari 0. Nilai akhir selalu dirender oleh React (SSR/no-JS/reduced-motion aman);
@@ -114,30 +116,32 @@ export function DashboardHome({
         <p className="text-sm text-muted-foreground sm:text-base">{t('welcome-back')}, {userName}!</p>
       </div>
 
-      {/* Mobile: 2 kolom, kartu disusun vertikal supaya angka Rupiah tidak terpotong */}
-      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
+      {/* Mobile: 3 kolom ubin ringkas; desktop: kartu lebih lega */}
+      <div className="grid grid-cols-3 gap-2 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
         {cards.map((c) => (
           <Card key={c.label} data-anim className={cn(animClass, 'transition-colors [@media(hover:hover)]:hover:border-primary/30')}>
-            <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:gap-4 sm:p-5">
-              <div className={cn('flex h-10 w-10 shrink-0 items-center justify-center rounded-xl sm:h-12 sm:w-12', c.color)}>
-                <c.icon className="h-5 w-5 sm:h-6 sm:w-6" />
+            <CardContent className="flex flex-col items-start gap-1.5 p-2.5 sm:flex-row sm:items-center sm:gap-4 sm:p-5">
+              <div className={cn('flex h-7 w-7 shrink-0 items-center justify-center rounded-lg sm:h-12 sm:w-12 sm:rounded-xl', c.color)}>
+                <c.icon className="h-4 w-4 sm:h-6 sm:w-6" />
               </div>
-              <div className="min-w-0">
-                <p className="truncate text-lg font-bold sm:text-xl">
+              <div className="min-w-0 max-w-full">
+                <p className="truncate text-sm font-bold leading-tight sm:text-xl">
                   <CountUp value={Number(c.value) || 0} kind={c.kind} />
                 </p>
-                <p className="text-xs text-muted-foreground sm:text-sm">{c.label}</p>
+                <p className="line-clamp-2 text-[10px] leading-tight text-muted-foreground sm:text-sm">{c.label}</p>
               </div>
             </CardContent>
           </Card>
         ))}
       </div>
 
+      {/* Mobile: grafik jadi carousel geser (scroll-snap); desktop: grid biasa */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <div className="snap-row sm:contents">
         <Card data-anim className={animClass}>
           <CardHeader className={cardPad}><CardTitle>{t('attendance-stats')}</CardTitle></CardHeader>
           <CardContent className={contentPad}>
-            <ChartInView className="min-h-[200px] sm:min-h-[260px]">
+            <ChartInView className="min-h-[150px] sm:min-h-[260px]">
               <DashboardAttendanceChart data={attendanceChart} emptyLabel={t('none')} ariaLabel={t('attendance-stats')} />
             </ChartInView>
           </CardContent>
@@ -149,7 +153,7 @@ export function DashboardHome({
             <CardTitle>{t('donation-trend')}</CardTitle>
           </CardHeader>
           <CardContent className={contentPad}>
-            <ChartInView className="min-h-[200px] sm:min-h-[260px]">
+            <ChartInView className="min-h-[150px] sm:min-h-[260px]">
               <DashboardDonationTrendChart data={trendData} emptyLabel={t('none')} ariaLabel={t('donation-trend')} />
             </ChartInView>
           </CardContent>
@@ -158,12 +162,15 @@ export function DashboardHome({
         <Card data-anim className={animClass}>
           <CardHeader className={cardPad}><CardTitle>{t('member-distribution')}</CardTitle></CardHeader>
           <CardContent className={contentPad}>
-            <ChartInView className="min-h-[280px]">
+            <ChartInView className="min-h-[200px] sm:min-h-[280px]">
               <DashboardMemberDonut data={memberChart} centerLabel={t('members')} emptyLabel={t('none')} />
             </ChartInView>
           </CardContent>
         </Card>
 
+        </div>
+
+        <div className="hidden sm:contents">
         <Card data-anim className={animClass}>
           <CardHeader className={cn(cardPad, 'flex-row items-center justify-between space-y-0')}>
             <CardTitle className="flex items-center gap-2"><HandHeart className="h-4 w-4" /> {t('recent-donations')}</CardTitle>
@@ -220,7 +227,54 @@ export function DashboardHome({
             ))}
           </CardContent>
         </Card>
+        </div>
+
+        <MobileLists
+          tabs={[
+            { id: 'donations', label: t('recent-donations'), href: '/dashboard/donations', empty: recentDonations.length === 0,
+              rows: recentDonations.map((d: any) => ({ id: d.id, title: d.donors?.nama || '-', sub: `${d.tipe} · ${formatDate(d.tanggal)}`, right: formatRupiahCompact(Number(d.jumlah)), rightClass: 'text-emerald-400 font-semibold' })) },
+            { id: 'events', label: t('upcoming-events'), href: '/dashboard/events', empty: upcomingEvents.length === 0,
+              rows: upcomingEvents.map((e: any) => ({ id: e.id, title: e.nama, sub: e.lokasi, right: formatDate(e.start_at), rightClass: 'text-primary' })) },
+            { id: 'activity', label: t('recent-activity'), href: '/dashboard/reports', empty: activities.length === 0,
+              rows: activities.map((a: any) => ({ id: a.id, title: a.action, sub: a.detail, right: timeAgo(a.created_at), rightClass: 'text-muted-foreground' })) },
+          ]}
+          noneLabel={t('none')} viewAll={t('view-all')}
+        />
       </div>
     </div>
+  );
+}
+
+type MobileTab = { id: string; label: string; href: string; empty: boolean; rows: { id: string | number; title: string; sub?: string; right: string; rightClass?: string }[] };
+
+/** Mobile: tiga daftar digabung jadi satu kartu bertab supaya halaman tidak panjang. */
+function MobileLists({ tabs, noneLabel, viewAll }: { tabs: MobileTab[]; noneLabel: string; viewAll: string }) {
+  const [active, setActive] = React.useState(tabs[0].id);
+  const tab = tabs.find((x) => x.id === active) ?? tabs[0];
+  return (
+    <Card data-anim className={cn(animClass, 'sm:hidden')}>
+      <div className="flex gap-1 overflow-x-auto p-2 [scrollbar-width:none]" role="tablist">
+        {tabs.map((x) => (
+          <button key={x.id} role="tab" aria-selected={active === x.id} onClick={() => setActive(x.id)}
+            className={cn('btn-fx btn-fx-row shrink-0 rounded-lg px-3 py-2 text-xs font-medium min-h-[40px] cursor-pointer',
+              active === x.id ? 'bg-primary/20 text-primary' : 'text-muted-foreground')}>
+            {x.label}
+          </button>
+        ))}
+      </div>
+      <CardContent className="space-y-2 p-3 pt-0">
+        {tab.empty && <p className="py-2 text-sm text-muted-foreground">{noneLabel}</p>}
+        {tab.rows.slice(0, 4).map((r) => (
+          <div key={r.id} className="flex items-center justify-between gap-3 border-b border-white/10 pb-2 last:border-0">
+            <div className="min-w-0">
+              <p className="truncate text-sm font-medium">{r.title}</p>
+              {r.sub && <p className="truncate text-xs text-muted-foreground">{r.sub}</p>}
+            </div>
+            <span className={cn('shrink-0 text-xs tabular-nums', r.rightClass)}>{r.right}</span>
+          </div>
+        ))}
+        <Link href={tab.href} className={viewAllClass}>{viewAll}</Link>
+      </CardContent>
+    </Card>
   );
 }

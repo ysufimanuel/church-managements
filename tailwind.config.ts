@@ -19,8 +19,8 @@ const config: Config = {
         muted: { DEFAULT: 'hsl(var(--muted))', foreground: 'hsl(var(--muted-foreground))' },
         card: { DEFAULT: 'hsl(var(--card))', foreground: 'hsl(var(--card-foreground))' },
         bg: { DEFAULT: '#0F1117', deep: '#0B0D12' },
-        surface: { DEFAULT: '#1A1D24', raised: '#1E222A' },
-        line: '#2D3748',
+        surface: { DEFAULT: 'rgba(255,255,255,0.06)', raised: 'rgba(255,255,255,0.10)' },
+        line: 'rgba(255,255,255,0.14)',
         ink: { DEFAULT: '#FFFFFF', soft: '#CBD5E1', muted: '#A0AEC0', faint: '#8794A8' },
         accent: { DEFAULT: 'hsl(var(--accent))', foreground: 'hsl(var(--accent-foreground))', ink: '#0F1117' },
         success: '#10B981',
@@ -47,7 +47,9 @@ const config: Config = {
         'photo-placeholder': 'radial-gradient(90% 70% at 70% 20%, #4A505C 0%, #252933 42%, #101218 100%)',
         scrim: 'linear-gradient(to top, rgba(15,17,23,0.94) 0%, rgba(15,17,23,0.35) 55%, rgba(15,17,23,0.05) 100%)',
       },
+      boxShadow: { glass: '0 8px 32px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.12)' },
       keyframes: {
+        'sx-wipe': { from: { clipPath: 'inset(0 100% 0 0)' }, to: { clipPath: 'inset(0 0 0 0)' } },
         'drawer-in': { from: { opacity: '0', transform: 'translateY(-8px)' }, to: { opacity: '1', transform: 'translateY(0)' } },
       },
       animation: { 'drawer-in': 'drawer-in 200ms cubic-bezier(0.32, 0.72, 0, 1) both' },
@@ -73,7 +75,7 @@ const config: Config = {
       '.pt-safe': { paddingTop: 'env(safe-area-inset-top, 0px)' },
       '.pb-safe': { paddingBottom: 'env(safe-area-inset-bottom, 0px)' },
       '.px-safe': { paddingLeft: 'env(safe-area-inset-left, 0px)', paddingRight: 'env(safe-area-inset-right, 0px)' },
-      '.glass-nav': { backgroundColor: 'rgba(15,17,23,0.78)', backdropFilter: 'blur(16px) saturate(160%)', WebkitBackdropFilter: 'blur(16px) saturate(160%)' },
+      '.glass-nav': { backgroundColor: 'rgba(15,17,23,0.55)', backdropFilter: 'blur(20px) saturate(180%)', WebkitBackdropFilter: 'blur(20px) saturate(180%)', borderBottom: '1px solid rgba(255,255,255,0.12)' },
     });
   })],
 };

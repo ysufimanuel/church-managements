@@ -1,5 +1,6 @@
 'use client';
 
+import { useUrlQuery } from '@/lib/search/use-url-query';
 import * as React from 'react';
 import { useLang } from '@/components/lang-context';
 import { Button } from '@/components/ui/button';
@@ -21,7 +22,7 @@ export function VolunteersClient({ volunteers, members, events, assignments, rol
 }) {
   const { t } = useLang();
   const [tab, setTab] = React.useState('list');
-  const [search, setSearch] = React.useState('');
+  const [search, setSearch] = useUrlQuery();
   const [modal, setModal] = React.useState(false);
   const [editing, setEditing] = React.useState<any>(null);
   const [source, setSource] = React.useState<'member' | 'external'>('member');

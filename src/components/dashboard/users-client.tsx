@@ -1,5 +1,6 @@
 'use client';
 
+import { useUrlQuery } from '@/lib/search/use-url-query';
 import * as React from 'react';
 import { useLang } from '@/components/lang-context';
 import { Button } from '@/components/ui/button';
@@ -13,7 +14,7 @@ import { roleLabel } from '@/lib/rbac';
 
 export function UsersClient({ users, selfId }: { users: any[]; selfId: string }) {
   const { t } = useLang();
-  const [search, setSearch] = React.useState('');
+  const [search, setSearch] = useUrlQuery();
   const [modal, setModal] = React.useState(false);
   const [editing, setEditing] = React.useState<any>(null);
 

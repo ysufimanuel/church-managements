@@ -4,7 +4,7 @@
 .default-web-site {
   min-height: 100vh;
   overflow-x: clip;
-  background: #0F1117;
+  background: transparent;
   color: #FFFFFF;
   font-family: "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -44,3 +44,12 @@
     width: min(100% - 3rem, 1200px);
   }
 }
+
+/* Glassmorphism: kartu & seksi berlatar kaca di atas mesh gradient global */
+.default-web-site .bg-bg-deep { background: rgb(11 13 18 / .40); }
+.default-web-site [class*="bg-surface"] {
+  -webkit-backdrop-filter: blur(14px) saturate(160%);
+  backdrop-filter: blur(14px) saturate(160%);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / .10), 0 8px 28px rgb(0 0 0 / .28);
+}
+.default-web-site section[id] { scroll-margin-top: 88px; }

@@ -1,5 +1,6 @@
 'use client';
 
+import { useUrlQuery } from '@/lib/search/use-url-query';
 import * as React from 'react';
 import { useLang } from '@/components/lang-context';
 import { Button } from '@/components/ui/button';
@@ -23,7 +24,7 @@ export function FinanceClient({ transactions, categories, settings, history, don
   const [modal, setModal] = React.useState<null | { tipe: 'pemasukan' | 'pengeluaran'; editing?: any }>(null);
   const [catModal, setCatModal] = React.useState<null | any>(null);
   const [saldoModal, setSaldoModal] = React.useState(false);
-  const [search, setSearch] = React.useState('');
+  const [search, setSearch] = useUrlQuery();
   const [filterCat, setFilterCat] = React.useState('');
   const [filterMonth, setFilterMonth] = React.useState('');
 

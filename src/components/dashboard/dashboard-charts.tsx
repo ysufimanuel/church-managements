@@ -19,11 +19,11 @@ import { formatRupiah } from '@/lib/utils';
 
 const COLORS = ['#00E5FF', '#3B82F6', '#10B981', '#F59E0B', '#8B5CF6', '#EF4444'];
 const AXIS = '#A0AEC0';
-const GRID = '#2D3748';
+const GRID = 'rgba(255,255,255,0.10)';
 
 const tooltipStyle: React.CSSProperties = {
-  background: '#1A1D24',
-  border: '1px solid #2D3748',
+  background: 'rgba(20,23,30,.85)',
+  border: '1px solid rgba(255,255,255,.16)',
   borderRadius: 8,
   fontSize: 12,
   padding: '6px 10px',

@@ -123,7 +123,8 @@ export function WebManagerClient({ navItems, theme, sections, role, publicPath, 
         return;
       }
       setPreviewKey((k) => k + 1);
-      toast.success(enabled ? 'Default Theme aktif pada Draft gereja' : 'Draft mengikuti tema yang sudah dipublikasikan');
+      toast.success(enabled ? 'Default Theme aktif untuk preview akun ini' : 'Preview mengikuti tema yang sudah dipublikasikan');
+      router.refresh();
     } catch (error) {
       setDefaultThemeEnabled(previous);
       toast.error(error instanceof Error ? error.message : 'Gagal menyimpan preferensi tema.');
@@ -152,7 +153,7 @@ export function WebManagerClient({ navItems, theme, sections, role, publicPath, 
     if (!pages.includes(page)) setPage('home');
   }, [pages, page]);
   const pageSections = activeSections.filter((s) => String(s.draft_page || s.page || '').trim().toLowerCase() === page).sort((a, b) => (a.draft_sort_order ?? a.sort_order) - (b.draft_sort_order ?? b.sort_order));
-  const previewPath = publicPath ? `${publicPath}${page === 'home' ? '' : `/${page}`}?preview=draft` : null;
+  const previewPath = publicPath ? `${publicPath}${page === 'home' ? '' : `/${page}`}?preview=draft${defaultThemeEnabled ? '&theme=default' : ''}` : null;
   async function run(p: Promise<{ ok: boolean; error?: string }>, okMsg?: string) {
     try {
       const result = await p;
@@ -183,7 +184,7 @@ export function WebManagerClient({ navItems, theme, sections, role, publicPath, 
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="min-w-0">
             <p className="font-semibold">Default Theme · Tema Draft Gereja</p>
-            <p className="mt-1 text-xs text-muted-foreground">Saat diaktifkan, Default Theme mengubah warna, tipografi, header, dan layout Draft gereja tanpa mengganti konten, halaman, atau media. Saat dinonaktifkan, Draft mengikuti tema yang sudah dipublikasikan. Jika Default Theme sudah dipublish, tema default tetap tampil. Website publik mengikuti tema ini setelah Publish.</p>
+            <p className="mt-1 text-xs text-muted-foreground">Saat diaktifkan, preview untuk akun ini memakai Default Theme tanpa mengganti konten, halaman, atau media. Untuk menjadikan Default Theme sebagai tampilan publik, aktifkan toggle lalu klik Publish Tema. Saat toggle dimatikan, preview mengikuti tema yang sudah dipublikasikan, termasuk Default Theme jika sebelumnya sudah dipublish.</p>
           </div>
           <div className="flex items-center gap-2"><span className="text-xs text-muted-foreground">{defaultThemeEnabled ? 'Aktif' : 'Nonaktif'}</span><Switch checked={defaultThemeEnabled} onCheckedChange={(checked) => void updateDefaultThemePreference(checked)} /></div>
         </div>

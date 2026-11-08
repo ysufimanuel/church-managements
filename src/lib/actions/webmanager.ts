@@ -86,6 +86,43 @@ export async function saveThemeDraft(theme: ThemeInput) {
   if (!data) return { ok: false, error: 'Tema Draft tidak tersimpan untuk gereja ini' };
   revalidateWM(); return { ok: true };
 }
+export async function restoreDefaultThemeDraft() {
+  const { profile, denied } = await guardWM();
+  if (denied) return { ok: false, error: denied };
+  const supabase = await createClient();
+  const { data: current, error: readError } = await supabase
+    .from('site_theme')
+    .select('draft')
+    .eq('id', 1)
+    .eq('church_id', profile.church_id)
+    .maybeSingle();
+  if (readError || !current) return { ok: false, error: readError?.message || 'Tema Draft tidak ditemukan' };
+
+  const currentDraft = current.draft && typeof current.draft === 'object' && !Array.isArray(current.draft)
+    ? current.draft as Record<string, unknown>
+    : {};
+  const draft = {
+    ...currentDraft,
+    primary_color: '#0F1117',
+    secondary_color: '#FFFFFF',
+    accent_color: '#00E5FF',
+    font_family: 'Plus Jakarta Sans',
+    website_theme: 'default',
+  };
+
+  const { data, error } = await supabase
+    .from('site_theme')
+    .update({ draft, state: 'draft' })
+    .eq('id', 1)
+    .eq('church_id', profile.church_id)
+    .select('id')
+    .maybeSingle();
+  if (error) return { ok: false, error: error.message };
+  if (!data) return { ok: false, error: 'Default Theme gagal dipulihkan untuk gereja ini' };
+  revalidateWM();
+  return { ok: true };
+}
+
 export async function publishTheme() {
   const { profile, denied } = await guardWM();
   if (denied) return { ok: false, error: denied };
@@ -114,10 +151,13 @@ export async function publishTheme() {
     ? preferenceRow.preferences as Record<string, unknown>
     : {};
 
-  // The toggle controls this editor's preview. Publishing while it is enabled
-  // makes Default Theme public. Turning it off later must not erase that
-  // published preset.
-  if (accountPreferences.website_theme === 'default' || existingPublished.website_theme === 'default') {
+  // An explicit Draft preset wins. The account toggle remains a convenient
+  // way to publish Default Theme, while an existing published preset remains
+  // stable when the toggle is later switched off.
+  const draftPreset = typeof draftValues.website_theme === 'string' ? draftValues.website_theme : null;
+  if (draftPreset === 'default' || (!draftPreset && (
+    accountPreferences.website_theme === 'default' || existingPublished.website_theme === 'default'
+  ))) {
     published.website_theme = 'default';
   } else {
     delete published.website_theme;

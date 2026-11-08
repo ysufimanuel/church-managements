@@ -22,9 +22,8 @@ if (typeof window !== 'undefined') {
 }
 
 type CountKind = 'int' | 'rupiah';
-const isNarrow = () => typeof window !== 'undefined' && window.matchMedia('(max-width: 639px)').matches;
-const formatCount = (kind: CountKind, n: number) =>
-  kind === 'rupiah' ? (isNarrow() ? formatRupiahCompact(Math.round(n)) : formatRupiah(Math.round(n))) : String(Math.round(n));
+const formatCount = (kind: CountKind, n: number, narrow = false) =>
+  kind === 'rupiah' ? (narrow ? formatRupiahCompact(Math.round(n)) : formatRupiah(Math.round(n))) : String(Math.round(n));
 
 /**
  * Angka naik dari 0. Nilai akhir selalu dirender oleh React (SSR/no-JS/reduced-motion aman);
@@ -32,21 +31,24 @@ const formatCount = (kind: CountKind, n: number) =>
  */
 function CountUp({ value, kind = 'int' }: { value: number; kind?: CountKind }) {
   const ref = React.useRef<HTMLSpanElement>(null);
+  // Render awal (SSR & hydrasi) selalu format penuh; format ringkas dipakai setelah mount di layar kecil
+  const [narrow, setNarrow] = React.useState(false);
+  React.useEffect(() => { setNarrow(window.matchMedia('(max-width: 639px)').matches); }, []);
 
   React.useEffect(() => {
     const node = ref.current?.firstChild;
     if (!node || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     const state = { v: 0 };
-    node.nodeValue = formatCount(kind, 0);
+    node.nodeValue = formatCount(kind, 0, narrow);
     const tween = gsap.to(state, {
       v: value, duration: 0.9, delay: 0.25, ease: 'power3.out',
-      onUpdate: () => { node.nodeValue = formatCount(kind, state.v); },
-      onComplete: () => { node.nodeValue = formatCount(kind, value); },
+      onUpdate: () => { node.nodeValue = formatCount(kind, state.v, narrow); },
+      onComplete: () => { node.nodeValue = formatCount(kind, value, narrow); },
     });
-    return () => { tween.kill(); node.nodeValue = formatCount(kind, value); };
-  }, [value, kind]);
+    return () => { tween.kill(); node.nodeValue = formatCount(kind, value, narrow); };
+  }, [value, kind, narrow]);
 
-  return <span ref={ref} className="tabular-nums">{formatCount(kind, value)}</span>;
+  return <span ref={ref} className="tabular-nums">{formatCount(kind, value, narrow)}</span>;
 }
 
 // Target sentuh >= 44px untuk link "Lihat semua" di mobile.

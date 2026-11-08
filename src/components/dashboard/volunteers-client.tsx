@@ -24,6 +24,7 @@ export function VolunteersClient({ volunteers, members, events, assignments, rol
   const { t } = useLang();
   const searchParams = useSearchParams();
   const [tab, setTab] = React.useState(() => searchParams.get('tab') === 'assignment' ? 'assignment' : 'list');
+  React.useEffect(() => { if (searchParams.get('tab') === 'assignment') setTab('assignment'); }, [searchParams]);
   const [search, setSearch] = useUrlQuery();
   const [modal, setModal] = React.useState(false);
   const [editing, setEditing] = React.useState<any>(null);

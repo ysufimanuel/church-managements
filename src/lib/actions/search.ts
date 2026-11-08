@@ -86,11 +86,22 @@ export async function searchDashboard(rawQuery: string): Promise<SearchResult> {
       .or(`sender_id.eq.${profile.id},receiver_id.eq.${profile.id}`)
       .ilike('content', like).limit(LIMIT);
     if (error) throw new Error(`messages: ${error.message}`);
-    return ((data as any[]) || []).map((r) => ({
-      id: `msg${r.id}`, group: 'messages', title: snippet(r.content, q),
-      subtitle: new Date(r.created_at).toLocaleString('id-ID'),
-      href: `/dashboard/communication?q=${encodeURIComponent(q)}`,
-    }));
+    const rows = (data as any[]) || [];
+    const peerIds = Array.from(new Set(rows.map((r) => r.sender_id === profile.id ? r.receiver_id : r.sender_id).filter(Boolean)));
+    const { data: peers, error: peersError } = peerIds.length
+      ? await supabase.from('profiles').select('id,nama').eq('church_id', cid).in('id', peerIds)
+      : { data: [], error: null };
+    if (peersError) throw new Error(`message contacts: ${peersError.message}`);
+    const names = new Map(((peers as any[]) || []).map((p) => [p.id, p.nama]));
+    return rows.map((r) => {
+      const peerId = r.sender_id === profile.id ? r.receiver_id : r.sender_id;
+      const peerName = names.get(peerId) || 'Kontak';
+      return {
+        id: `msg${r.id}`, group: 'messages', title: snippet(r.content, q),
+        subtitle: `Percakapan dengan ${peerName}`,
+        href: `/dashboard/communication?q=${encodeURIComponent(peerName)}&contact=${encodeURIComponent(peerId)}`,
+      };
+    });
   })());
 
   jobs.push((async () => {

@@ -198,10 +198,10 @@ export function GlobalSearch({ mode, features = [], slug, items = [], showTrigge
         </button>
       )}
       {open && (
-        <div className="fixed inset-0 z-[60] flex items-start justify-center px-3 pt-[max(1rem,env(safe-area-inset-top))] sm:pt-[12vh]" role="presentation">
+        <div className="fixed inset-0 z-[60] flex items-start justify-center overflow-y-auto px-3 py-[max(1rem,env(safe-area-inset-top))] sm:px-5 sm:pt-[9vh] lg:px-6 lg:pt-[8vh]" role="presentation">
           <div className="absolute inset-0 bg-black/55 backdrop-blur-sm" onClick={close} aria-hidden />
           <div ref={panelRef} role="dialog" aria-modal="true" aria-label={L.open}
-            className="glass-strong relative flex max-h-[82dvh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl text-white">
+            className="glass-strong relative flex max-h-[min(82dvh,760px)] w-full max-w-[720px] min-w-0 flex-col overflow-hidden rounded-2xl border border-white/10 text-white shadow-[0_24px_90px_rgb(0_0_0/.55)]">
             <div className="flex items-center gap-2 border-b border-white/10 px-3 py-2.5 sm:px-4">
               <Search className="h-5 w-5 shrink-0 text-white/70" />
               <input ref={inputRef} value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={onInputKey}

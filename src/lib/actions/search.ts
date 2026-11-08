@@ -31,10 +31,19 @@ export async function searchDashboard(rawQuery: string): Promise<SearchResult> {
     run('groups', 'groups', 'id,nama,deskripsi,jadwal', ['nama', 'deskripsi', 'jadwal'], (r) => ({ id: `g${r.id}`, title: r.nama, subtitle: snippet(r.deskripsi || r.jadwal || '', q), href: `/dashboard/groups?q=${encodeURIComponent(q)}` })),
     run('events', 'events', 'id,nama,lokasi,tipe', ['nama', 'lokasi', 'tipe'], (r) => ({ id: `e${r.id}`, title: r.nama, subtitle: [r.tipe, r.lokasi].filter(Boolean).join(' · '), href: `/dashboard/events?q=${encodeURIComponent(q)}` })),
     run('donations', 'donors', 'id,nama', ['nama'], (r) => ({ id: `d${r.id}`, title: r.nama, href: `/dashboard/donations?q=${encodeURIComponent(q)}` })),
-    run('finance', 'finance_transactions', 'id,keterangan,tipe,tanggal', ['keterangan'], (r) => ({ id: `t${r.id}`, title: r.keterangan || r.tipe, subtitle: `${r.tipe} · ${r.tanggal}`, href: `/dashboard/finance?q=${encodeURIComponent(q)}` })),
+    run('finance', 'finance_transactions', 'id,keterangan,tipe,tanggal', ['keterangan', 'tipe', 'tanggal'], (r) => ({ id: `t${r.id}`, title: r.keterangan || r.tipe, subtitle: `${r.tipe} · ${r.tanggal}`, href: `/dashboard/finance?q=${encodeURIComponent(q)}` })),
     run('volunteers', 'volunteers', 'id,external_nama,area', ['external_nama', 'area'], (r) => ({ id: `v${r.id}`, title: r.external_nama || r.area, subtitle: r.area, href: `/dashboard/volunteers?q=${encodeURIComponent(q)}` })),
     run('communication', 'announcements', 'id,judul,konten', ['judul', 'konten'], (r) => ({ id: `a${r.id}`, title: r.judul, subtitle: snippet(r.konten || '', q), href: `/dashboard/communication?q=${encodeURIComponent(q)}` })),
   ];
+  // Kontak chat: semua akun aktif yang memang ditampilkan di tab Messages.
+  jobs.push((async () => {
+    const { data } = await supabase.from('profiles').select('id,nama,role')
+      .eq('church_id', cid).eq('status', 'aktif').ilike('nama', like).limit(LIMIT);
+    return ((data as any[]) || []).map((r) => ({
+      id: `c${r.id}`, group: 'contacts', title: r.nama, subtitle: r.role,
+      href: `/dashboard/communication?q=${encodeURIComponent(q)}`,
+    }));
+  })());
   if (canUseWebManager(role)) {
     jobs.push(run('web-manager', 'site_nav_items', 'id,label', ['label'], (r) => ({ id: `n${r.id}`, title: r.label, href: '/dashboard/web-manager' })));
   }

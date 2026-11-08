@@ -37,9 +37,9 @@ export default async function PublicChurchPage({ params, searchParams }: Props) 
     return { ...item, ...(version as Record<string, unknown>) };
   }).filter(Boolean).filter((item: any) => item.visible !== false);
   const base = `/site/${church.slug}`; const page = (params.path?.[0] || 'home').trim().toLowerCase();
-  // Draft may omit a preset when its temporary override is disabled.
-  // In that case, inherit the last published theme instead of falling back to
-  // the legacy CMS palette. Explicit Draft values still take precedence.
+  // Draft inherits the published palette and preset. The per-account toggle
+  // may temporarily force Default Theme in preview, but turning it off must
+  // reveal the last published preset rather than the old CMS configuration.
   const publishedThemeValues = theme?.published && typeof theme.published === 'object'
     ? theme.published as Record<string, unknown>
     : (theme || {});
@@ -49,7 +49,10 @@ export default async function PublicChurchPage({ params, searchParams }: Props) 
   const themeValues: any = preview
     ? { ...publishedThemeValues, ...draftThemeValues }
     : publishedThemeValues;
-  const defaultTheme = themeValues?.website_theme === 'default';
+  const defaultTheme = preview
+    ? searchParams?.theme === 'default'
+      || (searchParams?.theme !== 'cms' && publishedThemeValues?.website_theme === 'default')
+    : publishedThemeValues?.website_theme === 'default';
   const primary = defaultTheme ? '#0F1117' : (themeValues?.primary_color || '#FFFFFF');
   const secondary = defaultTheme ? '#FFFFFF' : (themeValues?.secondary_color || '#1F2937');
   const accent = defaultTheme ? '#00E5FF' : (themeValues?.accent_color || '#22C55E');

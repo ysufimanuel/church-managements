@@ -2,9 +2,8 @@
 
 import * as React from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
 import { Church, UserCog, Globe2 } from 'lucide-react';
-import { useLang, LangSwitcher } from '@/components/lang-context';
+import { useLang } from '@/components/lang-context';
 import { logoutAction } from '@/lib/actions/auth';
 import { roleLabel, canManageUsers, canUseWebManager, type Role } from '@/lib/rbac';
 import { NotificationBell, type Notif } from './notification-bell';
@@ -22,7 +21,6 @@ export function DashboardShell({
   children: React.ReactNode;
 }) {
   const { t } = useLang();
-  const pathname = usePathname();
 
   const items = [...NAV];
   if (canUseWebManager(profile.role)) items.push({ href: '/dashboard/web-manager', key: 'web-manager', icon: Globe2 });

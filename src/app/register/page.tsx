@@ -12,7 +12,6 @@ import {
   Eye,
   EyeOff,
   Info,
-  UserPlus,
 } from 'lucide-react';
 import { registerChurchAction } from '@/lib/actions/registration';
 import { Button } from '@/components/ui/button';

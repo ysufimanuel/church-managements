@@ -9,15 +9,15 @@ import { Button } from '@/components/ui/button';
 import { Input, Label, Select } from '@/components/ui/input';
 import { Modal, Tabs, Switch } from '@/components/ui/modal';
 import { Badge, Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Plus, Pencil, Trash2, Rocket, Eye, Image as ImageIcon, X, GripVertical, ChevronDown } from 'lucide-react';
-import { saveNavItem, toggleNavVisibility, deleteNavItem, publishNav, saveThemeDraft, publishTheme, saveSectionDraft, publishSections, publishWebManager, deleteSection, saveWebsiteThemePreference, type ThemeInput, type WebsiteThemePreference } from '@/lib/actions/webmanager';
+import { Plus, Pencil, Trash2, Rocket, Eye, Image as ImageIcon, X, GripVertical, ChevronDown, RotateCcw } from 'lucide-react';
+import { saveNavItem, toggleNavVisibility, deleteNavItem, publishNav, saveThemeDraft, publishTheme, saveSectionDraft, publishSections, publishWebManager, deleteSection, saveWebsiteThemePreference, restoreDefaultThemeDraft, type ThemeInput, type WebsiteThemePreference } from '@/lib/actions/webmanager';
 import { toast } from 'sonner';
 import { MediaFrame } from '@/components/public/media-frame';
 import { VisualEditor } from '@/components/dashboard/visual-editor';
 import { canDelete, type Role } from '@/lib/rbac';
 
 const RATIOS = ['19:9', '16:9', '1:1', '4:3', '4:5', '2:3', '9:16', '2:9', '32:9'];
-const FONTS = ['Poppins', 'Inter', 'Roboto', 'Montserrat'];
+const FONTS = ['Plus Jakarta Sans', 'Poppins', 'Inter', 'Roboto', 'Montserrat'];
 const SECTION_TYPES = ['hero', 'card_grid', 'event_feed', 'group_feed', 'info_lokasi', 'media', 'map', 'richtext'];
 
 type SectionCardItem = { id: string; title: string; body: string; image_url: string; href: string };
@@ -187,6 +187,12 @@ export function WebManagerClient({ navItems, theme, sections, role, publicPath, 
             <p className="mt-1 text-xs text-muted-foreground">Saat diaktifkan, preview untuk akun ini memakai Default Theme tanpa mengganti konten, halaman, atau media. Untuk menjadikan Default Theme sebagai tampilan publik, aktifkan toggle lalu klik Publish Tema. Saat toggle dimatikan, preview mengikuti tema yang sudah dipublikasikan, termasuk Default Theme jika sebelumnya sudah dipublish.</p>
           </div>
           <div className="flex items-center gap-2"><span className="text-xs text-muted-foreground">{defaultThemeEnabled ? 'Aktif' : 'Nonaktif'}</span><Switch checked={defaultThemeEnabled} onCheckedChange={(checked) => void updateDefaultThemePreference(checked)} /></div>
+        </div>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="text-xs text-muted-foreground">Pulihkan hanya konfigurasi tema. Isi halaman, navigasi, dan media tetap aman.</p>
+          <Button type="button" variant="secondary" onClick={() => run(restoreDefaultThemeDraft(), 'Draft Default Theme dipulihkan')}>
+            <RotateCcw className="h-4 w-4" /> Pulihkan Default Theme
+          </Button>
         </div>
         <div className="space-y-2">
           <div className="flex items-center justify-between gap-2"><p className="text-sm font-medium">{defaultThemeEnabled ? 'Preview Draft Default Theme' : 'Preview Tema yang Dipublikasikan'}</p><a href={previewPath || '/default-web'} target="_blank" rel="noreferrer" className="text-xs font-medium text-primary underline underline-offset-4">Buka preview</a></div>

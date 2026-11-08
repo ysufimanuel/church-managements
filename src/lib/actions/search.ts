@@ -66,13 +66,13 @@ export async function searchDashboard(rawQuery: string): Promise<SearchResult> {
     run('volunteers', 'volunteers', 'id,external_nama,external_email,external_telepon,area,status', ['external_nama','external_email','external_telepon','area','status'], (r) => ({
       id: `v${r.id}`, title: r.external_nama || r.area,
       subtitle: [r.area,r.external_telepon,r.status].filter(Boolean).join(' · '),
-      href: `/dashboard/volunteers?q=${encodeURIComponent(q)}`,
+      href: `/dashboard/volunteers?tab=assignment&q=${encodeURIComponent(q)}`,
     })),
     run('communication', 'announcements', 'id,judul,konten,tanggal', ['judul','konten'], (r) => ({
       id: `a${r.id}`, title: r.judul, subtitle: snippet(r.konten || '', q),
-      href: `/dashboard/communication?q=${encodeURIComponent(q)}`,
+      href: `/dashboard/communication?tab=announcements&q=${encodeURIComponent(q)}`,
     })),
-    run('communication', 'volunteer_assignments', 'id,tempat,tugas,catatan,status,tanggal', ['tempat','tugas','catatan','status'], (r) => ({
+    run('communication', 'volunteer_assignments, 'id,tempat,tugas,catatan,status,tanggal', ['tempat','tugas','catatan','status'], (r) => ({
       id: `va${r.id}`, title: r.tugas || r.tempat, subtitle: [r.tempat,r.tanggal,r.status].filter(Boolean).join(' · '),
       href: `/dashboard/volunteers?q=${encodeURIComponent(q)}`,
     })),
@@ -114,12 +114,6 @@ export async function searchDashboard(rawQuery: string): Promise<SearchResult> {
     }));
   })());
 
-  if (canAdd(role)) {
-    jobs.push(run('communication', 'broadcasts', 'id,subject,message,status', ['subject','message','status'], (r) => ({
-      id: `b${r.id}`, title: r.subject, subtitle: snippet(r.message || '', q),
-      href: `/dashboard/communication?q=${encodeURIComponent(q)}`,
-    })));
-  }
   if (canUseWebManager(role)) {
     jobs.push(run('web-manager', 'site_nav_items', 'id,label', ['label'], (r) => ({
       id: `n${r.id}`, title: r.label, href: '/dashboard/web-manager',

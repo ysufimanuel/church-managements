@@ -37,7 +37,18 @@ export default async function PublicChurchPage({ params, searchParams }: Props) 
     return { ...item, ...(version as Record<string, unknown>) };
   }).filter(Boolean).filter((item: any) => item.visible !== false);
   const base = `/site/${church.slug}`; const page = (params.path?.[0] || 'home').trim().toLowerCase();
-  const themeValues: any = preview ? (theme?.draft || theme || {}) : (theme?.published || theme || {});
+  // Draft may omit a preset when its temporary override is disabled.
+  // In that case, inherit the last published theme instead of falling back to
+  // the legacy CMS palette. Explicit Draft values still take precedence.
+  const publishedThemeValues = theme?.published && typeof theme.published === 'object'
+    ? theme.published as Record<string, unknown>
+    : (theme || {});
+  const draftThemeValues = theme?.draft && typeof theme.draft === 'object'
+    ? theme.draft as Record<string, unknown>
+    : {};
+  const themeValues: any = preview
+    ? { ...publishedThemeValues, ...draftThemeValues }
+    : publishedThemeValues;
   const defaultTheme = themeValues?.website_theme === 'default';
   const primary = defaultTheme ? '#0F1117' : (themeValues?.primary_color || '#FFFFFF');
   const secondary = defaultTheme ? '#FFFFFF' : (themeValues?.secondary_color || '#1F2937');

@@ -48,8 +48,8 @@ function useScramble(label: string) {
   return { ref, run };
 }
 
-function SidebarLink({ item, active, label, index }: {
-  item: SidebarItem; active: boolean; label: string; index: number;
+function SidebarLink({ item, active, label }: {
+  item: SidebarItem; active: boolean; label: string;
 }) {
   const Icon = item.icon;
   const { ref, run } = useScramble(label);
@@ -132,9 +132,9 @@ export function Sidebar({ items, role }: { items: SidebarItem[]; role: Role }) {
       <p className="px-5 pb-1 pt-4 text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/70">Menu</p>
       <nav aria-label="Navigasi utama" className="min-h-0 flex-1 overflow-y-auto px-3 pb-3">
         <ul className="space-y-1">
-          {items.map((item, index) => {
+          {items.map((item) => {
             const active = item.href === '/dashboard' ? pathname === item.href : pathname.startsWith(item.href);
-            return <SidebarLink key={item.href} item={item} active={active} label={t(item.key)} index={index} />;
+            return <SidebarLink key={item.href} item={item} active={active} label={t(item.key)} />;
           })}
         </ul>
       </nav>

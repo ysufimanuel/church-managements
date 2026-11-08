@@ -128,7 +128,7 @@ export function GlobalSearch({ mode, features = [], slug, items = [], showTrigge
         : [];
     }
     const local: SearchHit[] = (mode === 'dashboard'
-      ? features.map((f) => ({ id: `f${f.href}`, group: 'features', title: t(f.key), href: f.href }))
+      ? features.map((f): SearchHit => ({ id: `f${f.href}`, group: 'features', title: t(f.key), href: f.href }))
       : [...items, ...domItems])
       .map((it) => ({ it, s: score(query, it.title, it.subtitle) }))
       .filter((x) => x.s > 0).sort((a, b) => b.s - a.s).map((x) => x.it);

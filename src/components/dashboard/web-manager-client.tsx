@@ -13,6 +13,7 @@ import { Plus, Pencil, Trash2, Rocket, Eye, Image as ImageIcon, X, GripVertical,
 import { saveNavItem, toggleNavVisibility, deleteNavItem, publishNav, saveThemeDraft, publishTheme, saveSectionDraft, publishSections, publishWebManager, deleteSection, saveWebsiteThemePreference, type ThemeInput, type WebsiteThemePreference } from '@/lib/actions/webmanager';
 import { toast } from 'sonner';
 import { MediaFrame } from '@/components/public/media-frame';
+import { VisualEditor } from '@/components/dashboard/visual-editor';
 import { canDelete, type Role } from '@/lib/rbac';
 
 const RATIOS = ['19:9', '16:9', '1:1', '4:3', '4:5', '2:3', '9:16', '2:9', '32:9'];
@@ -100,7 +101,7 @@ function ColorField({ label, value, onChange, id, hint }: { label: string; value
 export function WebManagerClient({ navItems, theme, sections, role, publicPath, websiteThemePreference, events, groups }: { navItems: any[]; theme: any; sections: any[]; events: ResourceOption[]; groups: ResourceOption[]; role: Role; publicPath: string | null; websiteThemePreference: WebsiteThemePreference }) {
   const { t } = useLang();
   const router = useRouter();
-  const [tab, setTab] = React.useState('nav');
+  const [tab, setTab] = React.useState('visual');
   const [navModal, setNavModal] = React.useState(false);
   const [navEditing, setNavEditing] = React.useState<any>(null);
   const [themeValues, setThemeValues] = React.useState<ThemeInput>(() => theme?.draft || theme?.published || { primary_color: '#FFFFFF', secondary_color: '#1F2937', accent_color: '#22C55E', font_family: 'Inter' });
@@ -122,7 +123,7 @@ export function WebManagerClient({ navItems, theme, sections, role, publicPath, 
         return;
       }
       setPreviewKey((k) => k + 1);
-      toast.success(enabled ? 'Default Theme aktif untuk preview akun ini' : 'Tema CMS dipakai untuk preview akun ini');
+      toast.success(enabled ? 'Default Theme aktif untuk preview akun ini' : 'Preview mengikuti tema yang sudah dipublikasikan');
       router.refresh();
     } catch (error) {
       setDefaultThemeEnabled(previous);
@@ -131,16 +132,27 @@ export function WebManagerClient({ navItems, theme, sections, role, publicPath, 
   }
 
   React.useEffect(() => { setThemeValues(theme?.draft || theme?.published || { primary_color: '#FFFFFF', secondary_color: '#1F2937', accent_color: '#22C55E', font_family: 'Inter' }); }, [theme]);
+  // A published nav row with a null Draft is a pending deletion. Keep it out of
+  // every Draft editor surface, while the public site continues using its published snapshot.
+  const activeNavItems = React.useMemo(
+    () => navItems.filter((item) => !(item.state === 'draft' && item.draft == null)),
+    [navItems],
+  );
+  // Deleted sections remain in the database only until their page is published.
+  const activeSections = React.useMemo(() => sections.filter((section) => !section.draft_deleted), [sections]);
   const pages = React.useMemo(() => {
     const set = new Set(['home', 'new', 'connect', 'grow', 'ministries', 'events', 'worship', 'tentang', 'kontak']);
-    navItems.forEach((n) => {
+    activeNavItems.forEach((n) => {
       const href = pageFromHref(n.draft?.href || n.href);
       if (href) set.add(href);
     });
-    sections.forEach((s) => { const draftPage = s.draft_page || s.page; if (draftPage) set.add(String(draftPage).toLowerCase()); });
+    activeSections.forEach((s) => { const draftPage = s.draft_page || s.page; if (draftPage) set.add(String(draftPage).toLowerCase()); });
     return Array.from(set);
-  }, [navItems, sections]);
-  const pageSections = sections.filter((s) => String(s.draft_page || s.page || '').trim().toLowerCase() === page).sort((a, b) => (a.draft_sort_order ?? a.sort_order) - (b.draft_sort_order ?? b.sort_order));
+  }, [activeNavItems, activeSections]);
+  React.useEffect(() => {
+    if (!pages.includes(page)) setPage('home');
+  }, [pages, page]);
+  const pageSections = activeSections.filter((s) => String(s.draft_page || s.page || '').trim().toLowerCase() === page).sort((a, b) => (a.draft_sort_order ?? a.sort_order) - (b.draft_sort_order ?? b.sort_order));
   const previewPath = publicPath ? `${publicPath}${page === 'home' ? '' : `/${page}`}?preview=draft${defaultThemeEnabled ? '&theme=default' : ''}` : null;
   async function run(p: Promise<{ ok: boolean; error?: string }>, okMsg?: string) {
     try {
@@ -162,23 +174,24 @@ export function WebManagerClient({ navItems, theme, sections, role, publicPath, 
 
   return <div className="space-y-4">
     <div className="flex flex-wrap items-start justify-between gap-2"><div><h1 className="text-2xl font-bold">{t('web-manager')}</h1><p className="text-muted-foreground">Kelola header, tema, halaman, draft, dan preview website publik.</p></div><Button onClick={() => run(publishWebManager(), t('publish'))}><Rocket className="h-4 w-4" /> {t('wm-publish')}</Button></div>
-    <Tabs active={tab} onChange={setTab} tabs={[{ id: 'nav', label: t('wm-header-nav') }, { id: 'theme', label: t('wm-theming') }, { id: 'sections', label: t('wm-sections') }]} />
+    <Tabs active={tab} onChange={setTab} tabs={[{ id: 'visual', label: 'Editor Visual' }, { id: 'nav', label: t('wm-header-nav') }, { id: 'theme', label: t('wm-theming') }, { id: 'sections', label: `${t('wm-sections')} (Lanjutan)` }]} />
+    {tab === 'visual' && <VisualEditor sections={sections} pages={pages} theme={theme} role={role} publicPath={publicPath} />}
 
-    {tab === 'nav' && <Card><CardHeader className="flex-row items-center justify-between"><CardTitle>Header & Navigasi</CardTitle><div className="flex gap-2"><Button variant="secondary" onClick={() => run(publishNav(), t('publish'))}><Rocket className="h-4 w-4" /> Publish Menu</Button><Button onClick={() => { setNavEditing(null); setNavModal(true); }}><Plus className="h-4 w-4" /> Menu Baru</Button></div></CardHeader><CardContent className="space-y-2">{navItems.slice().sort((a, b) => a.sort_order - b.sort_order).map((n) => <div key={n.id} className="flex flex-wrap items-center gap-3 rounded-md border p-3"><div className="min-w-0 flex-1"><p className="font-medium">{n.draft?.label || n.label}</p><p className="truncate text-xs text-muted-foreground">{n.draft?.href || n.href} · order #{n.draft?.sort_order ?? n.sort_order}</p></div><Badge variant={n.state === 'draft' ? 'warning' : 'success'}>{n.state === 'draft' ? 'Draft' : 'Published'}</Badge><div className="flex items-center gap-2"><span className="text-xs text-muted-foreground">{(n.draft?.visible ?? n.visible) ? 'On' : 'Off'}</span><Switch checked={Boolean(n.draft?.visible ?? n.visible)} onCheckedChange={(v) => run(toggleNavVisibility(n.id, v))} /></div><Button variant="ghost" size="icon" onClick={() => { setNavEditing(n); setNavModal(true); }}><Pencil className="h-4 w-4" /></Button>{canDelete(role) && <Button variant="ghost" size="icon" onClick={() => confirm(t('confirmation')) && run(deleteNavItem(n.id))}><Trash2 className="h-4 w-4 text-destructive" /></Button>}</div>)}{navItems.length === 0 && <p className="text-sm text-muted-foreground">Belum ada menu.</p>}</CardContent></Card>}
+    {tab === 'nav' && <Card><CardHeader className="flex-row items-center justify-between"><CardTitle>Header & Navigasi</CardTitle><div className="flex gap-2"><Button variant="secondary" onClick={() => run(publishNav(), t('publish'))}><Rocket className="h-4 w-4" /> Publish Menu</Button><Button onClick={() => { setNavEditing(null); setNavModal(true); }}><Plus className="h-4 w-4" /> Menu Baru</Button></div></CardHeader><CardContent className="space-y-2">{activeNavItems.slice().sort((a, b) => a.sort_order - b.sort_order).map((n) => <div key={n.id} className="flex flex-wrap items-center gap-3 rounded-md border p-3"><div className="min-w-0 flex-1"><p className="font-medium">{n.draft?.label || n.label}</p><p className="truncate text-xs text-muted-foreground">{n.draft?.href || n.href} · order #{n.draft?.sort_order ?? n.sort_order}</p></div><Badge variant={n.state === 'draft' ? 'warning' : 'success'}>{n.state === 'draft' ? 'Draft' : 'Published'}</Badge><div className="flex items-center gap-2"><span className="text-xs text-muted-foreground">{(n.draft?.visible ?? n.visible) ? 'On' : 'Off'}</span><Switch checked={Boolean(n.draft?.visible ?? n.visible)} onCheckedChange={(v) => run(toggleNavVisibility(n.id, v))} /></div><Button variant="ghost" size="icon" onClick={() => { setNavEditing(n); setNavModal(true); }}><Pencil className="h-4 w-4" /></Button>{canDelete(role) && <Button variant="ghost" size="icon" onClick={() => confirm(t('confirmation')) && run(deleteNavItem(n.id))}><Trash2 className="h-4 w-4 text-destructive" /></Button>}</div>)}{activeNavItems.length === 0 && <p className="text-sm text-muted-foreground">Belum ada menu.</p>}</CardContent></Card>}
 
     {tab === 'theme' && <Card><CardHeader><CardTitle>Tampilan & Tema</CardTitle></CardHeader><CardContent className="space-y-4"><details className="rounded-xl border"><summary className="flex cursor-pointer list-none items-center justify-between gap-3 p-4"><span><span className="font-semibold">Palette Global</span><span className="mt-1 block text-xs text-muted-foreground">Primary, Secondary, Accent, preview palette, dan font. Klik untuk membuka pengaturan.</span></span><ChevronDown className="h-5 w-5 shrink-0 text-muted-foreground" /></summary><div className="space-y-5 border-t p-4"><div className="rounded-xl border p-4"><p className="font-semibold">Palette 60 / 30 / 10</p><p className="mt-1 text-sm text-muted-foreground"><b>Primary</b>, <b>Secondary</b>, dan <b>Accent</b> adalah palette global. Rasio 60/30/10 menjadi panduan visual, bukan pembatas. Setiap section dan elemen dapat memakai warna/gradient sendiri.</p></div><div className="grid gap-4 lg:grid-cols-3"><ColorField id="primary" label="Primary · 60%" value={themeValues.primary_color} onChange={(v) => setThemeValues((x) => ({ ...x, primary_color: v }))} hint="Default background / ruang utama" /><ColorField id="secondary" label="Secondary · 30%" value={themeValues.secondary_color} onChange={(v) => setThemeValues((x) => ({ ...x, secondary_color: v }))} hint="Default text / navigation" /><ColorField id="accent" label="Accent · 10%" value={themeValues.accent_color} onChange={(v) => setThemeValues((x) => ({ ...x, accent_color: v }))} hint="Default highlight / CTA / detail" /></div><div className="grid grid-cols-[3fr_1.5fr_0.5fr] overflow-hidden rounded-xl border"><div className="min-h-20 p-4" style={{ background: themeValues.primary_color, color: themeValues.secondary_color }}>Primary</div><div className="min-h-20 p-4" style={{ background: themeValues.secondary_color, color: themeValues.primary_color }}>Secondary</div><div className="min-h-20 p-4" style={{ background: themeValues.accent_color, color: '#fff' }}>Accent</div></div><Select value={themeValues.font_family} onChange={(e) => setThemeValues((v) => ({ ...v, font_family: e.target.value }))}>{FONTS.map((f) => <option key={f} value={f}>{f}</option>)}</Select><div className="flex flex-wrap gap-2"><Button variant="secondary" onClick={() => run(saveThemeDraft(themeValues), t('wm-draft'))}>{t('wm-draft')}</Button><Button onClick={() => run(publishTheme(), t('publish'))}><Rocket className="h-4 w-4" /> Publish Tema</Button></div></div></details>
       <div className="space-y-3 rounded-xl border p-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="min-w-0">
-            <p className="font-semibold">Default Theme · Preview per Akun</p>
-            <p className="mt-1 text-xs text-muted-foreground">Saat diaktifkan, hanya preview Draft untuk akun ini yang memakai warna, tipografi, header, dan gaya layout Default Theme. Preferensi ini tidak mengubah konten, halaman, media, palette CMS, atau website publik. Nonaktifkan untuk kembali melihat Draft dengan tema CMS. Publish tetap manual.</p>
+            <p className="font-semibold">Default Theme · Tema Draft Gereja</p>
+            <p className="mt-1 text-xs text-muted-foreground">Saat diaktifkan, preview untuk akun ini memakai Default Theme tanpa mengganti konten, halaman, atau media. Untuk menjadikan Default Theme sebagai tampilan publik, aktifkan toggle lalu klik Publish Tema. Saat toggle dimatikan, preview mengikuti tema yang sudah dipublikasikan, termasuk Default Theme jika sebelumnya sudah dipublish.</p>
           </div>
           <div className="flex items-center gap-2"><span className="text-xs text-muted-foreground">{defaultThemeEnabled ? 'Aktif' : 'Nonaktif'}</span><Switch checked={defaultThemeEnabled} onCheckedChange={(checked) => void updateDefaultThemePreference(checked)} /></div>
         </div>
-        {defaultThemeEnabled ? (previewPath ? <div className="space-y-2">
-          <div className="flex items-center justify-between gap-2"><p className="text-sm font-medium">Preview Draft Default Theme</p><a href={previewPath} target="_blank" rel="noreferrer" className="text-xs font-medium text-primary underline underline-offset-4">Buka preview Draft</a></div>
-          <iframe key={`default-draft-${previewKey}`} src={previewPath} title="Preview Draft Default Theme" className="h-[620px] w-full rounded-lg border bg-[#0F1117]" loading="lazy" />
-        </div> : <div className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">Website gereja belum tersedia, sehingga preview belum dapat dibuka.</div>) : <div className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">Default Theme sedang nonaktif untuk akun ini. Aktifkan toggle untuk membuka preview.</div>}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between gap-2"><p className="text-sm font-medium">{defaultThemeEnabled ? 'Preview Draft Default Theme' : 'Preview Tema yang Dipublikasikan'}</p><a href={previewPath || '/default-web'} target="_blank" rel="noreferrer" className="text-xs font-medium text-primary underline underline-offset-4">Buka preview</a></div>
+          <iframe key={`default-draft-${previewKey}`} src={previewPath || '/default-web'} title={defaultThemeEnabled ? "Preview Draft Default Theme" : "Preview Tema yang Dipublikasikan"} className="h-[620px] w-full rounded-lg border bg-[#0F1117]" loading="lazy" />
+        </div>
       </div>
     </CardContent></Card>}
 

@@ -82,7 +82,7 @@ export function FinanceClient({ transactions, categories, settings, history, don
     const rows = transactions.filter((x) => x.tipe === tipe &&
       (!filterCat || x.kategori_id === Number(filterCat)) &&
       (!filterMonth || x.tanggal.startsWith(filterMonth)) &&
-      (!search || (x.keterangan || '').toLowerCase().includes(search.toLowerCase())));
+      (!search || [x.keterangan,catName(x.kategori_id)].some((v) => String(v || '').toLocaleLowerCase('id-ID').includes(search.trim().toLocaleLowerCase('id-ID')))));
     return (
       <div className="space-y-3">
         <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">

@@ -1,6 +1,7 @@
 'use client';
 
 import { useUrlQuery } from '@/lib/search/use-url-query';
+import { useSearchParams } from 'next/navigation';
 import * as React from 'react';
 import { useLang } from '@/components/lang-context';
 import { Button } from '@/components/ui/button';
@@ -21,7 +22,8 @@ export function VolunteersClient({ volunteers, members, events, assignments, rol
   volunteers: any[]; members: any[]; events: any[]; assignments: any[]; role: Role;
 }) {
   const { t } = useLang();
-  const [tab, setTab] = React.useState('list');
+  const searchParams = useSearchParams();
+  const [tab, setTab] = React.useState(() => searchParams.get('tab') === 'assignment' ? 'assignment' : 'list');
   const [search, setSearch] = useUrlQuery();
   const [modal, setModal] = React.useState(false);
   const [editing, setEditing] = React.useState<any>(null);
@@ -34,7 +36,9 @@ export function VolunteersClient({ volunteers, members, events, assignments, rol
   const volName = (v: any) => v.member_id ? memberName(v.member_id) : v.external_nama;
   const volNameById = (id: number) => { const v = volunteers.find((x) => x.id === id); return v ? volName(v) : '-'; };
   const eventName = (id: number | null) => events.find((e) => e.id === id)?.nama || '-';
-  const filtered = volunteers.filter((v) => (volName(v) || '').toLowerCase().includes(search.toLowerCase()));
+  const query = search.trim().toLocaleLowerCase('id-ID');
+  const filtered = volunteers.filter((v) => [volName(v),v.external_email,v.external_telepon,v.area,v.status,...(v.jadwal || [])].some((x) => String(x || '').toLocaleLowerCase('id-ID').includes(query)));
+  const filteredAssignments = assignments.filter((a) => [volNameById(a.volunteer_id),eventName(a.event_id),a.tugas,a.tempat,a.catatan,a.status].some((x) => String(x || '').toLocaleLowerCase('id-ID').includes(query)));
 
   async function handleSave(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -131,7 +135,7 @@ export function VolunteersClient({ volunteers, members, events, assignments, rol
         <div className="space-y-3">
           {canAdd(role) && <Button onClick={() => { setAsgEditing(null); setAsgModal(true); }}><Plus className="h-4 w-4" /> {t('add-assignment')}</Button>}
           <div className="space-y-2">
-            {assignments.map((a) => (
+            {filteredAssignments.map((a) => (
               <div key={a.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border p-3 text-sm">
                 <div>
                   <p className="font-medium">{volNameById(a.volunteer_id)} — {a.tugas}</p>
@@ -145,7 +149,7 @@ export function VolunteersClient({ volunteers, members, events, assignments, rol
                 </div>
               </div>
             ))}
-            {assignments.length === 0 && <p className="text-muted-foreground">{t('none')}</p>}
+            {filteredAssignments.length === 0 && <p className="text-muted-foreground">{t('none')}</p>}
           </div>
         </div>
       )}

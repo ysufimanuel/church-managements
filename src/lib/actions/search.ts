@@ -14,45 +14,116 @@ export async function searchDashboard(rawQuery: string): Promise<SearchResult> {
   if (q.length < 2) return { hits: [] };
   const profile = await getCurrentProfile().catch(() => null);
   if (!profile?.church_id) return { hits: [], error: 'unauthorized' };
+
   const role = profile.role as Role;
   const supabase = await createClient();
   const like = `%${q}%`;
   const cid = profile.church_id;
 
-  const run = async (group: string, table: string, cols: string, filterCols: string[], map: (r: any) => Omit<SearchHit, 'group'>) => {
-    const { data } = await supabase.from(table).select(cols).eq('church_id', cid)
+  // Semua filter .ilike hanya memakai kolom TEXT. Kolom enum/date/numeric
+  // tidak boleh dimasukkan ke .or(ilike), karena PostgREST akan menolak seluruh query.
+  const run = async (
+    group: string, table: string, cols: string, filterCols: string[],
+    map: (r: any) => Omit<SearchHit, 'group'>
+  ): Promise<SearchHit[]> => {
+    const { data, error } = await supabase.from(table).select(cols).eq('church_id', cid)
       .or(filterCols.map((c) => `${c}.ilike.${like}`).join(',')).limit(LIMIT);
+    if (error) throw new Error(`${table}: ${error.message}`);
     return ((data as any[]) || []).map((r) => ({ group, ...map(r) }));
   };
 
   const jobs: Promise<SearchHit[]>[] = [
-    run('members', 'members', 'id,nama,email,alamat,status', ['nama', 'email', 'alamat'], (r) => ({ id: `m${r.id}`, title: r.nama, subtitle: [r.email, r.status].filter(Boolean).join(' · '), href: `/dashboard/members?q=${encodeURIComponent(q)}` })),
-    run('families', 'families', 'id,nama,alamat', ['nama', 'alamat'], (r) => ({ id: `f${r.id}`, title: r.nama, subtitle: r.alamat, href: `/dashboard/families?q=${encodeURIComponent(q)}` })),
-    run('groups', 'groups', 'id,nama,deskripsi,jadwal', ['nama', 'deskripsi', 'jadwal'], (r) => ({ id: `g${r.id}`, title: r.nama, subtitle: snippet(r.deskripsi || r.jadwal || '', q), href: `/dashboard/groups?q=${encodeURIComponent(q)}` })),
-    run('events', 'events', 'id,nama,lokasi,tipe', ['nama', 'lokasi', 'tipe'], (r) => ({ id: `e${r.id}`, title: r.nama, subtitle: [r.tipe, r.lokasi].filter(Boolean).join(' · '), href: `/dashboard/events?q=${encodeURIComponent(q)}` })),
-    run('donations', 'donors', 'id,nama', ['nama'], (r) => ({ id: `d${r.id}`, title: r.nama, href: `/dashboard/donations?q=${encodeURIComponent(q)}` })),
-    run('finance', 'finance_transactions', 'id,keterangan,tipe,tanggal', ['keterangan', 'tipe', 'tanggal'], (r) => ({ id: `t${r.id}`, title: r.keterangan || r.tipe, subtitle: `${r.tipe} · ${r.tanggal}`, href: `/dashboard/finance?q=${encodeURIComponent(q)}` })),
-    run('volunteers', 'volunteers', 'id,external_nama,area', ['external_nama', 'area'], (r) => ({ id: `v${r.id}`, title: r.external_nama || r.area, subtitle: r.area, href: `/dashboard/volunteers?q=${encodeURIComponent(q)}` })),
-    run('communication', 'announcements', 'id,judul,konten', ['judul', 'konten'], (r) => ({ id: `a${r.id}`, title: r.judul, subtitle: snippet(r.konten || '', q), href: `/dashboard/communication?q=${encodeURIComponent(q)}` })),
+    run('members', 'members', 'id,nama,email,telepon,alamat,kota,status', ['nama','email','telepon','alamat','kota'], (r) => ({
+      id: `m${r.id}`, title: r.nama, subtitle: [r.telepon, r.email, r.status].filter(Boolean).join(' · '),
+      href: `/dashboard/members?q=${encodeURIComponent(q)}`,
+    })),
+    run('families', 'families', 'id,nama,alamat,kota', ['nama','alamat','kota'], (r) => ({
+      id: `f${r.id}`, title: r.nama, subtitle: [r.alamat,r.kota].filter(Boolean).join(' · '),
+      href: `/dashboard/families?q=${encodeURIComponent(q)}`,
+    })),
+    run('groups', 'groups', 'id,nama,deskripsi,jadwal', ['nama','deskripsi','jadwal'], (r) => ({
+      id: `g${r.id}`, title: r.nama, subtitle: snippet(r.deskripsi || r.jadwal || '', q),
+      href: `/dashboard/groups?q=${encodeURIComponent(q)}`,
+    })),
+    run('events', 'events', 'id,nama,tipe,custom_type,lokasi,deskripsi', ['nama','tipe','custom_type','lokasi','deskripsi'], (r) => ({
+      id: `e${r.id}`, title: r.nama, subtitle: [r.custom_type || r.tipe,r.lokasi].filter(Boolean).join(' · '),
+      href: `/dashboard/events?q=${encodeURIComponent(q)}`,
+    })),
+    run('donations', 'donations', 'id,tipe,custom_type,keterangan,tanggal,jumlah', ['tipe','custom_type','keterangan'], (r) => ({
+      id: `dn${r.id}`, title: r.keterangan || r.custom_type || r.tipe,
+      subtitle: [r.tipe,r.tanggal, r.jumlah != null ? `Rp ${Number(r.jumlah).toLocaleString('id-ID')}` : ''].filter(Boolean).join(' · '),
+      href: `/dashboard/donations?q=${encodeURIComponent(q)}`,
+    })),
+    run('donations', 'donors', 'id,nama,email,telepon', ['nama','email','telepon'], (r) => ({
+      id: `dr${r.id}`, title: r.nama, subtitle: [r.telepon,r.email].filter(Boolean).join(' · '),
+      href: `/dashboard/donations?q=${encodeURIComponent(q)}`,
+    })),
+    run('finance', 'finance_transactions', 'id,keterangan,tipe,tanggal,jumlah,status', ['keterangan'], (r) => ({
+      id: `t${r.id}`, title: r.keterangan || (r.tipe === 'pemasukan' ? 'Pemasukan' : 'Pengeluaran'),
+      subtitle: [r.tipe,r.tanggal,r.status, r.jumlah != null ? `Rp ${Number(r.jumlah).toLocaleString('id-ID')}` : ''].filter(Boolean).join(' · '),
+      href: `/dashboard/finance?q=${encodeURIComponent(q)}`,
+    })),
+    run('volunteers', 'volunteers', 'id,external_nama,external_email,external_telepon,area,status', ['external_nama','external_email','external_telepon','area','status'], (r) => ({
+      id: `v${r.id}`, title: r.external_nama || r.area,
+      subtitle: [r.area,r.external_telepon,r.status].filter(Boolean).join(' · '),
+      href: `/dashboard/volunteers?q=${encodeURIComponent(q)}`,
+    })),
+    run('communication', 'announcements', 'id,judul,konten,tanggal', ['judul','konten'], (r) => ({
+      id: `a${r.id}`, title: r.judul, subtitle: snippet(r.konten || '', q),
+      href: `/dashboard/communication?q=${encodeURIComponent(q)}`,
+    })),
+    run('communication', 'volunteer_assignments', 'id,tempat,tugas,catatan,status,tanggal', ['tempat','tugas','catatan','status'], (r) => ({
+      id: `va${r.id}`, title: r.tugas || r.tempat, subtitle: [r.tempat,r.tanggal,r.status].filter(Boolean).join(' · '),
+      href: `/dashboard/volunteers?q=${encodeURIComponent(q)}`,
+    })),
   ];
-  // Kontak chat: semua akun aktif yang memang ditampilkan di tab Messages.
+
+  // Cari pesan hanya pada percakapan milik user aktif, bukan pesan tenant lain.
   jobs.push((async () => {
-    const { data } = await supabase.from('profiles').select('id,nama,role')
-      .eq('church_id', cid).eq('status', 'aktif').ilike('nama', like).limit(LIMIT);
+    const { data, error } = await supabase.from('messages')
+      .select('id,content,created_at,sender_id,receiver_id')
+      .eq('church_id', cid)
+      .or(`sender_id.eq.${profile.id},receiver_id.eq.${profile.id}`)
+      .ilike('content', like).limit(LIMIT);
+    if (error) throw new Error(`messages: ${error.message}`);
     return ((data as any[]) || []).map((r) => ({
+      id: `msg${r.id}`, group: 'messages', title: snippet(r.content, q),
+      subtitle: new Date(r.created_at).toLocaleString('id-ID'),
+      href: `/dashboard/communication?q=${encodeURIComponent(q)}`,
+    }));
+  })());
+
+  jobs.push((async () => {
+    const { data, error } = await supabase.from('profiles').select('id,nama,role')
+      .eq('church_id', cid).eq('status', 'aktif').ilike('nama', like).limit(LIMIT);
+    if (error) throw new Error(`profiles: ${error.message}`);
+    return ((data as any[]) || []).filter((r) => r.id !== profile.id).map((r) => ({
       id: `c${r.id}`, group: 'contacts', title: r.nama, subtitle: r.role,
       href: `/dashboard/communication?q=${encodeURIComponent(q)}`,
     }));
   })());
+
+  if (canAdd(role)) {
+    jobs.push(run('communication', 'broadcasts', 'id,subject,message,status', ['subject','message','status'], (r) => ({
+      id: `b${r.id}`, title: r.subject, subtitle: snippet(r.message || '', q),
+      href: `/dashboard/communication?q=${encodeURIComponent(q)}`,
+    })));
+  }
   if (canUseWebManager(role)) {
-    jobs.push(run('web-manager', 'site_nav_items', 'id,label', ['label'], (r) => ({ id: `n${r.id}`, title: r.label, href: '/dashboard/web-manager' })));
+    jobs.push(run('web-manager', 'site_nav_items', 'id,label', ['label'], (r) => ({
+      id: `n${r.id}`, title: r.label, href: '/dashboard/web-manager',
+    })));
   }
   if (canManageUsers(role)) {
-    jobs.push(run('user-management', 'profiles', 'id,nama,username,email', ['nama', 'username', 'email'], (r) => ({ id: `u${r.id}`, title: r.nama, subtitle: r.username || r.email, href: '/dashboard/users' })));
+    jobs.push(run('user-management', 'profiles', 'id,nama,username,email', ['nama','username','email'], (r) => ({
+      id: `u${r.id}`, title: r.nama, subtitle: r.username || r.email, href: '/dashboard/users',
+    })));
   }
+
   const settled = await Promise.allSettled(jobs);
-  const hits = settled.flatMap((s) => (s.status === 'fulfilled' ? s.value : []));
-  return { hits };
+  const hits = settled.flatMap((s) => s.status === 'fulfilled' ? s.value : []);
+  const failed = settled.some((s) => s.status === 'rejected');
+  return { hits, ...(failed ? { error: hits.length ? 'partial' : 'search_failed' } : {}) };
 }
 
 /** Pencarian situs publik: hanya konten yang sudah dipublikasikan & aktif milik tenant slug tsb. */

@@ -25,8 +25,9 @@ export function EventsClient({ events, members, participants, role }: { events: 
   const [partMember, setPartMember] = React.useState('');
   const [partManual, setPartManual] = React.useState('');
 
+  const query = search.trim().toLocaleLowerCase('id-ID');
   const filtered = events.filter((e) =>
-    e.nama.toLowerCase().includes(search.toLowerCase()) && (!filterStatus || e.status === filterStatus)
+    [e.nama,e.tipe,e.custom_type,e.lokasi,e.deskripsi].some((v) => String(v || '').toLocaleLowerCase('id-ID').includes(query)) && (!filterStatus || e.status === filterStatus)
   );
   const partsOf = (eid: number) => participants.filter((p) => p.event_id === eid);
   const memberName = (id: number | null) => members.find((m) => m.id === id)?.nama || '-';

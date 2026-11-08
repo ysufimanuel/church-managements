@@ -116,6 +116,7 @@ mark.sx-hit { background: hsl(var(--primary) / .28); color: inherit; border-radi
   .dash-compact table.table-cards td { display: block; padding: 0; border: 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
   .dash-compact table.table-cards td::before { content: attr(data-label); display: block; font-size: 10px; text-transform: uppercase; letter-spacing: .05em; color: hsl(var(--muted-foreground)); }
   .dash-compact table.table-cards td:first-child { grid-column: 1 / -1; font-weight: 600; }
+  .dash-compact table.table-cards td.mobile-hide { display: none; }
   .dash-compact table.table-cards td:last-child { grid-column: 1 / -1; }
 }
 

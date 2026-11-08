@@ -11,7 +11,7 @@ import { Badge, Card, CardContent, CardHeader, CardTitle } from '@/components/ui
 import { Plus, Pencil, Trash2, Check, X, Download } from 'lucide-react';
 import { saveFinanceTransaction, approveTransaction, rejectTransaction, deleteTransaction, saveFinanceCategory, deleteFinanceCategory, updateSaldoAwal } from '@/lib/actions/finance';
 import { toast } from 'sonner';
-import { formatRupiah, formatDate } from '@/lib/utils';
+import { formatRupiahCompact, formatRupiah, formatDate } from '@/lib/utils';
 import { exportCSV, printPDF } from '@/lib/export';
 import { FinanceLineChart, CategoryPieChart } from './charts';
 import { canAdd, canEdit, canDelete, canApprove, type Role } from '@/lib/rbac';
@@ -85,13 +85,13 @@ export function FinanceClient({ transactions, categories, settings, history, don
       (!search || (x.keterangan || '').toLowerCase().includes(search.toLowerCase())));
     return (
       <div className="space-y-3">
-        <div className="flex flex-wrap gap-2">
-          <Input placeholder={t('search-members')} value={search} onChange={(e) => setSearch(e.target.value)} className="max-w-xs" />
-          <Select value={filterCat} onChange={(e) => setFilterCat(e.target.value)} className="w-auto">
+        <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
+          <Input placeholder={t('search-members')} value={search} onChange={(e) => setSearch(e.target.value)} className="col-span-2 sm:max-w-xs" />
+          <Select value={filterCat} onChange={(e) => setFilterCat(e.target.value)} className="w-full sm:w-auto">
             <option value="">{t('all-categories')}</option>
             {categories.filter((c) => c.tipe === tipe).map((c) => <option key={c.id} value={c.id}>{c.nama}</option>)}
           </Select>
-          <Input type="month" value={filterMonth} onChange={(e) => setFilterMonth(e.target.value)} className="w-auto" />
+          <Input type="month" value={filterMonth} onChange={(e) => setFilterMonth(e.target.value)} className="w-full sm:w-auto" />
           {role !== 'user' && (
             <Button variant="secondary" onClick={() => exportCSV(rows.map((x) => ({ Tanggal: x.tanggal, Kategori: catName(x.kategori_id), Keterangan: x.keterangan, Jumlah: x.jumlah, Status: x.status })), tipe)}>
               <Download className="h-4 w-4" /> {t('export')}
@@ -105,7 +105,7 @@ export function FinanceClient({ transactions, categories, settings, history, don
             {rows.map((x) => (
               <TR key={x.id}>
                 <TD>{formatDate(x.tanggal)}</TD><TD>{catName(x.kategori_id)}</TD><TD>{x.keterangan}</TD>
-                <TD>{donorName(x.donatur_id)}</TD>
+                <TD className="mobile-hide">{donorName(x.donatur_id)}</TD>
                 <TD className={x.tipe === 'pemasukan' ? 'text-emerald-400 font-semibold' : 'text-red-400 font-semibold'}>{formatRupiah(x.jumlah)}</TD>
                 <TD><Badge variant={x.status === 'approved' ? 'success' : x.status === 'rejected' ? 'destructive' : 'warning'}>{t(x.status)}</Badge></TD>
                 <TD>
@@ -130,10 +130,10 @@ export function FinanceClient({ transactions, categories, settings, history, don
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3 sm:space-y-4">
       <div>
-        <h1 className="text-2xl font-bold">{t('finance')}</h1>
-        <p className="text-muted-foreground">{t('manage-finance')}</p>
+        <h1 className="text-xl font-bold sm:text-2xl">{t('finance')}</h1>
+        <p className="hidden text-muted-foreground sm:block">{t('manage-finance')}</p>
       </div>
       <Tabs active={tab} onChange={setTab} tabs={[
         { id: 'dashboard', label: t('finance-dashboard') },
@@ -146,16 +146,16 @@ export function FinanceClient({ transactions, categories, settings, history, don
 
       {tab === 'dashboard' && (
         <div className="space-y-4">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            <Card><CardContent className="p-5"><p className="text-sm text-muted-foreground">{t('current-balance')}</p><p className="text-2xl font-bold text-primary">{formatRupiah(saldo)}</p>
+          <div className="grid grid-cols-3 gap-2 sm:grid-cols-2 sm:gap-4 xl:grid-cols-4">
+            <Card className="col-span-3 sm:col-span-1"><CardContent className="p-3 sm:p-5"><p className="text-xs text-muted-foreground sm:text-sm">{t('current-balance')}</p><p className="text-xl font-bold text-primary sm:text-2xl">{formatRupiah(saldo)}</p>
               {canApprove(role) && <Button variant="ghost" size="sm" className="mt-1" onClick={() => setSaldoModal(true)}>{t('saldo-awal')}: {formatRupiah(Number(settings?.saldo_awal || 0))}</Button>}
             </CardContent></Card>
-            <Card><CardContent className="p-5"><p className="text-sm text-muted-foreground">{t('total-income')}</p><p className="text-2xl font-bold text-emerald-400">{formatRupiah(totalIn)}</p></CardContent></Card>
-            <Card><CardContent className="p-5"><p className="text-sm text-muted-foreground">{t('total-expense')}</p><p className="text-2xl font-bold text-red-400">{formatRupiah(totalOut)}</p></CardContent></Card>
-            <Card><CardContent className="p-5"><p className="text-sm text-muted-foreground">{t('total-donors')}</p><p className="text-2xl font-bold">{donors.length}</p></CardContent></Card>
+            <Card><CardContent className="p-2.5 sm:p-5"><p className="truncate text-[11px] text-muted-foreground sm:text-sm">{t('total-income')}</p><p className="truncate text-sm font-bold text-emerald-400 sm:text-2xl"><span className="sm:hidden">{formatRupiahCompact(totalIn)}</span><span className="hidden sm:inline">{formatRupiah(totalIn)}</span></p></CardContent></Card>
+            <Card><CardContent className="p-2.5 sm:p-5"><p className="truncate text-[11px] text-muted-foreground sm:text-sm">{t('total-expense')}</p><p className="truncate text-sm font-bold text-red-400 sm:text-2xl"><span className="sm:hidden">{formatRupiahCompact(totalOut)}</span><span className="hidden sm:inline">{formatRupiah(totalOut)}</span></p></CardContent></Card>
+            <Card><CardContent className="p-2.5 sm:p-5"><p className="truncate text-[11px] text-muted-foreground sm:text-sm">{t('total-donors')}</p><p className="text-sm font-bold sm:text-2xl">{donors.length}</p></CardContent></Card>
           </div>
           <Card><CardHeader><CardTitle>{t('income-expense-chart')}</CardTitle></CardHeader><CardContent><FinanceLineChart data={chartData} /></CardContent></Card>
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <div className="snap-row grid grid-cols-1 gap-4 lg:grid-cols-2">
             <Card><CardHeader><CardTitle>{t('income-by-category')}</CardTitle></CardHeader><CardContent><CategoryPieChart data={catChart('pemasukan')} /></CardContent></Card>
             <Card><CardHeader><CardTitle>{t('expense-by-category')}</CardTitle></CardHeader><CardContent><CategoryPieChart data={catChart('pengeluaran')} /></CardContent></Card>
           </div>
@@ -194,18 +194,18 @@ export function FinanceClient({ transactions, categories, settings, history, don
               <Download className="h-4 w-4" /> {t('export-report')}
             </Button>
           )}
-          <Card><CardContent className="p-6 space-y-2">
-            <h3 className="text-lg font-bold">{t('laporan-keuangan')}</h3>
-            <p>{t('saldo-awal')}: <b>{formatRupiah(Number(settings?.saldo_awal || 0))}</b></p>
-            <p>{t('total-income')}: <b className="text-emerald-400">{formatRupiah(totalIn)}</b></p>
-            <p>{t('total-expense')}: <b className="text-red-400">{formatRupiah(totalOut)}</b></p>
-            <p className="text-xl">{t('current-balance')}: <b className="text-primary">{formatRupiah(saldo)}</b></p>
+          <Card><CardContent className="space-y-1.5 p-3 text-sm sm:space-y-2 sm:p-6 sm:text-base">
+            <h3 className="text-base font-bold sm:text-lg">{t('laporan-keuangan')}</h3>
+            <p className="flex justify-between gap-3 border-b border-white/10 pb-1.5"><span>{t('saldo-awal')}</span><b className="tabular-nums">{formatRupiah(Number(settings?.saldo_awal || 0))}</b></p>
+            <p className="flex justify-between gap-3 border-b border-white/10 pb-1.5"><span>{t('total-income')}</span><b className="tabular-nums text-emerald-400">{formatRupiah(totalIn)}</b></p>
+            <p className="flex justify-between gap-3 border-b border-white/10 pb-1.5"><span>{t('total-expense')}</span><b className="tabular-nums text-red-400">{formatRupiah(totalOut)}</b></p>
+            <p className="flex justify-between gap-3 text-base sm:text-xl"><span>{t('current-balance')}</span><b className="tabular-nums text-primary">{formatRupiah(saldo)}</b></p>
           </CardContent></Card>
         </div>
       )}
 
       {tab === 'approval' && (
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
           <div>
             <h3 className="mb-2 font-semibold">{t('pending-approval')}</h3>
             <Table>

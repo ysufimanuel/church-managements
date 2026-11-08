@@ -21,7 +21,8 @@ export function GroupsClient({ groups, members, groupMembers, role }: { groups: 
   const [showPhone, setShowPhone] = React.useState(true);
   const [selectedMember, setSelectedMember] = React.useState('');
 
-  const filtered = groups.filter((g) => g.nama.toLowerCase().includes(search.toLowerCase()));
+  const query = search.trim().toLocaleLowerCase('id-ID');
+  const filtered = groups.filter((g) => [g.nama,g.deskripsi,g.jadwal,memberName(g.leader_id)].some((v) => String(v || '').toLocaleLowerCase('id-ID').includes(query)));
   const membersOf = (gid: number) => groupMembers.filter((gm) => gm.group_id === gid).map((gm) => gm.member_id);
   const memberName = (id: number | null) => members.find((m) => m.id === id)?.nama || '-';
 

@@ -11,13 +11,13 @@ import { MobileNav } from './mobile-nav';
 import { Sidebar } from './sidebar';
 import { NAV } from './nav-items';
 import { GlobalSearch } from '@/components/search/global-search';
-import { InitialsAvatar } from '@/components/ui/initials-avatar';
+import { ProfilePhotoButton } from './profile-photo-button';
 
 
 export function DashboardShell({
   profile, notifications, children,
 }: {
-  profile: { id: string; nama: string; role: Role };
+  profile: { id: string; nama: string; role: Role; avatar_url?: string | null };
   notifications: Notif[];
   children: React.ReactNode;
 }) {
@@ -51,7 +51,7 @@ export function DashboardShell({
               <p className="text-sm font-medium">{profile.nama}</p>
               <p className="text-xs text-muted-foreground">{roleLabel(profile.role)}</p>
             </div>
-            <InitialsAvatar name={profile.nama} className="h-9 w-9 text-xs" />
+            <ProfilePhotoButton name={profile.nama} avatarUrl={profile.avatar_url} />
           </div>
         </header>
         <main className="dash-compact flex-1 p-3 sm:p-4 md:p-6">

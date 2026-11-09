@@ -183,6 +183,21 @@ export function MobileNav({
   const indRef = React.useRef<HTMLDivElement>(null);
   const tabEls = React.useRef<Partial<Record<TabId, HTMLElement | null>>>({});
   const placed = React.useRef(false);
+  const magnifyAt = React.useCallback((clientX: number) => {
+    if (prefersReduced()) return;
+    for (const el of Object.values(tabEls.current)) {
+      if (!el) continue;
+      const rect = el.getBoundingClientRect();
+      const distance = Math.abs(clientX - (rect.left + rect.width / 2));
+      const scale = distance >= 104 ? 1 : 1 + (1 - distance / 104) * 0.24;
+      gsap.to(el, { scale, y: scale > 1.08 ? -5 : 0, duration: 0.12, ease: 'power2.out', overwrite: 'auto' });
+    }
+  }, []);
+  const resetMagnifier = React.useCallback(() => {
+    for (const el of Object.values(tabEls.current)) {
+      if (el) gsap.to(el, { scale: 1, y: 0, duration: 0.18, ease: 'power2.out', overwrite: 'auto' });
+    }
+  }, []);
 
   const place = React.useCallback((animate: boolean) => {
     const ind = indRef.current;
@@ -269,7 +284,7 @@ export function MobileNav({
         aria-label="Navigasi utama"
         className="glass-strong fixed inset-x-3 bottom-[max(0.5rem,env(safe-area-inset-bottom))] z-50 rounded-3xl lg:hidden"
       >
-        <div ref={barRef} className="relative grid auto-cols-fr grid-flow-col px-1">
+        <div ref={barRef} className="relative grid auto-cols-fr grid-flow-col px-1 touch-pan-y" onPointerDown={(event) => { if (event.pointerType === 'touch' || event.pointerType === 'pen') magnifyAt(event.clientX); }} onPointerMove={(event) => { if (event.buttons > 0 || event.pointerType === 'touch' || event.pointerType === 'pen') magnifyAt(event.clientX); }} onPointerUp={resetMagnifier} onPointerCancel={resetMagnifier} onPointerLeave={resetMagnifier}>
           <div
             ref={indRef} aria-hidden
             className="pointer-events-none absolute bottom-1 top-1 left-0 rounded-2xl bg-primary/15 opacity-0"

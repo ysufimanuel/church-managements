@@ -11,7 +11,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   return (
     <LangProvider>
       <DashboardShell
-        profile={{ id: profile.id, nama: profile.nama, role: profile.role as Role }}
+        profile={{ id: profile.id, nama: profile.nama, role: profile.role as Role, avatar_url: profile.avatar_url }}
         notifications={[]}
       >
         {children}

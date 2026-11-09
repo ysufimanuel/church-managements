@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import gsap from 'gsap';
 import { Search, X, CornerDownLeft, LayoutGrid, FileText, Users, CalendarDays, Wallet, HeartHandshake, MessageSquare, Globe2, Settings, BarChart3, UserCog, HandCoins, ClipboardCheck, UsersRound } from 'lucide-react';
 import { useLang } from '@/components/lang-context';
+import { Skeleton } from '@/components/ui/skeleton';
 import { searchDashboard, searchPublicSite } from '@/lib/actions/search';
 import { highlightParts, score } from '@/lib/search/text';
 import type { SearchHit } from '@/lib/search/types';
@@ -233,7 +234,7 @@ export function GlobalSearch({ mode, features = [], slug, items = [], showTrigge
             <div ref={listRef} id="sx-list" role="listbox" className="min-h-0 flex-1 overflow-y-auto p-2">
               {query.length < 2 && flat.length === 0 && <p className="px-3 py-6 text-center text-sm text-white/60">{L.hint}</p>}
               {query.length >= 2 && !loading && flat.length === 0 && <p className="px-3 py-6 text-center text-sm text-white/60">{failed ? L.error : L.none}</p>}
-              {loading && flat.length === 0 && query.length >= 2 && <p className="px-3 py-6 text-center text-sm text-white/60">{L.searching}</p>}
+              {loading && flat.length === 0 && query.length >= 2 && <div className="space-y-2 p-3" role="status" aria-label={L.searching}>{Array.from({ length: 4 }).map((_, i) => <div key={i} className="flex items-center gap-3"><Skeleton className="h-8 w-8 rounded-lg" /><div className="flex-1 space-y-2"><Skeleton className="h-3 w-2/3" /><Skeleton className="h-2.5 w-1/3" /></div></div>)}</div>}
               {groups.map(([g, hs]) => (
                 <div key={g} className="mb-1">
                   <p className="sx-row px-3 pb-1 pt-2 text-[11px] font-semibold uppercase tracking-wider text-white/50">{groupTitle(g)}</p>

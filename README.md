@@ -140,3 +140,12 @@ Setiap action memanggil `requireRole(...)` di server — RBAC ditegakkan dua lap
 
 - Email broadcast membuat notifikasi in-app; untuk pengiriman email nyata, hubungkan `saveBroadcast` ke provider (Resend/SMTP) — titik integrasi sudah ditandai di kode.
 - Login memakai username → lookup email ke tabel `profiles`, lalu `signInWithPassword`.
+
+
+## UI and UX updates
+
+- Dashboard profile photo upload is stored in the private server-managed Supabase Storage workflow and displayed in the account avatar.
+- English is the default locale; Indonesian and English remain the only supported languages.
+- Login logo opens role-based demo account details and fills the selected credentials. Demo access descriptions explain each role's permissions.
+- Shared dashboard skeleton primitives keep loading placeholders close to the dashboard content layout; global search uses matching result placeholders.
+- Search results use feature-specific icons, and mobile navigation supports touch-drag magnification with reduced-motion and mobile rendering safeguards.

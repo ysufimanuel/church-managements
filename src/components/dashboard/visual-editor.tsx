@@ -35,7 +35,8 @@ export function VisualEditor({ sections, pages, theme, role, publicPath }: { sec
   const [busy, setBusy] = React.useState(false);
   const [addOpen, setAddOpen] = React.useState(false);
   const [confirm, setConfirm] = React.useState<ConfirmState>(null);
-  const [frameLoading, setFrameLoading] = React.useState(true);
+  const [previewEnabled, setPreviewEnabled] = React.useState(false);
+  const [frameLoading, setFrameLoading] = React.useState(false);
   const [frameKey, setFrameKey] = React.useState(0);
   const [dragId, setDragId] = React.useState<number | null>(null);
   const [overId, setOverId] = React.useState<number | null>(null);
@@ -89,9 +90,10 @@ export function VisualEditor({ sections, pages, theme, role, publicPath }: { sec
     iframeRef.current?.contentWindow?.postMessage({ type: 'wm:focus', id, scroll }, window.location.origin);
   }, []);
   const reloadPreview = React.useCallback(() => {
+    if (!previewEnabled) return;
     setFrameLoading(true);
     try { iframeRef.current?.contentWindow?.location.reload(); } catch { setFrameKey((k) => k + 1); }
-  }, []);
+  }, [previewEnabled]);
 
   /* ───────── autosave ───────── */
   const flush = React.useCallback(async () => {
@@ -217,7 +219,7 @@ export function VisualEditor({ sections, pages, theme, role, publicPath }: { sec
     setSelectedId(null);
     setSaveState('idle');
     setOverride(null);
-    setFrameLoading(true);
+    setFrameLoading(previewEnabled);
     setPage(slug);
   }
 
@@ -454,18 +456,23 @@ export function VisualEditor({ sections, pages, theme, role, publicPath }: { sec
             {frameLoading && previewSrc && <span className="flex items-center gap-1.5 text-xs text-muted-foreground"><span className="h-3 w-3 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" /> Memperbarui…</span>}
           </div>
           <div className="flex min-h-0 flex-1 justify-center overflow-auto p-2 sm:p-3">
-            {previewSrc ? (
+            {previewSrc && previewEnabled ? (
               <iframe
-                key={`${page}-${frameKey}`}
+                key={page + '-' + frameKey}
                 ref={iframeRef}
                 src={previewSrc}
                 loading="lazy"
                 referrerPolicy="strict-origin-when-cross-origin"
-                title={`Pratinjau halaman ${pageLabel(page)}`}
+                title={'Pratinjau halaman ' + pageLabel(page)}
                 onLoad={() => { setFrameLoading(false); postFocus(selectedIdRef.current, false); }}
                 className={cn('h-[70vh] rounded-lg border bg-white shadow-lg lg:h-full', deviceWidth ? 'shrink-0' : 'w-full')}
                 style={deviceWidth ? { width: deviceWidth, maxWidth: '100%' } : undefined}
               />
+            ) : previewSrc ? (
+              <div className="flex h-full min-h-[320px] w-full flex-col items-center justify-center gap-3 rounded-lg border border-dashed p-6 text-center">
+                <span className="text-sm text-muted-foreground">Preview website dimuat saat diminta agar resource situs publik tidak membebani editor.</span>
+                <Button type="button" onClick={() => { setFrameLoading(true); setPreviewEnabled(true); }}>Muat preview website</Button>
+              </div>
             ) : (
               <div className="flex h-full min-h-[320px] w-full items-center justify-center rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">Website publik belum tersedia untuk gereja ini.</div>
             )}

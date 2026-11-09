@@ -22,8 +22,9 @@ export default async function DashboardPage() {
   // awal bulan, 5 bulan lalu (total 6 bulan termasuk bulan ini) — untuk chart tren donasi
   const trendStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 5, 1)).toISOString().slice(0, 10);
 
-  const [members, attendanceWeek, donationsMonth, events, groups, volunteers, activities, upcoming, recentDonations, attendanceChartRows, donationsTrend] = await Promise.all([
+  const [members, attendanceWeek, donationsMonth, events, groups, volunteers, activities, upcoming, recentDonations, donationsTrend] = await Promise.all([
     supabase.from('members').select('id, jk, status', { count: 'exact' }),
+    // Satu query dipakai untuk statistik mingguan sekaligus chart kehadiran.
     supabase.from('attendance').select('id, tanggal').gte('tanggal', chartStartKey).lte('tanggal', todayKey),
     supabase.from('donations').select('jumlah').gte('tanggal', monthStart),
     supabase.from('events').select('id, status'),
@@ -32,13 +33,12 @@ export default async function DashboardPage() {
     supabase.from('activities').select('*').order('created_at', { ascending: false }).limit(8),
     supabase.from('events').select('*').in('status', ['upcoming', 'ongoing']).order('start_at').limit(5),
     supabase.from('donations').select('*, donors(nama)').order('tanggal', { ascending: false }).limit(5),
-    supabase.from('attendance').select('tanggal').gte('tanggal', chartStartKey).lte('tanggal', todayKey),
     supabase.from('donations').select('jumlah, tanggal').gte('tanggal', trendStart),
   ]);
 
   // Tujuh hari kalender terakhir, termasuk hari tanpa kehadiran (nilai 0).
   const byDay: Record<string, number> = {};
-  (attendanceChartRows.data || []).forEach((a) => {
+  (attendanceWeek.data || []).forEach((a) => {
     byDay[a.tanggal] = (byDay[a.tanggal] || 0) + 1;
   });
   const attendanceChart = Array.from({ length: 7 }, (_, index) => {

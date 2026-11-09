@@ -225,3 +225,13 @@ mark.sx-hit { background: hsl(var(--primary) / .28); color: inherit; border-radi
   .btn-fx, .btn-fx svg { scale: none !important; rotate: none !important; translate: none !important; }
   .btn-fx-default::after { display: none; }
 }
+
+
+/* Performance guardrails: keep compositing cheap on touch devices. */
+@media (hover: none) and (pointer: coarse) {
+  .glass, .glass-strong { -webkit-backdrop-filter: blur(8px) saturate(130%); backdrop-filter: blur(8px) saturate(130%); }
+  .btn-fx, .btn-fx svg { transition-duration: .14s; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+}

@@ -21,6 +21,22 @@ export function NotificationBell({ initial, userId }: { initial: Notif[]; userId
   const ref = React.useRef<HTMLDivElement>(null);
 
   React.useEffect(() => {
+    let active = true;
+    const supabase = createClient();
+    void supabase
+      .from('notifications')
+      .select('id, title, message, type, read, created_at')
+      .or(`user_id.is.null,user_id.eq.${userId}`)
+      .order('created_at', { ascending: false })
+      .limit(30)
+      .then(({ data, error }) => {
+        if (!active || error || !data) return;
+        setItems(data as Notif[]);
+      });
+    return () => { active = false; };
+  }, [userId]);
+
+  React.useEffect(() => {
     const supabase = createClient();
     const channel = supabase
       .channel('notif-realtime')

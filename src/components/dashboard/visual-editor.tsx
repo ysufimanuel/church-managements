@@ -459,6 +459,8 @@ export function VisualEditor({ sections, pages, theme, role, publicPath }: { sec
                 key={`${page}-${frameKey}`}
                 ref={iframeRef}
                 src={previewSrc}
+                loading="lazy"
+                referrerPolicy="strict-origin-when-cross-origin"
                 title={`Pratinjau halaman ${pageLabel(page)}`}
                 onLoad={() => { setFrameLoading(false); postFocus(selectedIdRef.current, false); }}
                 className={cn('h-[70vh] rounded-lg border bg-white shadow-lg lg:h-full', deviceWidth ? 'shrink-0' : 'w-full')}

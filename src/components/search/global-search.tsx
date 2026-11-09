@@ -3,7 +3,7 @@
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
 import gsap from 'gsap';
-import { Search, X, CornerDownLeft, LayoutGrid, FileText, Users, CalendarDays, Wallet, HeartHandshake, MessageSquare, Globe2, Settings, ChartNoAxesCombined, UserCog, HandCoins, ClipboardCheck, UsersRound } from 'lucide-react';
+import { Search, X, CornerDownLeft, LayoutGrid, FileText, Users, CalendarDays, Wallet, HeartHandshake, MessageSquare, Globe2, Settings, BarChart3, UserCog, HandCoins, ClipboardCheck, UsersRound } from 'lucide-react';
 import { useLang } from '@/components/lang-context';
 import { searchDashboard, searchPublicSite } from '@/lib/actions/search';
 import { highlightParts, score } from '@/lib/search/text';

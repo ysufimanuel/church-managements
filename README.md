@@ -149,3 +149,6 @@ Setiap action memanggil `requireRole(...)` di server — RBAC ditegakkan dua lap
 - Login logo opens role-based demo account details and fills the selected credentials. Demo access descriptions explain each role's permissions.
 - Shared dashboard skeleton primitives keep loading placeholders close to the dashboard content layout; global search uses matching result placeholders.
 - Search results use feature-specific icons, and mobile navigation supports touch-drag magnification with reduced-motion and mobile rendering safeguards.
+
+
+Build verification fix: reports search icon reference corrected.

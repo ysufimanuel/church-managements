@@ -1,5 +1,7 @@
 import { cn } from '@/lib/utils';
 
+// Keep list and dashboard avatars initials-only; personal profile photos are handled separately.
+
 export function InitialsAvatar({
   name,
   className,

@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { useUrlQuery } from '@/lib/search/use-url-query';
 import * as React from 'react';
 import { useLang } from '@/components/lang-context';
@@ -50,7 +51,7 @@ export function UsersClient({ users, selfId }: { users: any[]; selfId: string })
         {filtered.map((u) => (
           <Card key={u.id}>
             <CardContent className="flex items-center gap-4 p-5">
-              <img src={u.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(u.nama)}&background=1A1D24&color=00e5ff`} alt="" className="h-12 w-12 rounded-full" />
+              <Image src={u.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(u.nama)}&background=1A1D24&color=00e5ff`} alt="" width={48} height={48} sizes="48px" className="h-12 w-12 rounded-full object-cover" />
               <div className="min-w-0 flex-1">
                 <p className="truncate font-medium">{u.nama}</p>
                 <p className="truncate text-sm text-muted-foreground">@{u.username}</p>

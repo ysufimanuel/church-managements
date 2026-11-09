@@ -231,10 +231,7 @@ export function MobileNav({
         className="max-h-[85dvh] overflow-y-auto pb-[calc(4.75rem+env(safe-area-inset-bottom))]">
         <div className="space-y-4 p-4">
           <div data-sheet-item className="flex items-center gap-3">
-            <img
-              src={`https://ui-avatars.com/api/?name=${encodeURIComponent(profile.nama)}&background=00e5ff&color=0F1117`}
-              alt="" className="h-10 w-10 rounded-full"
-            />
+            <span aria-hidden="true" className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/15 text-xs font-bold text-primary">{profile.nama.trim().split(/\s+/).slice(0, 2).map((part) => part[0]).join('').toUpperCase()}</span>
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-semibold">{profile.nama}</p>
               <p className="text-xs text-muted-foreground">{roleText}</p>

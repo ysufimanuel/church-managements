@@ -199,7 +199,7 @@ export function WebManagerClient({ navItems, theme, sections, role, publicPath, 
         </div>
         <div className="space-y-2">
           <div className="flex items-center justify-between gap-2"><p className="text-sm font-medium">{defaultThemeEnabled ? 'Preview Draft Default Theme' : 'Preview Tema yang Dipublikasikan'}</p><a href={previewPath || '/default-web'} target="_blank" rel="noreferrer" className="text-xs font-medium text-primary underline underline-offset-4">Buka preview</a></div>
-          <iframe key={`default-draft-${previewKey}`} src={previewPath || '/default-web'} loading="lazy" referrerPolicy="strict-origin-when-cross-origin" title={defaultThemeEnabled ? "Preview Draft Default Theme" : "Preview Tema yang Dipublikasikan"} className="h-[620px] w-full rounded-lg border bg-[#0F1117]" loading="lazy" />
+          <iframe key={`default-draft-${previewKey}`} src={previewPath || '/default-web'} loading="lazy" referrerPolicy="strict-origin-when-cross-origin" title={defaultThemeEnabled ? "Preview Draft Default Theme" : "Preview Tema yang Dipublikasikan"} className="h-[620px] w-full rounded-lg border bg-[#0F1117]" />
         </div>
       </div>
     </CardContent></Card>}

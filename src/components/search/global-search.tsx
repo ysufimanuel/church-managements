@@ -43,7 +43,7 @@ const featureIcon = (href: string) => {
   if (href.includes('/finance')) return Wallet;
   if (href.includes('/volunteers')) return HeartHandshake;
   if (href.includes('/communication')) return MessageSquare;
-  if (href.includes('/reports')) return ChartNoAxesCombined;
+  if (href.includes('/reports')) return BarChart3;
   if (href.includes('/users')) return UserCog;
   if (href.includes('/web-manager')) return Globe2;
   if (href === '/dashboard') return LayoutGrid;

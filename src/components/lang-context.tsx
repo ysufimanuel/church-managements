@@ -5,13 +5,13 @@ import { createContext, useContext, useEffect, useState } from 'react';
 import { translations, type Lang } from '@/lib/i18n';
 
 const LangContext = createContext<{ lang: Lang; setLang: (l: Lang) => void; t: (k: string) => string }>({
-  lang: 'id', setLang: () => {}, t: (k) => k,
+  lang: 'en', setLang: () => {}, t: (k) => k,
 });
 
 export function LangProvider({ children }: { children: React.ReactNode }) {
-  const [lang, setLangState] = useState<Lang>('id');
+  const [lang, setLangState] = useState<Lang>('en');
   useEffect(() => {
-    const saved = (localStorage.getItem('cmsLanguage') as Lang) || 'id';
+    const saved = (localStorage.getItem('cmsLanguage') as Lang) || 'en';
     setLangState(saved);
   }, []);
   const setLang = (l: Lang) => {

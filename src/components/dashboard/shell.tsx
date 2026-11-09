@@ -11,6 +11,7 @@ import { MobileNav } from './mobile-nav';
 import { Sidebar } from './sidebar';
 import { NAV } from './nav-items';
 import { GlobalSearch } from '@/components/search/global-search';
+import { InitialsAvatar } from '@/components/ui/initials-avatar';
 
 
 export function DashboardShell({
@@ -50,7 +51,7 @@ export function DashboardShell({
               <p className="text-sm font-medium">{profile.nama}</p>
               <p className="text-xs text-muted-foreground">{roleLabel(profile.role)}</p>
             </div>
-            <span aria-label={`Avatar ${profile.nama}`} className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/15 text-xs font-bold text-primary">{profile.nama.trim().split(/\s+/).slice(0, 2).map((part) => part[0]).join('').toUpperCase()}</span>
+            <InitialsAvatar name={profile.nama} className="h-9 w-9 text-xs" />
           </div>
         </header>
         <main className="dash-compact flex-1 p-3 sm:p-4 md:p-6">

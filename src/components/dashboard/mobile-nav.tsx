@@ -9,6 +9,7 @@ import { Globe2, LayoutDashboard, LogOut, Search, Settings, Wallet, type LucideI
 import { useLang, LangSwitcher } from '@/components/lang-context';
 import { logoutAction } from '@/lib/actions/auth';
 import { cn } from '@/lib/utils';
+import { InitialsAvatar } from '@/components/ui/initials-avatar';
 
 if (typeof window !== 'undefined') {
   gsap.registerPlugin(CustomEase);
@@ -231,7 +232,7 @@ export function MobileNav({
         className="max-h-[85dvh] overflow-y-auto pb-[calc(4.75rem+env(safe-area-inset-bottom))]">
         <div className="space-y-4 p-4">
           <div data-sheet-item className="flex items-center gap-3">
-            <span aria-hidden="true" className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/15 text-xs font-bold text-primary">{profile.nama.trim().split(/\s+/).slice(0, 2).map((part) => part[0]).join('').toUpperCase()}</span>
+            <InitialsAvatar name={profile.nama} className="h-10 w-10 text-xs" />
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-semibold">{profile.nama}</p>
               <p className="text-xs text-muted-foreground">{roleText}</p>

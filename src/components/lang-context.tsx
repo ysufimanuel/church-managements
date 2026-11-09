@@ -11,9 +11,11 @@ const LangContext = createContext<{ lang: Lang; setLang: (l: Lang) => void; t: (
 export function LangProvider({ children }: { children: React.ReactNode }) {
   const [lang, setLangState] = useState<Lang>('en');
   useEffect(() => {
-    const saved = (localStorage.getItem('cmsLanguage') as Lang) || 'en';
+    const stored = localStorage.getItem('cmsLanguage');
+    const saved: Lang = stored === 'id' || stored === 'en' ? stored : 'en';
     setLangState(saved);
   }, []);
+  useEffect(() => { document.documentElement.lang = lang; }, [lang]);
   const setLang = (l: Lang) => {
     setLangState(l);
     localStorage.setItem('cmsLanguage', l);

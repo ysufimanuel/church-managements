@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import { useFormState, useFormStatus } from 'react-dom';
 import gsap from 'gsap';
-import { Church, Eye, EyeOff, Info, LogIn, UserPlus } from 'lucide-react';
+import { Church, Eye, EyeOff, LogIn, UserPlus, ShieldCheck, X } from 'lucide-react';
 import { loginAction } from '@/lib/actions/auth';
 import { LangProvider, LangSwitcher, useLang } from '@/components/lang-context';
 import { Button } from '@/components/ui/button';
@@ -39,6 +39,9 @@ function LoginForm() {
   const { t } = useLang();
   const [state, formAction] = useFormState(loginAction, null);
   const [showPass, setShowPass] = useState(false);
+  const [demoOpen, setDemoOpen] = useState(false);
+  const usernameRef = useRef<HTMLInputElement>(null);
+  const passwordRef = useRef<HTMLInputElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
   const logoRef = useRef<HTMLDivElement>(null);
   const headerRef = useRef<HTMLDivElement>(null);
@@ -90,20 +93,32 @@ function LoginForm() {
       <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-cyan-300/70 to-transparent" />
 
       <div className="mb-5 flex justify-center sm:mb-6">
-        <div
-          ref={logoRef}
-          className="flex h-14 w-14 items-center justify-center rounded-2xl border border-cyan-300/25 bg-cyan-400/10 text-cyan-300 shadow-[0_0_28px_rgba(34,211,238,0.14)] sm:h-16 sm:w-16"
-        >
+        <button type="button" onClick={() => setDemoOpen((open) => !open)} aria-label={t('demo-accounts')} aria-expanded={demoOpen}
+          ref={logoRef as React.RefObject<HTMLButtonElement>}
+          className="flex h-14 w-14 items-center justify-center rounded-2xl border border-cyan-300/25 bg-cyan-400/10 text-cyan-300 shadow-[0_0_28px_rgba(34,211,238,0.14)] transition-transform hover:scale-105 focus-visible:outline focus-visible:outline-2 focus-visible:outline-cyan-300 sm:h-16 sm:w-16">
           <Church className="h-7 w-7 sm:h-8 sm:w-8" strokeWidth={1.6} />
-        </div>
+        </button>
       </div>
 
       <div ref={headerRef} className="mb-7 space-y-1.5 text-center">
         <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-cyan-300/80">FLOCKLY</p>
         <h1 className="text-xl font-bold tracking-tight text-white sm:text-2xl">{t('app-title')}</h1>
         <p className="text-xs text-slate-400 sm:text-sm">{t('app-subtitle')}</p>
+        <p className="pt-1 text-[11px] font-medium tracking-wide text-cyan-300/80">{t('created-by')}</p>
       </div>
 
+      {demoOpen && <section className="mb-5 rounded-2xl border border-cyan-300/20 bg-cyan-300/[0.06] p-4 text-left" aria-label={t('demo-accounts')}>
+        <div className="mb-3 flex items-center justify-between gap-2"><div className="flex items-center gap-2 text-sm font-semibold text-cyan-100"><ShieldCheck className="h-4 w-4" />{t('demo-accounts')}</div><button type="button" onClick={() => setDemoOpen(false)} aria-label={t('close')} className="rounded-lg p-1 text-slate-400 hover:bg-white/10"><X className="h-4 w-4" /></button></div>
+        <p className="mb-3 text-[11px] leading-relaxed text-slate-300">{t('demo-intro')}</p>
+        {[
+          { role: 'User', email: 'usertest@gmail.com', password: 'user123', description: t('demo-user-desc') },
+          { role: 'Admin', email: 'admintest@gmail.com', password: 'admin123', description: t('demo-admin-desc') },
+          { role: 'Super Admin', email: 'ysufimanuel@gmail.com', password: 'super123', description: t('demo-super-desc') },
+        ].map((demo) => <button key={demo.email} type="button" onClick={() => { if (usernameRef.current) usernameRef.current.value = demo.email; if (passwordRef.current) passwordRef.current.value = demo.password; setDemoOpen(false); }} className="mb-2 block w-full rounded-xl border border-white/10 bg-black/20 p-3 text-left transition-colors hover:border-cyan-300/40 hover:bg-white/[0.06]">
+          <span className="mb-1 block text-xs font-bold text-cyan-200">{demo.role}</span><span className="block break-all text-xs text-white">{demo.email}</span><span className="mt-0.5 block text-xs text-slate-400">{t('password')}: {demo.password}</span><span className="mt-2 block text-[11px] leading-relaxed text-slate-400">{demo.description}</span>
+        </button>)}
+        <p className="mt-2 text-[10px] leading-relaxed text-slate-500">{t('demo-select-hint')}</p>
+      </section>}
       <form ref={formRef} action={formAction} className="space-y-4">
         <div className="space-y-2">
           <Label htmlFor="username" className="ml-1 text-xs font-medium text-slate-300">
@@ -112,7 +127,8 @@ function LoginForm() {
           <Input
             id="username"
             name="username"
-            placeholder="Masukkan username atau email"
+            ref={usernameRef}
+            placeholder={t('login-username-placeholder')}
             required
             autoComplete="username"
             className="h-12 rounded-xl border-white/10 bg-slate-950/35 px-4 text-sm text-white placeholder:text-slate-500 focus-visible:border-cyan-300/60 focus-visible:ring-cyan-300/20"
@@ -128,7 +144,8 @@ function LoginForm() {
               id="password"
               name="password"
               type={showPass ? 'text' : 'password'}
-              placeholder="Masukkan password"
+              ref={passwordRef}
+              placeholder={t('login-password-placeholder')}
               required
               autoComplete="current-password"
               className="h-12 rounded-xl border-white/10 bg-slate-950/35 px-4 pr-12 text-sm text-white placeholder:text-slate-500 focus-visible:border-cyan-300/60 focus-visible:ring-cyan-300/20"
@@ -172,15 +189,7 @@ function LoginForm() {
           </Link>
         </div>
 
-        <div className="border-t border-white/[0.08] pt-4">
-          <p className="mb-3 flex items-center justify-center gap-1.5 text-[10px] text-slate-500">
-            <Info className="h-3 w-3" />
-            {t('default-login')}
-          </p>
-          <div className="flex justify-center">
-            <LangSwitcher />
-          </div>
-        </div>
+        <div className="border-t border-white/[0.08] pt-4"><div className="flex justify-center"><LangSwitcher /></div></div>
       </div>
     </div>
   );

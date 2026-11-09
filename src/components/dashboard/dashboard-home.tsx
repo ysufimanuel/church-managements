@@ -56,7 +56,7 @@ const viewAllClass =
   'btn-fx btn-fx-row inline-flex min-h-[44px] items-center rounded-md px-1 text-sm text-primary [@media(hover:hover)]:hover:underline';
 
 // Awalnya tersembunyi lewat CSS; GSAP yang memunculkan. motion-reduce: langsung tampil.
-const animClass = 'opacity-0 motion-reduce:opacity-100';
+const animClass = 'motion-reduce:opacity-100';
 
 const cardPad = 'p-4 sm:p-6';
 const contentPad = 'p-4 pt-0 sm:p-6 sm:pt-0';

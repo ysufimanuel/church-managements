@@ -2,7 +2,7 @@
 export type Lang = 'id' | 'en';
 
 const id: Record<string, string> = {
-  'app-title': 'Church Management System', 'app-subtitle': 'Sistem Manajemen Gereja Digital',
+  'app-title': 'Church Management System', 'app-subtitle': 'Sistem Manajemen Gereja Digital', 'created-by': 'Created by, Growth Axys', 'login-username-placeholder': 'Masukkan username atau email', 'login-password-placeholder': 'Masukkan password', 'demo-accounts': 'Akun Demo', 'demo-intro': 'Pilih peran untuk mengisi kredensial akun demo. Akses dibatasi sesuai tingkat kewenangan masing-masing.', 'demo-user-desc': 'Hanya dapat melihat data dan mengekspor data. Tidak dapat mengubah data, menggunakan Web Manager, atau mengelola pengguna.', 'demo-admin-desc': 'Dapat melihat, menambah, dan memperbarui data serta menggunakan Web Manager. Tidak dapat mengakses User Management, menghapus data, atau menyetujui transaksi sendiri.', 'demo-super-desc': 'Memiliki akses penuh, termasuk pengelolaan pengguna, Web Manager, penghapusan data, dan persetujuan transaksi.', 'demo-select-hint': 'Memilih akun akan mengisi email dan password pada formulir login.',
   username: 'Username', password: 'Password', 'remember-me': 'Ingat saya',
   'forgot-password': 'Lupa password?', login: 'Login', 'default-login': 'Default: admin / admin123',
   'lang-id': 'Bahasa Indonesia', 'lang-en': 'English', 'cms-title': 'CMS Gereja',
@@ -114,7 +114,7 @@ const id: Record<string, string> = {
 };
 
 const en: Record<string, string> = {
-  'app-title': 'Church Management System', 'app-subtitle': 'Digital Church Management System',
+  'app-title': 'Church Management System', 'app-subtitle': 'Digital Church Management System', 'created-by': 'Created by, Growth Axys', 'login-username-placeholder': 'Enter username or email', 'login-password-placeholder': 'Enter password', 'demo-accounts': 'Demo Accounts', 'demo-intro': 'Choose a role to fill in the demo account credentials. Access is restricted according to each role’s permissions.', 'demo-user-desc': 'Can only view and export data. Cannot update data, use Web Manager, or manage users.', 'demo-admin-desc': 'Can view, add, and update data and use Web Manager. Cannot access User Management, delete data, or approve their own transactions.', 'demo-super-desc': 'Has full access, including user management, Web Manager, data deletion, and transaction approvals.', 'demo-select-hint': 'Selecting an account fills in the email and password fields.',
   username: 'Username', password: 'Password', 'remember-me': 'Remember me',
   'forgot-password': 'Forgot password?', login: 'Login', 'default-login': 'Default: admin / admin123',
   'lang-id': 'Bahasa Indonesia', 'lang-en': 'English', 'cms-title': 'Church CMS',

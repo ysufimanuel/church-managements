@@ -1,6 +1,5 @@
 'use client';
 
-import Image from 'next/image';
 import { useUrlQuery } from '@/lib/search/use-url-query';
 import * as React from 'react';
 import { useLang } from '@/components/lang-context';
@@ -12,6 +11,7 @@ import { Plus, Pencil, Trash2, Search } from 'lucide-react';
 import { saveUser, deleteUser } from '@/lib/actions/users';
 import { toast } from 'sonner';
 import { roleLabel } from '@/lib/rbac';
+import { InitialsAvatar } from '@/components/ui/initials-avatar';
 
 export function UsersClient({ users, selfId }: { users: any[]; selfId: string }) {
   const { t } = useLang();
@@ -51,7 +51,7 @@ export function UsersClient({ users, selfId }: { users: any[]; selfId: string })
         {filtered.map((u) => (
           <Card key={u.id}>
             <CardContent className="flex items-center gap-4 p-5">
-              <Image src={u.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(u.nama)}&background=1A1D24&color=00e5ff`} alt="" width={48} height={48} sizes="48px" className="h-12 w-12 rounded-full object-cover" />
+              <InitialsAvatar name={u.nama} className="h-12 w-12 text-sm" />
               <div className="min-w-0 flex-1">
                 <p className="truncate font-medium">{u.nama}</p>
                 <p className="truncate text-sm text-muted-foreground">@{u.username}</p>

@@ -99,7 +99,7 @@ function LoginForm() {
       </div>
 
       <div ref={headerRef} className="mb-7 space-y-1.5 text-center">
-        <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-cyan-300/80">Welcome back</p>
+        <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-cyan-300/80">FLOCKLY</p>
         <h1 className="text-xl font-bold tracking-tight text-white sm:text-2xl">{t('app-title')}</h1>
         <p className="text-xs text-slate-400 sm:text-sm">{t('app-subtitle')}</p>
       </div>

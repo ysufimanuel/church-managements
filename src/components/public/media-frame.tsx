@@ -42,7 +42,7 @@ export function MediaFrame({ item, className }: { item: MediaItem; className?: s
       inner = <video src={normalized} title={item.title || 'video'} className="h-full w-full object-cover" controls playsInline preload="none" autoPlay={Boolean(item.autoplay)} muted={item.muted !== false} />;
     } else {
       if (embedActive) {
-        inner = <iframe src={withVideoParams(normalized, false, item.muted)} title={item.title || 'video'} allow="autoplay; fullscreen; picture-in-picture" allowFullScreen className="h-full w-full" loading="lazy" referrerPolicy="strict-origin-when-cross-origin" />;
+        inner = <iframe src={withVideoParams(normalized, true, item.muted)} title={item.title || 'video'} allow="autoplay; fullscreen; picture-in-picture" allowFullScreen className="h-full w-full" loading="lazy" referrerPolicy="strict-origin-when-cross-origin" />;
       } else {
         const youtubeId = normalized.match(/(?:youtube(?:-nocookie)?\.com\/(?:embed\/|watch\?v=)|youtu\.be\/)([\w-]{6,})/)?.[1];
         inner = <button type="button" onClick={() => setEmbedActive(true)} aria-label={`Muat video ${item.title || 'YouTube'}`} className="absolute inset-0 flex h-full w-full items-center justify-center overflow-hidden bg-black text-white">

@@ -21,6 +21,9 @@ export function DashboardShell({
   children: React.ReactNode;
 }) {
   const { t } = useLang();
+  const onDashboardRender = React.useCallback((id: string, phase: string, actualDuration: number, baseDuration: number) => {
+    if (process.env.NODE_ENV === 'development') console.debug('[React Profiler]', { id, phase, actualDuration, baseDuration });
+  }, []);
 
   const items = [...NAV];
   if (canUseWebManager(profile.role)) items.push({ href: '/dashboard/web-manager', key: 'web-manager', icon: Globe2 });
@@ -47,14 +50,11 @@ export function DashboardShell({
               <p className="text-sm font-medium">{profile.nama}</p>
               <p className="text-xs text-muted-foreground">{roleLabel(profile.role)}</p>
             </div>
-            <img
-              src={`https://ui-avatars.com/api/?name=${encodeURIComponent(profile.nama)}&background=00e5ff&color=0F1117`}
-              alt="Avatar" className="h-9 w-9 rounded-full"
-            />
+            <span aria-label={`Avatar ${profile.nama}`} className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/15 text-xs font-bold text-primary">{profile.nama.trim().split(/\s+/).slice(0, 2).map((part) => part[0]).join('').toUpperCase()}</span>
           </div>
         </header>
         <main className="dash-compact flex-1 p-3 sm:p-4 md:p-6">
-          {children}
+          <React.Profiler id="dashboard-content" onRender={onDashboardRender}>{children}</React.Profiler>
           {/* ruang untuk bottom tab bar (mobile) */}
           <div className="h-[calc(4.5rem+env(safe-area-inset-bottom))] lg:hidden" aria-hidden />
         </main>

@@ -3,7 +3,7 @@
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
 import gsap from 'gsap';
-import { Search, X, CornerDownLeft, LayoutGrid, FileText } from 'lucide-react';
+import { Search, X, CornerDownLeft, LayoutGrid, FileText, Users, CalendarDays, Wallet, HeartHandshake, MessageSquare, Globe2, Settings, ChartNoAxesCombined, UserCog, HandCoins, ClipboardCheck, UsersRound } from 'lucide-react';
 import { useLang } from '@/components/lang-context';
 import { searchDashboard, searchPublicSite } from '@/lib/actions/search';
 import { highlightParts, score } from '@/lib/search/text';
@@ -30,6 +30,23 @@ const TEXT = {
     g: { page: 'Halaman', menu: 'Menu', members: 'Jemaat', families: 'Keluarga', groups: 'Kelompok', events: 'Acara', donations: 'Donasi', finance: 'Keuangan', volunteers: 'Relawan', communication: 'Komunikasi', messages: 'Pesan chat', 'web-manager': 'Web Manager', 'user-management': 'Pengguna', contacts: 'Kontak chat' } as Record<string, string> },
   en: { ph: 'Search everything on this site...', phDash: 'Search members, events, donations, features...', none: 'No results', hint: 'Type at least 2 characters', open: 'Search', close: 'Close', features: 'Features', error: 'Search failed, try again', searching: 'Searching…',
     g: { page: 'Pages', menu: 'Menu', members: 'Members', families: 'Families', groups: 'Groups', events: 'Events', donations: 'Donations', finance: 'Finance', volunteers: 'Volunteers', communication: 'Communication', messages: 'Chat messages', 'web-manager': 'Web Manager', 'user-management': 'Users', contacts: 'Chat contacts' } as Record<string, string> },
+};
+
+const featureIcon = (href: string) => {
+  if (href.includes('/members')) return Users;
+  if (href.includes('/families')) return UsersRound;
+  if (href.includes('/groups')) return HeartHandshake;
+  if (href.includes('/events')) return CalendarDays;
+  if (href.includes('/attendance')) return ClipboardCheck;
+  if (href.includes('/donations')) return HandCoins;
+  if (href.includes('/finance')) return Wallet;
+  if (href.includes('/volunteers')) return HeartHandshake;
+  if (href.includes('/communication')) return MessageSquare;
+  if (href.includes('/reports')) return ChartNoAxesCombined;
+  if (href.includes('/users')) return UserCog;
+  if (href.includes('/web-manager')) return Globe2;
+  if (href === '/dashboard') return LayoutGrid;
+  return Settings;
 };
 
 const reduced = () => typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -229,7 +246,7 @@ export function GlobalSearch({ mode, features = [], slug, items = [], showTrigge
                         className={cn('sx-row flex min-h-[48px] w-full items-center gap-3 rounded-xl px-3 py-2 text-left transition-colors cursor-pointer',
                           i === active ? 'bg-white/15' : 'hover:bg-white/10')}>
                         <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-primary/15 text-primary">
-                          {g === 'page' || g === 'menu' ? <FileText className="h-4 w-4" /> : <LayoutGrid className="h-4 w-4" />}
+                          {g === 'features' ? React.createElement(featureIcon(h.href), { className: 'h-4 w-4' }) : g === 'page' || g === 'menu' ? <FileText className="h-4 w-4" /> : <LayoutGrid className="h-4 w-4" />}
                         </span>
                         <span className="min-w-0 flex-1">
                           <span className="block truncate text-sm font-medium"><Hl text={h.title} q={query} /></span>

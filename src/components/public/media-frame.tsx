@@ -44,7 +44,7 @@ export function MediaFrame({ item, className }: { item: MediaItem; className?: s
       if (embedActive) {
         inner = <iframe src={withVideoParams(normalized, false, item.muted)} title={item.title || 'video'} allow="autoplay; fullscreen; picture-in-picture" allowFullScreen className="h-full w-full" loading="lazy" referrerPolicy="strict-origin-when-cross-origin" />;
       } else {
-        const youtubeId = normalized.match(/(?:youtube(?:-nocookie)?\\.com\\/(?:embed\\/|watch\\?v=)|youtu\\.be\\/)([\\w-]{6,})/)?.[1];
+        const youtubeId = normalized.match(/(?:youtube(?:-nocookie)?\.com\/(?:embed\/|watch\?v=)|youtu\.be\/)([\w-]{6,})/)?.[1];
         inner = <button type="button" onClick={() => setEmbedActive(true)} aria-label={`Muat video ${item.title || 'YouTube'}`} className="absolute inset-0 flex h-full w-full items-center justify-center overflow-hidden bg-black text-white">
           {youtubeId && <img src={`https://i.ytimg.com/vi/${youtubeId}/hqdefault.jpg`} alt="" loading="lazy" decoding="async" className="absolute inset-0 h-full w-full object-cover opacity-80" />}
           <span className="relative rounded-full bg-red-600 px-5 py-3 text-sm font-semibold shadow-lg">▶ Putar video</span>

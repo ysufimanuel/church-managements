@@ -2,7 +2,7 @@
 
 import { useUrlQuery } from '@/lib/search/use-url-query';
 import * as React from 'react';
-import { useLang } from '@/components/lang-context';
+import { useLang, tm } from '@/components/lang-context';
 import { Button } from '@/components/ui/button';
 import { Input, Label, Select, Textarea } from '@/components/ui/input';
 import { Table, THead, TBody, TR, TH, TD } from '@/components/ui/table';
@@ -65,7 +65,7 @@ export function FinanceClient({ transactions, categories, settings, history, don
     if (res.ok) {
       toast.success(modal?.editing ? t('save') : canApprove(role) ? t('approved') : t('pending-approval'));
       setModal(null);
-    } else toast.error(res.error);
+    } else toast.error(tm(res.error));
   }
 
   async function handleSaveCat(e: React.FormEvent<HTMLFormElement>) {
@@ -75,7 +75,7 @@ export function FinanceClient({ transactions, categories, settings, history, don
       id: catModal?.id, nama: String(fd.get('nama')),
       tipe: String(fd.get('tipe')) as any, deskripsi: String(fd.get('deskripsi') || ''),
     });
-    if (res.ok) { toast.success(t('save')); setCatModal(null); } else toast.error(res.error);
+    if (res.ok) { toast.success(t('save')); setCatModal(null); } else toast.error(tm(res.error));
   }
 
   function trxTable(tipe: 'pemasukan' | 'pengeluaran') {
@@ -92,8 +92,8 @@ export function FinanceClient({ transactions, categories, settings, history, don
             {categories.filter((c) => c.tipe === tipe).map((c) => <option key={c.id} value={c.id}>{c.nama}</option>)}
           </Select>
           <Input type="month" value={filterMonth} onChange={(e) => setFilterMonth(e.target.value)} className="w-full sm:w-auto" />
-          {role !== 'user' && (
-            <Button variant="secondary" onClick={() => exportCSV(rows.map((x) => ({ Tanggal: x.tanggal, Kategori: catName(x.kategori_id), Keterangan: x.keterangan, Jumlah: x.jumlah, Status: x.status })), tipe)}>
+          {(
+            <Button variant="secondary" onClick={() => exportCSV(rows.map((x) => ({ [t('date')]: x.tanggal, [t('category')]: catName(x.kategori_id), [t('description')]: x.keterangan, [t('amount')]: x.jumlah, [t('status')]: x.status })), tipe)}>
               <Download className="h-4 w-4" /> {t('export')}
             </Button>
           )}
@@ -112,12 +112,12 @@ export function FinanceClient({ transactions, categories, settings, history, don
                   <div className="flex gap-1">
                     {canApprove(role) && x.status === 'pending' && (
                       <>
-                        <Button variant="ghost" size="icon" aria-label={t('approve')} onClick={async () => { const r = await approveTransaction(x.id); r.ok ? toast.success(t('approved')) : toast.error(r.error); }}><Check className="h-4 w-4 text-emerald-400" /></Button>
-                        <Button variant="ghost" size="icon" aria-label={t('reject')} onClick={async () => { const r = await rejectTransaction(x.id); r.ok ? toast.success(t('rejected')) : toast.error(r.error); }}><X className="h-4 w-4 text-destructive" /></Button>
+                        <Button variant="ghost" size="icon" aria-label={t('approve')} onClick={async () => { const r = await approveTransaction(x.id); r.ok ? toast.success(t('approved')) : toast.error(tm(r.error)); }}><Check className="h-4 w-4 text-emerald-400" /></Button>
+                        <Button variant="ghost" size="icon" aria-label={t('reject')} onClick={async () => { const r = await rejectTransaction(x.id); r.ok ? toast.success(t('rejected')) : toast.error(tm(r.error)); }}><X className="h-4 w-4 text-destructive" /></Button>
                       </>
                     )}
-                    {canEdit(role) && x.status === 'pending' && <Button variant="ghost" size="icon" aria-label="Edit" onClick={() => setModal({ tipe, editing: x })}><Pencil className="h-4 w-4" /></Button>}
-                    {canDelete(role) && <Button variant="ghost" size="icon" aria-label="Hapus" onClick={async () => { if (confirm(t('confirmation'))) { const r = await deleteTransaction(x.id); r.ok ? toast.success(t('save')) : toast.error(r.error); } }}><Trash2 className="h-4 w-4 text-destructive" /></Button>}
+                    {canEdit(role) && x.status === 'pending' && <Button variant="ghost" size="icon" aria-label={t('act-edit')} onClick={() => setModal({ tipe, editing: x })}><Pencil className="h-4 w-4" /></Button>}
+                    {canDelete(role) && <Button variant="ghost" size="icon" aria-label={t('act-delete')} onClick={async () => { if (confirm(t('confirmation'))) { const r = await deleteTransaction(x.id); r.ok ? toast.success(t('save')) : toast.error(tm(r.error)); } }}><Trash2 className="h-4 w-4 text-destructive" /></Button>}
                   </div>
                 </TD>
               </TR>
@@ -177,8 +177,8 @@ export function FinanceClient({ transactions, categories, settings, history, don
                   <TD><Badge variant={c.tipe === 'pemasukan' ? 'success' : 'destructive'}>{t(c.tipe === 'pemasukan' ? 'income' : 'expense')}</Badge></TD>
                   <TD>{c.deskripsi}</TD>
                   <TD><div className="flex gap-1">
-                    {canEdit(role) && <Button variant="ghost" size="icon" onClick={() => setCatModal(c)} aria-label="Edit"><Pencil className="h-4 w-4" /></Button>}
-                    {canDelete(role) && <Button variant="ghost" size="icon" aria-label="Hapus" onClick={async () => { if (confirm(t('confirmation'))) { const r = await deleteFinanceCategory(c.id); r.ok ? toast.success(t('save')) : toast.error(r.error); } }}><Trash2 className="h-4 w-4 text-destructive" /></Button>}
+                    {canEdit(role) && <Button variant="ghost" size="icon" onClick={() => setCatModal(c)} aria-label={t('act-edit')}><Pencil className="h-4 w-4" /></Button>}
+                    {canDelete(role) && <Button variant="ghost" size="icon" aria-label={t('act-delete')} onClick={async () => { if (confirm(t('confirmation'))) { const r = await deleteFinanceCategory(c.id); r.ok ? toast.success(t('save')) : toast.error(tm(r.error)); } }}><Trash2 className="h-4 w-4 text-destructive" /></Button>}
                   </div></TD>
                 </TR>
               ))}
@@ -189,8 +189,8 @@ export function FinanceClient({ transactions, categories, settings, history, don
 
       {tab === 'laporan' && (
         <div className="space-y-3">
-          {role !== 'user' && (
-            <Button variant="secondary" onClick={() => printPDF(t('laporan-keuangan'), transactions.map((x) => ({ Tanggal: x.tanggal, Tipe: x.tipe, Kategori: catName(x.kategori_id), Keterangan: x.keterangan, Jumlah: x.jumlah, Status: x.status })))}>
+          {(
+            <Button variant="secondary" onClick={() => printPDF(t('laporan-keuangan'), transactions.map((x) => ({ [t('date')]: x.tanggal, [t('type')]: x.tipe, [t('category')]: catName(x.kategori_id), [t('description')]: x.keterangan, [t('amount')]: x.jumlah, [t('status')]: x.status })))}>
               <Download className="h-4 w-4" /> {t('export-report')}
             </Button>
           )}
@@ -217,8 +217,8 @@ export function FinanceClient({ transactions, categories, settings, history, don
                     <TD>{formatRupiah(x.jumlah)}</TD>
                     <TD>{canApprove(role) ? (
                       <div className="flex gap-1">
-                        <Button size="sm" onClick={async () => { const r = await approveTransaction(x.id); r.ok ? toast.success(t('approved')) : toast.error(r.error); }}><Check className="h-3 w-3" /> {t('approve')}</Button>
-                        <Button size="sm" variant="destructive" onClick={async () => { const r = await rejectTransaction(x.id); r.ok ? toast.success(t('rejected')) : toast.error(r.error); }}><X className="h-3 w-3" /> {t('reject')}</Button>
+                        <Button size="sm" onClick={async () => { const r = await approveTransaction(x.id); r.ok ? toast.success(t('approved')) : toast.error(tm(r.error)); }}><Check className="h-3 w-3" /> {t('approve')}</Button>
+                        <Button size="sm" variant="destructive" onClick={async () => { const r = await rejectTransaction(x.id); r.ok ? toast.success(t('rejected')) : toast.error(tm(r.error)); }}><X className="h-3 w-3" /> {t('reject')}</Button>
                       </div>
                     ) : <Badge variant="warning">{t('pending')}</Badge>}</TD>
                   </TR>
@@ -291,7 +291,7 @@ export function FinanceClient({ transactions, categories, settings, history, don
           e.preventDefault();
           const v = Number(new FormData(e.currentTarget).get('saldo'));
           const r = await updateSaldoAwal(v);
-          r.ok ? (toast.success(t('save')), setSaldoModal(false)) : toast.error(r.error);
+          r.ok ? (toast.success(t('save')), setSaldoModal(false)) : toast.error(tm(r.error));
         }}>
           <Input name="saldo" type="number" defaultValue={Number(settings?.saldo_awal || 0)} required />
           <div className="flex justify-end gap-2">

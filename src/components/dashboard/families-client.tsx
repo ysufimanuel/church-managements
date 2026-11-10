@@ -2,7 +2,7 @@
 
 import { useUrlQuery } from '@/lib/search/use-url-query';
 import * as React from 'react';
-import { useLang } from '@/components/lang-context';
+import { useLang, tm } from '@/components/lang-context';
 import { Button } from '@/components/ui/button';
 import { Input, Label, Select } from '@/components/ui/input';
 import { Modal } from '@/components/ui/modal';
@@ -34,7 +34,7 @@ export function FamiliesClient({ families, members, familyMembers, role }: { fam
       alamat: String(fd.get('alamat') || ''), kota: String(fd.get('kota') || ''),
       anggota,
     });
-    if (res.ok) { toast.success(t('save')); setModal(false); } else toast.error(res.error);
+    if (res.ok) { toast.success(t('save')); setModal(false); } else toast.error(tm(res.error));
   }
 
   return (
@@ -57,8 +57,8 @@ export function FamiliesClient({ families, members, familyMembers, role }: { fam
             <CardHeader className="flex-row items-start justify-between">
               <CardTitle className="text-base">{f.nama}</CardTitle>
               <div className="flex gap-1">
-                {canEdit(role) && <Button variant="ghost" size="icon" onClick={() => { setEditing(f); setModal(true); }} aria-label="Edit"><Pencil className="h-4 w-4" /></Button>}
-                {canDelete(role) && <Button variant="ghost" size="icon" aria-label="Hapus" onClick={async () => { if (confirm(t('confirmation'))) { const r = await deleteFamily(f.id); r.ok ? toast.success(t('save')) : toast.error(r.error); } }}><Trash2 className="h-4 w-4 text-destructive" /></Button>}
+                {canEdit(role) && <Button variant="ghost" size="icon" onClick={() => { setEditing(f); setModal(true); }} aria-label={t('act-edit')}><Pencil className="h-4 w-4" /></Button>}
+                {canDelete(role) && <Button variant="ghost" size="icon" aria-label={t('act-delete')} onClick={async () => { if (confirm(t('confirmation'))) { const r = await deleteFamily(f.id); r.ok ? toast.success(t('save')) : toast.error(tm(r.error)); } }}><Trash2 className="h-4 w-4 text-destructive" /></Button>}
               </div>
             </CardHeader>
             <CardContent className="space-y-2 text-sm">

@@ -6,6 +6,7 @@ import { X } from 'lucide-react';
 import gsap from 'gsap';
 import { CustomEase } from 'gsap/CustomEase';
 import { Button } from './button';
+import { useLang } from '@/components/lang-context';
 
 if (typeof window !== 'undefined') {
   gsap.registerPlugin(CustomEase);
@@ -18,6 +19,7 @@ export function Modal({
 }: {
   open: boolean; onClose: () => void; title: string; children: React.ReactNode; wide?: boolean;
 }) {
+  const { t } = useLang();
   React.useEffect(() => {
     const esc = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
     if (open) document.addEventListener('keydown', esc);
@@ -27,14 +29,14 @@ export function Modal({
   if (!open) return null;
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} aria-hidden />
+      <div className="absolute inset-0 bg-black/60" onClick={onClose} aria-hidden />
       <div
         role="dialog" aria-modal="true"
         className={cn('glass-strong relative z-10 w-full rounded-card p-5 sm:p-6 max-h-[90vh] overflow-y-auto', wide ? 'max-w-2xl' : 'max-w-md')}
       >
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-lg font-semibold">{title}</h2>
-          <Button variant="ghost" size="icon" onClick={onClose} aria-label="Tutup">
+          <Button variant="ghost" size="icon" onClick={onClose} aria-label={t('close')}>
             <X className="h-4 w-4" />
           </Button>
         </div>

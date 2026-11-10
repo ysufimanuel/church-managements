@@ -3,13 +3,15 @@
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { redirect } from 'next/navigation';
+import { t, type Lang } from '@/lib/i18n';
 
 export async function loginAction(prevState: any, formData: FormData) {
   const usernameOrEmail = String(formData.get('username') || '').trim();
   const password = String(formData.get('password') || '');
+  const lang: Lang = formData.get('lang') === 'id' ? 'id' : 'en';
 
   if (!usernameOrEmail || !password) {
-    return { error: 'Username/email dan password wajib diisi' };
+    return { error: t(lang, 'login-required') };
   }
 
   const supabase = await createClient();
@@ -28,23 +30,23 @@ export async function loginAction(prevState: any, formData: FormData) {
 
       if (lookupError) {
         console.error('[AUTH] Username lookup failed:', lookupError.code);
-        return { error: 'Login sementara tidak tersedia. Coba gunakan email atau hubungi administrator.' };
+        return { error: t(lang, 'login-unavailable') };
       }
       email = profile?.email || null;
     } catch {
       // A missing service-role key should not crash the Server Action.
-      return { error: 'Login dengan username belum dikonfigurasi. Gunakan email untuk sementara.' };
+      return { error: t(lang, 'login-username-unconfigured') };
     }
   }
 
-  if (!email) return { error: 'Username/email atau password salah' };
+  if (!email) return { error: t(lang, 'login-invalid') };
 
   const { error: signInError } = await supabase.auth.signInWithPassword({
     email,
     password,
   });
 
-  if (signInError) return { error: 'Username/email atau password salah' };
+  if (signInError) return { error: t(lang, 'login-invalid') };
 
   const { data: { user } } = await supabase.auth.getUser();
   if (user) {

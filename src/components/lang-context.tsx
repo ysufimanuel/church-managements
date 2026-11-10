@@ -3,23 +3,38 @@
 import * as React from 'react';
 import { createContext, useContext, useEffect, useState } from 'react';
 import { translations, type Lang } from '@/lib/i18n';
+import { translateServerMessage } from '@/lib/server-messages';
 
-const LangContext = createContext<{ lang: Lang; setLang: (l: Lang) => void; t: (k: string) => string }>({
-  lang: 'id', setLang: () => {}, t: (k) => k,
+// Module-level copy of the active language so non-hook code (toasts, export builders) can localize.
+let currentLang: Lang = 'en';
+export const getLang = () => currentLang;
+/** Translate a server-action message into the active UI language. */
+export const tm = (msg?: string | null) => translateServerMessage(currentLang, msg);
+
+const LangContext = createContext<{ lang: Lang; setLang: (l: Lang) => void; t: (k: string) => string; tm: (m?: string | null) => string }>({
+  lang: 'en', setLang: () => {}, t: (k) => k, tm: (m) => m ?? '',
 });
 
 export function LangProvider({ children }: { children: React.ReactNode }) {
-  const [lang, setLangState] = useState<Lang>('id');
+  const [lang, setLangState] = useState<Lang>('en');
   useEffect(() => {
-    const saved = (localStorage.getItem('cmsLanguage') as Lang) || 'id';
+    let saved: Lang = 'en';
+    try {
+      const v = localStorage.getItem('cmsLanguage');
+      if (v === 'id' || v === 'en') saved = v;
+    } catch {}
+    currentLang = saved;
     setLangState(saved);
+    document.documentElement.lang = saved;
   }, []);
   const setLang = (l: Lang) => {
+    currentLang = l;
     setLangState(l);
-    localStorage.setItem('cmsLanguage', l);
+    try { localStorage.setItem('cmsLanguage', l); } catch {}
+    document.documentElement.lang = l;
   };
-  const t = (k: string) => translations[lang][k] ?? k;
-  return <LangContext.Provider value={{ lang, setLang, t }}>{children}</LangContext.Provider>;
+  const t = (k: string) => translations[lang][k] ?? translations.en[k] ?? k;
+  return <LangContext.Provider value={{ lang, setLang, t, tm: (m) => translateServerMessage(lang, m) }}>{children}</LangContext.Provider>;
 }
 
 export function useLang() {

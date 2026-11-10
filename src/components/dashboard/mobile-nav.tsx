@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import gsap from 'gsap';
 import { CustomEase } from 'gsap/CustomEase';
 import { Globe2, LayoutDashboard, LogOut, Search, Settings, Wallet, type LucideIcon } from 'lucide-react';
@@ -128,7 +128,7 @@ function Sheet({
   if (!mounted) return null;
   return (
     <div className="fixed inset-0 z-40 lg:hidden">
-      <div ref={overlayRef} className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} aria-hidden />
+      <div ref={overlayRef} className="absolute inset-0 bg-black/60" onClick={onClose} aria-hidden />
       <div
         ref={panelRef} role="dialog" aria-modal="true" aria-label={label} tabIndex={-1}
         className={cn(
@@ -151,12 +151,13 @@ export function MobileNav({
 }: {
   items: NavItem[];
   canWebManager: boolean;
-  profile: { nama: string };
+  profile: { nama: string; avatarUrl?: string | null; onOpenProfile?: () => void };
   roleText: string;
 }) {
   const { t } = useLang();
   const pathname = usePathname();
-    const [sheet, setSheet] = React.useState<null | 'menu'>(null);
+  const router = useRouter();
+  const [sheet, setSheet] = React.useState<null | 'menu'>(null);
 
   const tabs: Tab[] = [
     { id: 'dashboard', icon: LayoutDashboard, label: t('dashboard'), href: '/dashboard' },
@@ -220,6 +221,112 @@ export function MobileNav({
     gsap.fromTo(icon, fx.from, { ...fx.to, overwrite: 'auto', clearProps: 'transform' });
   }, [activeId]);
 
+  /* ---- geser sambil ditahan: efek kaca pembesar (dock magnify) ---- */
+  const [lensId, setLensId] = React.useState<TabId | null>(null);
+  const lensRef = React.useRef<HTMLDivElement>(null);
+  const scrub = React.useRef({ down: false, active: false, startX: 0, pointerId: -1, hover: null as TabId | null, lastX: 0, timer: 0 as unknown as ReturnType<typeof setTimeout>, suppress: false });
+
+  const tabAt = (clientX: number): TabId | null => {
+    let best: TabId | null = null; let bestD = Infinity;
+    for (const tb of tabs) {
+      const el = tabEls.current[tb.id];
+      if (!el) continue;
+      const r = el.getBoundingClientRect();
+      const d = Math.abs(clientX - (r.left + r.width / 2));
+      if (d < bestD) { bestD = d; best = tb.id; }
+    }
+    return best;
+  };
+
+  const magnify = (clientX: number) => {
+    scrub.current.lastX = clientX;
+    const bar = barRef.current;
+    if (!bar) return;
+    const barRect = bar.getBoundingClientRect();
+    const lens = lensRef.current;
+    if (lens) {
+      const half = lens.offsetWidth / 2;
+      const x = Math.min(Math.max(clientX - barRect.left, half), barRect.width - half);
+      gsap.set(lens, { x: x - half });
+    }
+    if (prefersReduced()) return;
+    for (const tb of tabs) {
+      const el = tabEls.current[tb.id];
+      const icon = el?.querySelector('[data-icon]');
+      if (!el || !icon) continue;
+      const r = el.getBoundingClientRect();
+      const dist = Math.abs(clientX - (r.left + r.width / 2));
+      const k = Math.max(0, 1 - dist / (r.width * 1.1));
+      gsap.set(icon, { scale: 1 + 0.55 * k, y: -10 * k });
+    }
+  };
+
+  const endScrub = (activate: boolean) => {
+    const st = scrub.current;
+    clearTimeout(st.timer);
+    const wasActive = st.active;
+    const target = st.hover;
+    st.down = false; st.active = false; st.hover = null;
+    setLensId(null);
+    for (const tb of tabs) {
+      const icon = tabEls.current[tb.id]?.querySelector('[data-icon]');
+      if (icon) gsap.to(icon, { scale: 1, y: 0, duration: prefersReduced() ? 0 : 0.28, ease: 'outStrong', overwrite: 'auto', clearProps: 'transform' });
+    }
+    if (!wasActive) return;
+    st.suppress = true;
+    setTimeout(() => { st.suppress = false; }, 0);
+    if (!activate || !target) return;
+    const tb = tabs.find((x) => x.id === target);
+    if (!tb) return;
+    if (tb.href) router.push(tb.href);
+    else if (tb.id === 'search') window.dispatchEvent(new Event('wkc:open-search'));
+    else setSheet((cur) => (cur === 'menu' ? null : 'menu'));
+  };
+
+  const enterScrub = (clientX: number) => {
+    const st = scrub.current;
+    if (!st.down || st.active) return;
+    st.active = true;
+    try { barRef.current?.setPointerCapture(st.pointerId); } catch {}
+    st.hover = tabAt(clientX);
+    setLensId(st.hover);
+    navigator.vibrate?.(8);
+    magnify(clientX);
+  };
+
+  const onBarPointerDown = (e: React.PointerEvent) => {
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    const st = scrub.current;
+    st.down = true; st.active = false; st.startX = e.clientX; st.pointerId = e.pointerId;
+    const x = e.clientX;
+    clearTimeout(st.timer);
+    st.timer = setTimeout(() => enterScrub(x), 220);
+  };
+  const onBarPointerMove = (e: React.PointerEvent) => {
+    const st = scrub.current;
+    if (!st.down) return;
+    if (!st.active) {
+      if (Math.abs(e.clientX - st.startX) > 10) enterScrub(e.clientX);
+      return;
+    }
+    const hover = tabAt(e.clientX);
+    if (hover !== st.hover) { st.hover = hover; setLensId(hover); navigator.vibrate?.(5); }
+    magnify(e.clientX);
+  };
+
+  // Animasi muncul lensa
+  React.useLayoutEffect(() => {
+    const lens = lensRef.current;
+    if (!lensId || !lens) return;
+    magnify(scrub.current.lastX);
+    if (prefersReduced()) return;
+    if (!lens.dataset.shown) {
+      lens.dataset.shown = '1';
+      gsap.fromTo(lens, { scale: 0.6, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.22, ease: 'outStrong', overwrite: 'auto' });
+    }
+  }, [lensId]);
+  const lensTab = lensId ? tabs.find((x) => x.id === lensId) : null;
+
   const tabClass = (id: TabId) => cn(
     'relative z-10 flex min-h-[52px] flex-col items-center justify-center gap-0.5 py-1.5 text-[10px] font-medium',
     'transition-colors duration-200 active:scale-[0.92] [transition-property:color,transform]',
@@ -232,11 +339,18 @@ export function MobileNav({
         className="max-h-[85dvh] overflow-y-auto pb-[calc(4.75rem+env(safe-area-inset-bottom))]">
         <div className="space-y-4 p-4">
           <div data-sheet-item className="flex items-center gap-3">
-            <InitialsAvatar name={profile.nama} className="h-10 w-10 text-xs" />
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-semibold">{profile.nama}</p>
-              <p className="text-xs text-muted-foreground">{roleText}</p>
-            </div>
+            <button
+              type="button"
+              onClick={() => { closeSheet(); profile.onOpenProfile?.(); }}
+              aria-label={t('my-profile')}
+              className="btn-fx btn-fx-row flex min-w-0 flex-1 items-center gap-3 rounded-xl text-left"
+            >
+              <InitialsAvatar name={profile.nama} src={profile.avatarUrl} className="h-10 w-10 text-xs" />
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-sm font-semibold">{profile.nama}</span>
+                <span className="block text-xs text-muted-foreground">{roleText}</span>
+              </span>
+            </button>
             <LangSwitcher />
           </div>
           <p data-sheet-item className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{t('all-features')}</p>
@@ -266,10 +380,30 @@ export function MobileNav({
       </Sheet>
 
       <nav
-        aria-label="Navigasi utama"
-        className="glass-strong fixed inset-x-3 bottom-[max(0.5rem,env(safe-area-inset-bottom))] z-50 rounded-3xl lg:hidden"
+        aria-label={t('main-navigation')}
+        className="glass-strong fixed inset-x-3 bottom-[max(0.5rem,env(safe-area-inset-bottom))] z-50 touch-none select-none rounded-3xl [-webkit-touch-callout:none] lg:hidden"
       >
-        <div ref={barRef} className="relative grid auto-cols-fr grid-flow-col px-1">
+        <div
+          ref={barRef}
+          className="relative grid auto-cols-fr grid-flow-col px-1"
+          onPointerDown={onBarPointerDown}
+          onPointerMove={onBarPointerMove}
+          onPointerUp={() => endScrub(true)}
+          onPointerCancel={() => endScrub(false)}
+          onContextMenu={(e) => { if (scrub.current.down || scrub.current.active) e.preventDefault(); }}
+          onClickCapture={(e) => { if (scrub.current.suppress) { e.preventDefault(); e.stopPropagation(); } }}
+        >
+          {lensTab && (
+            <div
+              ref={lensRef}
+              aria-hidden
+              data-lens
+              className="pointer-events-none absolute bottom-[calc(100%+10px)] left-0 z-20 flex w-[76px] flex-col items-center gap-1 rounded-full border border-white/25 bg-[radial-gradient(circle_at_30%_25%,rgba(255,255,255,0.28),rgba(0,229,255,0.12)_55%,rgba(10,14,22,0.85))] px-2 py-3 text-primary shadow-[0_8px_28px_rgba(0,0,0,0.45),inset_0_0_14px_rgba(255,255,255,0.12)] will-change-transform"
+            >
+              <lensTab.icon className="h-7 w-7" strokeWidth={2.2} />
+              <span className="max-w-full truncate text-[10px] font-semibold text-foreground">{lensTab.label}</span>
+            </div>
+          )}
           <div
             ref={indRef} aria-hidden
             className="pointer-events-none absolute bottom-1 top-1 left-0 rounded-2xl bg-primary/15 opacity-0"
@@ -283,7 +417,7 @@ export function MobileNav({
             );
             const ref = (el: HTMLElement | null) => { tabEls.current[id] = el; };
             return href ? (
-              <Link key={id} ref={ref} href={href} aria-current={routeTab === id && !sheet ? 'page' : undefined} className={tabClass(id)}>{inner}</Link>
+              <Link key={id} ref={ref} href={href} draggable={false} aria-current={routeTab === id && !sheet ? 'page' : undefined} className={tabClass(id)}>{inner}</Link>
             ) : (
               <button
                 key={id} ref={ref} type="button" aria-expanded={id === 'menu' ? sheet === 'menu' : undefined} aria-haspopup="dialog"

@@ -3,7 +3,7 @@
 import { useUrlQuery } from '@/lib/search/use-url-query';
 import { useSearchParams } from 'next/navigation';
 import * as React from 'react';
-import { useLang } from '@/components/lang-context';
+import { useLang, tm } from '@/components/lang-context';
 import { Button } from '@/components/ui/button';
 import { Input, Label, Select, Textarea } from '@/components/ui/input';
 import { Modal, Tabs } from '@/components/ui/modal';
@@ -54,7 +54,7 @@ export function VolunteersClient({ volunteers, members, events, assignments, rol
       jadwal,
       status: String(fd.get('status') || 'aktif'),
     });
-    if (res.ok) { toast.success(t('save')); setModal(false); } else toast.error(res.error);
+    if (res.ok) { toast.success(t('save')); setModal(false); } else toast.error(tm(res.error));
   }
 
   async function handleSaveAsg(e: React.FormEvent<HTMLFormElement>) {
@@ -70,7 +70,7 @@ export function VolunteersClient({ volunteers, members, events, assignments, rol
       tugas: String(fd.get('tugas') || ''),
       catatan: String(fd.get('catatan') || ''),
     });
-    if (res.ok) { toast.success(t('save')); setAsgModal(false); } else toast.error(res.error);
+    if (res.ok) { toast.success(t('save')); setAsgModal(false); } else toast.error(tm(res.error));
   }
 
   return (
@@ -101,8 +101,8 @@ export function VolunteersClient({ volunteers, members, events, assignments, rol
                     <Badge variant="default" className="mt-1 capitalize">{t(v.area)}</Badge>
                   </div>
                   <div className="flex gap-1">
-                    {canEdit(role) && <Button variant="ghost" size="icon" onClick={() => { setEditing(v); setSource(v.member_id ? 'member' : 'external'); setJadwal(v.jadwal || []); setModal(true); }} aria-label="Edit"><Pencil className="h-4 w-4" /></Button>}
-                    {canDelete(role) && <Button variant="ghost" size="icon" aria-label="Hapus" onClick={async () => { if (confirm(t('confirmation'))) { const r = await deleteVolunteer(v.id); r.ok ? toast.success(t('save')) : toast.error(r.error); } }}><Trash2 className="h-4 w-4 text-destructive" /></Button>}
+                    {canEdit(role) && <Button variant="ghost" size="icon" onClick={() => { setEditing(v); setSource(v.member_id ? 'member' : 'external'); setJadwal(v.jadwal || []); setModal(true); }} aria-label={t('act-edit')}><Pencil className="h-4 w-4" /></Button>}
+                    {canDelete(role) && <Button variant="ghost" size="icon" aria-label={t('act-delete')} onClick={async () => { if (confirm(t('confirmation'))) { const r = await deleteVolunteer(v.id); r.ok ? toast.success(t('save')) : toast.error(tm(r.error)); } }}><Trash2 className="h-4 w-4 text-destructive" /></Button>}
                   </div>
                 </CardHeader>
                 <CardContent className="text-sm space-y-1">
@@ -145,8 +145,8 @@ export function VolunteersClient({ volunteers, members, events, assignments, rol
                 </div>
                 <div className="flex items-center gap-2">
                   <Badge variant="secondary">{a.status}</Badge>
-                  {canEdit(role) && <Button variant="ghost" size="icon" onClick={() => { setAsgEditing(a); setAsgModal(true); }} aria-label="Edit"><Pencil className="h-4 w-4" /></Button>}
-                  {canDelete(role) && <Button variant="ghost" size="icon" aria-label="Hapus" onClick={async () => { if (confirm(t('confirmation'))) { const r = await deleteAssignment(a.id); r.ok ? toast.success(t('save')) : toast.error(r.error); } }}><Trash2 className="h-4 w-4 text-destructive" /></Button>}
+                  {canEdit(role) && <Button variant="ghost" size="icon" onClick={() => { setAsgEditing(a); setAsgModal(true); }} aria-label={t('act-edit')}><Pencil className="h-4 w-4" /></Button>}
+                  {canDelete(role) && <Button variant="ghost" size="icon" aria-label={t('act-delete')} onClick={async () => { if (confirm(t('confirmation'))) { const r = await deleteAssignment(a.id); r.ok ? toast.success(t('save')) : toast.error(tm(r.error)); } }}><Trash2 className="h-4 w-4 text-destructive" /></Button>}
                 </div>
               </div>
             ))}

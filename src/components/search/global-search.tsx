@@ -3,7 +3,8 @@
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
 import gsap from 'gsap';
-import { Search, X, CornerDownLeft, LayoutGrid, FileText } from 'lucide-react';
+import { Search, X, CornerDownLeft, LayoutGrid, FileText, Globe2, UserCog, Users, MessagesSquare, type LucideIcon } from 'lucide-react';
+import { NAV } from '@/components/dashboard/nav-items';
 import { useLang } from '@/components/lang-context';
 import { searchDashboard, searchPublicSite } from '@/lib/actions/search';
 import { highlightParts, score } from '@/lib/search/text';
@@ -32,6 +33,25 @@ const TEXT = {
     g: { page: 'Pages', menu: 'Menu', members: 'Members', families: 'Families', groups: 'Groups', events: 'Events', donations: 'Donations', finance: 'Finance', volunteers: 'Volunteers', communication: 'Communication', messages: 'Chat messages', 'web-manager': 'Web Manager', 'user-management': 'Users', contacts: 'Chat contacts' } as Record<string, string> },
 };
 
+/** Icon follows the feature a result belongs to (same icons as the sidebar / bottom nav). */
+const ICON_BY_HREF: [string, LucideIcon][] = [
+  ...NAV.map((n): [string, LucideIcon] => [n.href, n.icon]),
+  ['/dashboard/web-manager', Globe2],
+  ['/dashboard/users', UserCog],
+].sort((a, b) => b[0].length - a[0].length) as [string, LucideIcon][];
+const ICON_BY_GROUP: Record<string, LucideIcon> = {
+  page: FileText, menu: FileText,
+  ...Object.fromEntries(NAV.map((n) => [n.key, n.icon])),
+  'web-manager': Globe2, 'user-management': UserCog,
+  messages: MessagesSquare, contacts: Users,
+};
+function iconFor(h: SearchHit | undefined): LucideIcon | null {
+  if (!h) return null;
+  const path = h.href.split(/[?#]/)[0];
+  const byHref = ICON_BY_HREF.find(([href]) => (href === '/dashboard' ? path === href : path.startsWith(href)));
+  return byHref?.[1] ?? ICON_BY_GROUP[h.group] ?? LayoutGrid;
+}
+
 const reduced = () => typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 function Hl({ text, q }: { text: string; q: string }) {
@@ -40,7 +60,7 @@ function Hl({ text, q }: { text: string; q: string }) {
 
 export function GlobalSearch({ mode, features = [], slug, items = [], showTrigger, scanDom, className }: Props) {
   const { t, lang } = useLang();
-  const L = TEXT[lang] ?? TEXT.id;
+  const L = TEXT[lang] ?? TEXT.en;
   const router = useRouter();
   const [open, setOpen] = React.useState(false);
   const [q, setQ] = React.useState('');
@@ -199,11 +219,15 @@ export function GlobalSearch({ mode, features = [], slug, items = [], showTrigge
       )}
       {open && (
         <div className="fixed inset-0 z-[60] flex items-start justify-center overflow-y-auto px-3 py-[max(1rem,env(safe-area-inset-top))] sm:px-5 sm:pt-[9vh] lg:px-6 lg:pt-[8vh]" role="presentation">
-          <div className="absolute inset-0 bg-black/55 backdrop-blur-sm" onClick={close} aria-hidden />
+          <div className="absolute inset-0 bg-black/60" onClick={close} aria-hidden />
           <div ref={panelRef} role="dialog" aria-modal="true" aria-label={L.open}
             className="glass-strong relative flex max-h-[min(82dvh,760px)] w-full max-w-[720px] min-w-0 flex-col overflow-hidden rounded-2xl border border-white/10 text-white shadow-[0_24px_90px_rgb(0_0_0/.55)]">
             <div className="flex items-center gap-2 border-b border-white/10 px-3 py-2.5 sm:px-4">
-              <Search className="h-5 w-5 shrink-0 text-white/70" />
+              {(() => {
+                // Leading icon morphs to the icon of the highlighted result's feature
+                const LeadIcon = (query.length >= 2 && iconFor(flat[active])) || Search;
+                return <LeadIcon key={LeadIcon === Search ? 'search' : (LeadIcon.displayName || 'f') + active} className="sx-lead h-5 w-5 shrink-0 text-primary" aria-hidden />;
+              })()}
               <input ref={inputRef} value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={onInputKey}
                 placeholder={mode === 'dashboard' ? L.phDash : L.ph} enterKeyHint="go" autoComplete="off" spellCheck={false}
                 role="combobox" aria-expanded="true" aria-controls="sx-list"
@@ -229,7 +253,7 @@ export function GlobalSearch({ mode, features = [], slug, items = [], showTrigge
                         className={cn('sx-row flex min-h-[48px] w-full items-center gap-3 rounded-xl px-3 py-2 text-left transition-colors cursor-pointer',
                           i === active ? 'bg-white/15' : 'hover:bg-white/10')}>
                         <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-primary/15 text-primary">
-                          {g === 'page' || g === 'menu' ? <FileText className="h-4 w-4" /> : <LayoutGrid className="h-4 w-4" />}
+                          {React.createElement(iconFor(h) ?? LayoutGrid, { className: 'h-4 w-4' })}
                         </span>
                         <span className="min-w-0 flex-1">
                           <span className="block truncate text-sm font-medium"><Hl text={h.title} q={query} /></span>

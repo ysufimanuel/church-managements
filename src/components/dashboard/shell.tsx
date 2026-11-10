@@ -12,16 +12,18 @@ import { Sidebar } from './sidebar';
 import { NAV } from './nav-items';
 import { GlobalSearch } from '@/components/search/global-search';
 import { InitialsAvatar } from '@/components/ui/initials-avatar';
+import { ProfileModal, type ProfileData } from './profile-modal';
 
 
 export function DashboardShell({
   profile, notifications, children,
 }: {
-  profile: { id: string; nama: string; role: Role };
+  profile: ProfileData;
   notifications: Notif[];
   children: React.ReactNode;
 }) {
   const { t } = useLang();
+  const [profileOpen, setProfileOpen] = React.useState(false);
   const onDashboardRender = React.useCallback((id: string, phase: string, actualDuration: number, baseDuration: number) => {
     if (process.env.NODE_ENV === 'development') console.debug('[React Profiler]', { id, phase, actualDuration, baseDuration });
   }, []);
@@ -46,13 +48,19 @@ export function DashboardShell({
           </Link>
           <div className="flex-1" />
           <NotificationBell initial={notifications} userId={profile.id} />
-          <div className="flex items-center gap-3">
-            <div className="text-right hidden sm:block">
+          <button
+            type="button"
+            onClick={() => setProfileOpen(true)}
+            aria-label={t('my-profile')}
+            title={t('my-profile')}
+            className="btn-fx btn-fx-row flex cursor-pointer items-center gap-3 rounded-xl px-1.5 py-1 text-left"
+          >
+            <div className="hidden text-right sm:block">
               <p className="text-sm font-medium">{profile.nama}</p>
               <p className="text-xs text-muted-foreground">{roleLabel(profile.role)}</p>
             </div>
-            <InitialsAvatar name={profile.nama} className="h-9 w-9 text-xs" />
-          </div>
+            <InitialsAvatar name={profile.nama} src={profile.avatarUrl} className="h-9 w-9 text-xs" />
+          </button>
         </header>
         <main className="dash-compact flex-1 p-3 sm:p-4 md:p-6">
           <React.Profiler id="dashboard-content" onRender={onDashboardRender}>{children}</React.Profiler>
@@ -64,9 +72,10 @@ export function DashboardShell({
       <MobileNav
         items={items}
         canWebManager={canUseWebManager(profile.role)}
-        profile={{ nama: profile.nama }}
+        profile={{ nama: profile.nama, avatarUrl: profile.avatarUrl, onOpenProfile: () => setProfileOpen(true) }}
         roleText={roleLabel(profile.role)}
       />
+      <ProfileModal open={profileOpen} onClose={() => setProfileOpen(false)} profile={profile} />
     </div>
   );
 }

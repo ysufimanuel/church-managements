@@ -33,7 +33,7 @@ function useScramble(label: string) {
         if (char === ' ' || i < count) return char;
         return GLYPHS[Math.floor(Math.random() * GLYPHS.length)];
       }).join('');
-      iteration += 1 / 2.2;
+      iteration += 1 / 1.6;
       if (iteration <= label.length) frame.current = requestAnimationFrame(tick);
       else { el.textContent = label; frame.current = null; }
     };
@@ -53,12 +53,8 @@ function SidebarLink({ item, active, label, open, index, onNavigate }: {
 }) {
   const Icon = item.icon;
   const { ref, run } = useScramble(label);
-  // Saat sidebar dibuka, nama fitur muncul dengan animasi scramble berurutan dari atas ke bawah
-  React.useEffect(() => {
-    if (!open) return;
-    const id = window.setTimeout(run, 60 + index * 45);
-    return () => window.clearTimeout(id);
-  }, [open, index, run]);
+  // Scramble only on hover/focus (single rAF loop); opening just fades labels in via CSS.
+  void index;
   return (
     <li data-sidebar-item data-active={active ? 'true' : 'false'}>
       <Link href={item.href} aria-current={active ? 'page' : undefined} aria-label={label} title={open ? undefined : label}
@@ -132,7 +128,7 @@ export function Sidebar({ items, role }: { items: SidebarItem[]; role: Role }) {
 
   return (
     <div className={cn(
-      'sticky top-3 m-3 mr-0 hidden h-[calc(100dvh-1.5rem)] shrink-0 transition-[width] duration-300 ease-out-strong lg:block',
+      'sticky top-3 m-3 mr-0 hidden h-[calc(100dvh-1.5rem)] shrink-0 transition-[width] duration-200 ease-out-strong lg:block',
       open ? 'w-[264px]' : 'w-[72px]',
     )}>
       <aside ref={asideRef} className="glass flex h-full w-full flex-col overflow-hidden rounded-card">
@@ -142,7 +138,7 @@ export function Sidebar({ items, role }: { items: SidebarItem[]; role: Role }) {
           </span>
           <div className={cn('min-w-0 flex-1 overflow-hidden whitespace-nowrap transition-opacity duration-200', open ? 'opacity-100' : 'pointer-events-none opacity-0')} aria-hidden={!open}>
             <h1 className="truncate text-sm font-bold">{t('cms-title')}</h1>
-            <p className="text-[11px] text-muted-foreground">Gereja Digital</p>
+            <p className="text-[11px] text-muted-foreground">{t('church-digital')}</p>
           </div>
         </div>
 
@@ -156,7 +152,7 @@ export function Sidebar({ items, role }: { items: SidebarItem[]; role: Role }) {
           </button>
         </div>
 
-        <nav aria-label="Navigasi utama" className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden px-3 pb-3 pt-2">
+        <nav aria-label={t('main-navigation')} className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden px-3 pb-3 pt-2">
           <ul className="space-y-1">
             {items.map((item, i) => {
               const active = item.href === '/dashboard' ? pathname === item.href : pathname.startsWith(item.href);
@@ -178,7 +174,7 @@ export function Sidebar({ items, role }: { items: SidebarItem[]; role: Role }) {
       </aside>
 
       <button type="button" onClick={() => setOpenPersist(!open)} aria-expanded={open}
-        aria-label={open ? 'Tutup sidebar' : 'Buka sidebar'} title={open ? 'Tutup sidebar' : 'Buka sidebar'}
+        aria-label={open ? t('close-sidebar') : t('open-sidebar')} title={open ? t('close-sidebar') : t('open-sidebar')}
         className="btn-fx glass-strong absolute -right-3 top-[72px] z-10 grid h-6 w-6 place-items-center rounded-full cursor-pointer">
         {open ? <ChevronLeft className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
       </button>

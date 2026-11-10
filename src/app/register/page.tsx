@@ -16,9 +16,11 @@ import {
 import { registerChurchAction } from '@/lib/actions/registration';
 import { Button } from '@/components/ui/button';
 import { Input, Label } from '@/components/ui/input';
+import { LangProvider, LangSwitcher, useLang } from '@/components/lang-context';
 
 function SubmitButton() {
   const { pending } = useFormStatus();
+  const { t } = useLang();
 
   return (
     <Button
@@ -29,19 +31,20 @@ function SubmitButton() {
       {pending ? (
         <>
           <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-r-transparent" />
-          Mendaftarkan...
+          {t('registering')}
         </>
       ) : (
         <>
           <CheckCircle2 className="h-4 w-4" />
-          Daftarkan Gereja
+          {t('register-submit')}
         </>
       )}
     </Button>
   );
 }
 
-export default function RegisterPage() {
+function RegisterForm() {
+  const { t, tm } = useLang();
   const [state, formAction] = useFormState(registerChurchAction, null);
   const [step, setStep] = useState(1);
   const [showPassword, setShowPassword] = useState(false);
@@ -116,7 +119,7 @@ export default function RegisterPage() {
 
       <div
         ref={cardRef}
-        className="relative z-10 w-full max-w-[460px] overflow-hidden rounded-[28px] border border-white/[0.10] bg-white/[0.055] p-5 shadow-[0_24px_90px_rgba(0,0,0,0.48)] backdrop-blur-2xl sm:p-8"
+        className="relative z-10 w-full max-w-[460px] overflow-hidden rounded-[28px] border border-white/[0.10] bg-white/[0.055] p-5 shadow-[0_24px_90px_rgba(0,0,0,0.48)] backdrop-blur-xl sm:p-8"
       >
         <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-cyan-300/70 to-transparent" />
 
@@ -127,59 +130,59 @@ export default function RegisterPage() {
         </div>
 
         <div ref={headerRef} className="mb-6 space-y-1.5 text-center">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-cyan-300/80">Get started</p>
-          <h1 className="text-xl font-bold tracking-tight text-white sm:text-2xl">Daftar Gereja</h1>
-          <p className="text-xs text-slate-400 sm:text-sm">Buat akun untuk sistem manajemen gereja Anda</p>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-cyan-300/80">{t('get-started')}</p>
+          <h1 className="text-xl font-bold tracking-tight text-white sm:text-2xl">{t('register-church')}</h1>
+          <p className="text-xs text-slate-400 sm:text-sm">{t('reg-subtitle')}</p>
 
-          <div className="mx-auto flex max-w-[150px] items-center gap-2 pt-3" aria-label={`Langkah ${step} dari 2`}>
+          <div className="mx-auto flex max-w-[150px] items-center gap-2 pt-3" aria-label={t('step-of').replace('{n}', String(step))}>
             <div className={`h-1.5 flex-1 rounded-full transition-colors duration-300 ${step >= 1 ? 'bg-cyan-400' : 'bg-white/15'}`} />
             <div className={`h-1.5 flex-1 rounded-full transition-colors duration-300 ${step >= 2 ? 'bg-cyan-400' : 'bg-white/15'}`} />
           </div>
-          <p className="pt-1 text-[10px] text-slate-500">Langkah {step} dari 2</p>
+          <p className="pt-1 text-[10px] text-slate-500">{t('step-of').replace('{n}', String(step))}</p>
         </div>
 
         <form action={formAction}>
           <div ref={stepContentRef}>
             {step === 1 ? (
               <div ref={firstStepRef} className="space-y-3.5">
-                <p className="mb-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-cyan-300">1. Data Gereja</p>
-                <Field label="Nama Gereja" name="church_name" placeholder="Contoh: GKI Bogor" required value={churchData.church_name} onChange={updateChurchData} />
-                <Field label="Alamat" name="church_address" placeholder="Jl. Gereja No. 1" required value={churchData.church_address} onChange={updateChurchData} />
+                <p className="mb-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-cyan-300">{t('reg-step1')}</p>
+                <Field label={t('church-name-label')} name="church_name" placeholder={t('ph-church')} required value={churchData.church_name} onChange={updateChurchData} />
+                <Field label={t('church-address')} name="church_address" placeholder={t('ph-address')} required value={churchData.church_address} onChange={updateChurchData} />
                 <div className="grid grid-cols-2 gap-2.5">
-                  <Field label="Kota" name="church_city" placeholder="Bogor" required value={churchData.church_city} onChange={updateChurchData} />
-                  <Field label="Telepon" name="church_phone" type="tel" placeholder="021-xxxx" required value={churchData.church_phone} onChange={updateChurchData} />
+                  <Field label={t('city-label')} name="church_city" placeholder={t('ph-city')} required value={churchData.church_city} onChange={updateChurchData} />
+                  <Field label={t('phone')} name="church_phone" type="tel" placeholder="021-xxxx" required value={churchData.church_phone} onChange={updateChurchData} />
                 </div>
-                <Field label="Email Gereja" name="church_email" type="email" placeholder="info@gereja.com" required value={churchData.church_email} onChange={updateChurchData} />
+                <Field label={t('church-email')} name="church_email" type="email" placeholder="info@gereja.com" required value={churchData.church_email} onChange={updateChurchData} />
 
                 <Button type="button" onClick={goToAccountStep} className="btn-fx btn-fx-default mt-3 h-11 w-full rounded-xl bg-primary text-xs font-semibold text-primary-foreground shadow-[0_0_22px_rgba(0,229,255,0.22)] transition-all hover:brightness-110 sm:h-12 sm:text-sm">
-                  Lanjut ke Akun Admin <ArrowRight className="h-4 w-4" />
+                  {t('next-admin')} <ArrowRight className="h-4 w-4" />
                 </Button>
               </div>
             ) : (
               <div className="space-y-3.5">
-                <p className="mb-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-cyan-300">2. Akun Super Admin</p>
+                <p className="mb-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-cyan-300">{t('reg-step2')}</p>
                 {Object.entries(churchData).map(([name, value]) => (
                   <input key={name} type="hidden" name={name} value={value} />
                 ))}
-                <Field label="Nama Admin" name="admin_name" placeholder="Nama lengkap" required autoComplete="name" />
-                <Field label="Username" name="username" placeholder="username_admin" required autoComplete="username" />
-                <Field label="Email (untuk login)" name="admin_email" type="email" placeholder="admin@gereja.com" required autoComplete="email" />
+                <Field label={t('admin-name')} name="admin_name" placeholder={t('ph-fullname')} required autoComplete="name" />
+                <Field label={t('username')} name="username" placeholder="username_admin" required autoComplete="username" />
+                <Field label={t('email-login')} name="admin_email" type="email" placeholder="admin@gereja.com" required autoComplete="email" />
                 <div className="space-y-1.5">
-                  <Label htmlFor="password" className="ml-1 text-[11px] font-medium text-slate-300">Password</Label>
+                  <Label htmlFor="password" className="ml-1 text-[11px] font-medium text-slate-300">{t('password')}</Label>
                   <div className="relative">
-                    <Input id="password" name="password" type={showPassword ? 'text' : 'password'} placeholder="Minimal 6 karakter" minLength={6} required autoComplete="new-password" className="h-11 rounded-xl border-white/10 bg-slate-950/35 px-3.5 pr-11 text-xs text-white placeholder:text-slate-500 focus-visible:border-cyan-300/60 focus-visible:ring-cyan-300/20" />
-                    <button type="button" onClick={() => setShowPassword((visible) => !visible)} className="btn-fx btn-fx-ghost absolute right-3 top-1/2 -translate-y-1/2 rounded-md p-1.5 text-slate-400 transition-colors hover:text-cyan-200" aria-label={showPassword ? 'Sembunyikan password' : 'Tampilkan password'} aria-pressed={showPassword}>
+                    <Input id="password" name="password" type={showPassword ? 'text' : 'password'} placeholder={t('ph-pass-min')} minLength={6} required autoComplete="new-password" className="h-11 rounded-xl border-white/10 bg-slate-950/35 px-3.5 pr-11 text-xs text-white placeholder:text-slate-500 focus-visible:border-cyan-300/60 focus-visible:ring-cyan-300/20" />
+                    <button type="button" onClick={() => setShowPassword((visible) => !visible)} className="btn-fx btn-fx-ghost absolute right-3 top-1/2 -translate-y-1/2 rounded-md p-1.5 text-slate-400 transition-colors hover:text-cyan-200" aria-label={showPassword ? t('hide-password') : t('show-password')} aria-pressed={showPassword}>
                       {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
                   </div>
                 </div>
 
-                {state?.error && <p ref={errorRef} role="alert" aria-live="polite" className="rounded-xl border border-red-400/20 bg-red-500/10 px-3.5 py-3 text-center text-xs font-medium text-red-300">{state.error}</p>}
-                {state?.success && <p role="status" className="rounded-xl border border-emerald-400/20 bg-emerald-500/10 px-3.5 py-3 text-center text-xs font-medium text-emerald-300">{state.success}</p>}
+                {state?.error && <p ref={errorRef} role="alert" aria-live="polite" className="rounded-xl border border-red-400/20 bg-red-500/10 px-3.5 py-3 text-center text-xs font-medium text-red-300">{tm(state.error)}</p>}
+                {state?.success && <p role="status" className="rounded-xl border border-emerald-400/20 bg-emerald-500/10 px-3.5 py-3 text-center text-xs font-medium text-emerald-300">{tm(state.success)}</p>}
 
                 <div className="flex gap-2 pt-1">
                   <Button type="button" variant="outline" onClick={() => setStep(1)} className="btn-fx btn-fx-ghost h-11 w-[38%] rounded-xl border-white/10 bg-white/[0.04] text-xs text-slate-300 hover:bg-white/10">
-                    <ArrowLeft className="h-4 w-4" /> Kembali
+                    <ArrowLeft className="h-4 w-4" /> {t('back')}
                   </Button>
                   <div className="w-[62%]"><SubmitButton /></div>
                 </div>
@@ -189,12 +192,13 @@ export default function RegisterPage() {
         </form>
 
         <div className="mt-6 border-t border-white/[0.08] pt-4 text-center">
+          <div className="mb-3 flex justify-center"><LangSwitcher /></div>
           <p className="flex items-center justify-center gap-1.5 text-xs text-slate-400">
-            Sudah punya akun?
-            <Link href="/login" className="font-semibold text-cyan-300 transition-colors hover:text-cyan-100 hover:underline">Login</Link>
+            {t('have-account')}
+            <Link href="/login" className="font-semibold text-cyan-300 transition-colors hover:text-cyan-100 hover:underline">{t('login')}</Link>
           </p>
           <p className="mt-3 flex items-center justify-center gap-1 text-[10px] text-slate-500">
-            <Info className="h-3 w-3" /> Pendaftaran gereja dan akun superadmin
+            <Info className="h-3 w-3" /> {t('reg-footer')}
           </p>
         </div>
       </div>
@@ -208,5 +212,13 @@ function Field({ label, name, type = 'text', ...props }: React.ComponentProps<ty
       <Label htmlFor={name} className="ml-1 text-[11px] font-medium text-slate-300">{label}</Label>
       <Input id={name} name={name} type={type} {...props} className="h-11 rounded-xl border-white/10 bg-slate-950/35 px-3.5 text-xs text-white placeholder:text-slate-500 focus-visible:border-cyan-300/60 focus-visible:ring-cyan-300/20" />
     </div>
+  );
+}
+
+export default function RegisterPage() {
+  return (
+    <LangProvider>
+      <RegisterForm />
+    </LangProvider>
   );
 }

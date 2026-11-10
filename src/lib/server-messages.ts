@@ -28,11 +28,11 @@ const ID_TO_EN: Record<string, string> = {
 };
 
 const PATTERNS: [RegExp, (m: RegExpMatchArray) => string][] = [
-  [/^Donasi tersimpan, tetapi total donatur gagal diperbarui: (.*)$/s, (m) => `Donation saved, but the donor total failed to update: ${m[1]}`],
-  [/^Donasi terhapus, tetapi total donatur gagal diperbarui: (.*)$/s, (m) => `Donation deleted, but the donor total failed to update: ${m[1]}`],
-  [/^Profil tersimpan, tetapi password gagal diperbarui: (.*)$/s, (m) => `Profile saved, but the password failed to update: ${m[1]}`],
-  [/^Profil tersimpan, tetapi metadata autentikasi gagal diperbarui: (.*)$/s, (m) => `Profile saved, but auth metadata failed to update: ${m[1]}`],
-  [/^Authorization failed: (.*)$/s, (m) => `Authorization failed: ${m[1].replace('session/profile tidak ditemukan', 'session/profile not found')}`],
+  [/^Donasi tersimpan, tetapi total donatur gagal diperbarui: ([\s\S]*)$/, (m) => `Donation saved, but the donor total failed to update: ${m[1]}`],
+  [/^Donasi terhapus, tetapi total donatur gagal diperbarui: ([\s\S]*)$/, (m) => `Donation deleted, but the donor total failed to update: ${m[1]}`],
+  [/^Profil tersimpan, tetapi password gagal diperbarui: ([\s\S]*)$/, (m) => `Profile saved, but the password failed to update: ${m[1]}`],
+  [/^Profil tersimpan, tetapi metadata autentikasi gagal diperbarui: ([\s\S]*)$/, (m) => `Profile saved, but auth metadata failed to update: ${m[1]}`],
+  [/^Authorization failed: ([\s\S]*)$/, (m) => `Authorization failed: ${m[1].replace('session/profile tidak ditemukan', 'session/profile not found')}`],
 ];
 
 const EN_TO_ID: Record<string, string> = {

@@ -1,4 +1,5 @@
 import type { Lang } from '@/lib/i18n';
+import { WM_EN } from '@/lib/wm-en';
 
 // Server actions return messages in Indonesian (source language). On the client these are
 // translated to the active UI language so English mode never shows Indonesian text.
@@ -42,6 +43,7 @@ export function translateServerMessage(lang: Lang, msg?: string | null): string 
   if (!msg) return '';
   if (lang === 'id') return EN_TO_ID[msg] ?? msg;
   if (ID_TO_EN[msg]) return ID_TO_EN[msg];
+  if (WM_EN[msg]) return WM_EN[msg];
   for (const [re, fn] of PATTERNS) {
     const m = msg.match(re);
     if (m) return fn(m);

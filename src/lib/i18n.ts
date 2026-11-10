@@ -142,6 +142,7 @@ const id: Record<string, string> = {
   'page-load-failed': 'Halaman ini gagal dimuat', 'client-error': 'Terjadi kesalahan di sisi klien.', 'try-again': 'Coba lagi',
   'view-all-lower': 'Lihat semua', 'exp-name': 'Nama', 'exp-date': 'Tanggal', 'exp-type': 'Tipe', 'exp-desc': 'Keterangan', 'exp-amount': 'Jumlah', 'exp-phone': 'Telepon', 'exp-gender': 'Jenis Kelamin',
   metric: 'Metrik', value: 'Nilai', 'total-events': 'Total Acara', 'total-volunteers': 'Total Relawan',
+  'all-active-accounts': 'Semua akun CMS aktif',
 };
 
 const en: Record<string, string> = {
@@ -284,6 +285,7 @@ const en: Record<string, string> = {
   'page-load-failed': 'This page failed to load', 'client-error': 'A client-side error occurred.', 'try-again': 'Try again',
   'view-all-lower': 'View all', 'exp-name': 'Name', 'exp-date': 'Date', 'exp-type': 'Type', 'exp-desc': 'Description', 'exp-amount': 'Amount', 'exp-phone': 'Phone', 'exp-gender': 'Gender',
   metric: 'Metric', value: 'Value', 'total-events': 'Total Events', 'total-volunteers': 'Total Volunteers',
+  'all-active-accounts': 'All active CMS accounts',
 };
 
 export const translations: Record<Lang, Record<string, string>> = { id, en };

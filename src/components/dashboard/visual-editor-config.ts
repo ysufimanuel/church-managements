@@ -1,3 +1,4 @@
+import { tr } from '@/components/lang-context';
 import { LayoutTemplate, LayoutGrid, CalendarDays, Users, MapPin, Images, Map as MapIcon, Type, type LucideIcon } from 'lucide-react';
 
 export type SectionTypeId = 'hero' | 'card_grid' | 'event_feed' | 'group_feed' | 'info_lokasi' | 'media' | 'map' | 'richtext';
@@ -110,7 +111,7 @@ export function sectionSummary(type: string, content: any) {
   const c = content || {};
   const text = String(c.title || c.address || c.body || c.subtitle || '').trim();
   if (text) return text.length > 48 ? `${text.slice(0, 47)}…` : text;
-  return sectionMeta(type).hint.split('.')[0];
+  return tr(sectionMeta(type).hint).split('.')[0];
 }
 
 export const RATIO_OPTIONS: { value: string; label: string }[] = [

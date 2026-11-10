@@ -294,8 +294,8 @@ export default function LoginPage() {
   return (
     <LangProvider>
       <main className="relative flex min-h-dvh items-center justify-center overflow-hidden bg-[#090d14] px-4 py-10 font-sans text-white selection:bg-cyan-300/30">
-        <div aria-hidden="true" className="pointer-events-none absolute -left-28 -top-28 h-80 w-80 rounded-full bg-cyan-500/10 blur-[100px]" />
-        <div aria-hidden="true" className="pointer-events-none absolute -bottom-32 -right-24 h-96 w-96 rounded-full bg-blue-600/15 blur-[110px]" />
+        <div aria-hidden="true" className="pointer-events-none absolute -left-28 -top-28 h-80 w-80 rounded-full bg-[radial-gradient(circle,rgba(6,182,212,0.16),transparent_70%)]" />
+        <div aria-hidden="true" className="pointer-events-none absolute -bottom-32 -right-24 h-96 w-96 rounded-full bg-[radial-gradient(circle,rgba(37,99,235,0.18),transparent_70%)]" />
         <div aria-hidden="true" className="pointer-events-none absolute left-1/2 top-1/2 h-[520px] w-[520px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/[0.025]" />
         <div aria-hidden="true" className="pointer-events-none absolute left-1/2 top-1/2 h-[680px] w-[680px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/[0.02]" />
 

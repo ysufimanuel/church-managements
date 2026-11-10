@@ -12,6 +12,7 @@ import { canDelete, type Role } from '@/lib/rbac';
 import { deleteSection, publishSections, reorderSections, saveSectionContent, saveSectionDraft, setSectionEnabled } from '@/lib/actions/webmanager';
 import { SectionPanel, type PageOption } from './visual-editor-panel';
 import { SECTION_META, SECTION_ORDER, effective, hasUnpublished, pageLabel, sectionMeta, sectionSummary, type SectionTypeId } from './visual-editor-config';
+import { useLang, tr } from '@/components/lang-context';
 
 type ActionRes = { ok: boolean; error?: string; id?: number };
 type SaveState = 'idle' | 'dirty' | 'saving' | 'saved' | 'error';
@@ -24,6 +25,7 @@ const AUTOSAVE_MS = 900;
 const clone = <T,>(value: T): T => JSON.parse(JSON.stringify(value ?? {}));
 
 export function VisualEditor({ sections, pages, theme, role, publicPath }: { sections: any[]; pages: string[]; theme: any; role: Role; publicPath: string | null }) {
+  useLang(); // re-render when the UI language changes
   const router = useRouter();
   const [page, setPage] = React.useState('home');
   const [selectedId, setSelectedId] = React.useState<number | null>(null);
@@ -111,12 +113,12 @@ export function VisualEditor({ sections, pages, theme, role, publicPath }: { sec
           } else {
             if (!pendingRef.current) pendingRef.current = pending;
             setSaveState('error');
-            toast.error(res.error || 'Gagal menyimpan perubahan');
+            toast.error(res.error || tr('Gagal menyimpan perubahan'));
           }
         } catch (error) {
           if (!pendingRef.current) pendingRef.current = pending;
           setSaveState('error');
-          toast.error(error instanceof Error ? error.message : 'Gagal menghubungi server');
+          toast.error(error instanceof Error ? error.message : tr('Gagal menghubungi server'));
         }
       });
     }
@@ -233,10 +235,10 @@ export function VisualEditor({ sections, pages, theme, role, publicPath }: { sec
     const defaults = SECTION_META[type].defaults();
     const res: ActionRes = await saveSectionDraft({ page, type, sort_order: maxSort() + 10, content: defaults, enabled: true });
     setBusy(false);
-    if (!res.ok || res.id == null) { toast.error(res.error || 'Gagal menambah bagian'); return; }
+    if (!res.ok || res.id == null) { toast.error(res.error || tr('Gagal menambah bagian')); return; }
     cacheRef.current.set(res.id, defaults);
     pendingSelectRef.current = res.id;
-    toast.success(`${SECTION_META[type].label} ditambahkan di bagian paling bawah`);
+    toast.success(`${tr(SECTION_META[type].label)} ${tr('ditambahkan di bagian paling bawah')}`);
     router.refresh();
     reloadPreview();
   }
@@ -247,13 +249,13 @@ export function VisualEditor({ sections, pages, theme, role, publicPath }: { sec
     const e = effective(s);
     const source = clone(cacheRef.current.get(s.id) ?? s.content ?? {});
     const res: ActionRes = await saveSectionDraft({ page, type: e.type, sort_order: maxSort() + 10, content: source, enabled: e.enabled });
-    if (!res.ok || res.id == null) { setBusy(false); toast.error(res.error || 'Gagal menggandakan bagian'); return; }
+    if (!res.ok || res.id == null) { setBusy(false); toast.error(res.error || tr('Gagal menggandakan bagian')); return; }
     const ids = ordered.map((x) => x.id as number);
     ids.splice(ids.indexOf(s.id) + 1, 0, res.id);
     const moved: ActionRes = await reorderSections(ids);
     setBusy(false);
-    if (!moved.ok) toast.error(moved.error || 'Bagian digandakan, tetapi urutannya belum bisa dipindah');
-    else toast.success('Bagian digandakan tepat di bawah aslinya');
+    if (!moved.ok) toast.error(moved.error || tr('Bagian digandakan, tetapi urutannya belum bisa dipindah'));
+    else toast.success(tr('Bagian digandakan tepat di bawah aslinya'));
     cacheRef.current.set(res.id, source);
     pendingSelectRef.current = res.id;
     router.refresh();
@@ -265,7 +267,7 @@ export function VisualEditor({ sections, pages, theme, role, publicPath }: { sec
     setBusy(true);
     const res: ActionRes = await setSectionEnabled(s.id, !effective(s).enabled);
     setBusy(false);
-    if (!res.ok) { toast.error(res.error || 'Gagal mengubah tampilan'); return; }
+    if (!res.ok) { toast.error(res.error || tr('Gagal mengubah tampilan')); return; }
     router.refresh();
     reloadPreview();
   }
@@ -275,7 +277,7 @@ export function VisualEditor({ sections, pages, theme, role, publicPath }: { sec
     setOverride(ids);
     await flush();
     const res: ActionRes = await reorderSections(ids);
-    if (!res.ok) { setOverride(null); toast.error(res.error || 'Gagal mengubah urutan'); return; }
+    if (!res.ok) { setOverride(null); toast.error(res.error || tr('Gagal mengubah urutan')); return; }
     router.refresh();
     reloadPreview();
   }
@@ -290,11 +292,11 @@ export function VisualEditor({ sections, pages, theme, role, publicPath }: { sec
   }
 
   function askDelete(s: any) {
-    const label = sectionMeta(effective(s).type).label;
+    const label = tr(sectionMeta(effective(s).type).label);
     setConfirm({
-      title: `Hapus “${label}”?`,
-      body: 'Bagian ini akan dihapus dari halaman. Jika halaman sudah pernah dipublikasikan, bagian ini baru hilang dari website setelah kamu menekan Publikasikan.',
-      confirmLabel: 'Ya, hapus',
+      title: `${tr('Hapus')} “${label}”?`,
+      body: tr('Bagian ini akan dihapus dari halaman. Jika halaman sudah pernah dipublikasikan, bagian ini baru hilang dari website setelah kamu menekan Publikasikan.'),
+      confirmLabel: tr('Ya, hapus'),
       danger: true,
       onConfirm: async () => {
         setConfirm(null);
@@ -302,10 +304,10 @@ export function VisualEditor({ sections, pages, theme, role, publicPath }: { sec
         setBusy(true);
         const res: ActionRes = await deleteSection(s.id);
         setBusy(false);
-        if (!res.ok) { toast.error(res.error || 'Gagal menghapus'); return; }
+        if (!res.ok) { toast.error(res.error || tr('Gagal menghapus')); return; }
         if (selectedIdRef.current === s.id) { selectedIdRef.current = null; setSelectedId(null); setMobileView('preview'); }
         cacheRef.current.delete(s.id);
-        toast.success('Bagian dihapus');
+        toast.success(tr('Bagian dihapus'));
         router.refresh();
         reloadPreview();
       },
@@ -314,17 +316,17 @@ export function VisualEditor({ sections, pages, theme, role, publicPath }: { sec
 
   function askPublish() {
     setConfirm({
-      title: `Publikasikan halaman ${pageLabel(page)}?`,
-      body: 'Semua perubahan pada halaman ini akan langsung tampil di website publik gereja.',
-      confirmLabel: 'Publikasikan sekarang',
+      title: `${tr('Publikasikan halaman')} ${pageLabel(page)}?`,
+      body: tr('Semua perubahan pada halaman ini akan langsung tampil di website publik gereja.'),
+      confirmLabel: tr('Publikasikan sekarang'),
       onConfirm: async () => {
         setConfirm(null);
         setBusy(true);
         await flush();
         const res: ActionRes = await publishSections(page);
         setBusy(false);
-        if (!res.ok) { toast.error(res.error || 'Gagal mempublikasikan'); return; }
-        toast.success('Halaman sudah tayang di website publik');
+        if (!res.ok) { toast.error(res.error || tr('Gagal mempublikasikan')); return; }
+        toast.success(tr('Halaman sudah tayang di website publik'));
         router.refresh();
       },
     });
@@ -332,10 +334,10 @@ export function VisualEditor({ sections, pages, theme, role, publicPath }: { sec
 
   /* ───────── tampilan ───────── */
   const statusChip = (() => {
-    if (saveState === 'dirty') return <span className="text-xs text-muted-foreground">Belum tersimpan…</span>;
+    if (saveState === 'dirty') return <span className="text-xs text-muted-foreground">{tr('Belum tersimpan…')}</span>;
     if (saveState === 'saving') return <span className="text-xs text-muted-foreground">Menyimpan…</span>;
     if (saveState === 'saved') return <span className="text-xs font-medium text-emerald-400">✓ Tersimpan sebagai draf</span>;
-    if (saveState === 'error') return <button type="button" onClick={() => void flush()} className="text-xs font-semibold text-destructive underline underline-offset-4">Gagal menyimpan · Coba lagi</button>;
+    if (saveState === 'error') return <button type="button" onClick={() => void flush()} className="text-xs font-semibold text-destructive underline underline-offset-4">{tr('Gagal menyimpan · Coba lagi')}</button>;
     return <span className="hidden text-xs text-muted-foreground xl:inline">Perubahan tersimpan otomatis sebagai draf</span>;
   })();
 
@@ -347,13 +349,13 @@ export function VisualEditor({ sections, pages, theme, role, publicPath }: { sec
       {/* Bilah atas */}
       <div className="flex flex-wrap items-center gap-2 glass rounded-xl p-3">
         <div className="min-w-[10rem] flex-1 sm:flex-none">
-          <Select aria-label="Pilih halaman" value={page} onChange={(e) => void changePage(e.target.value)} className="font-medium">
-            {pageOptions.map((p) => <option key={p.slug} value={p.slug}>Halaman: {p.label}</option>)}
+          <Select aria-label={tr('Pilih halaman')} value={page} onChange={(e) => void changePage(e.target.value)} className="font-medium">
+            {pageOptions.map((p) => <option key={p.slug} value={p.slug}>{tr('Halaman')}: {tr(p.label)}</option>)}
           </Select>
         </div>
-        <div className="hidden items-center gap-1 rounded-lg bg-secondary/60 p-1 lg:flex" role="group" aria-label="Ukuran layar pratinjau">
+        <div className="hidden items-center gap-1 rounded-lg bg-secondary/60 p-1 lg:flex" role="group" aria-label={tr('Ukuran layar pratinjau')}>
           {([['mobile', Smartphone, 'HP'], ['tablet', Tablet, 'Tablet'], ['desktop', Monitor, 'Komputer']] as const).map(([id, Icon, label]) => (
-            <button key={id} type="button" aria-pressed={device === id} aria-label={`Pratinjau ${label}`} title={label} onClick={() => setDevice(id)} className={cn('flex h-9 w-9 items-center justify-center rounded-md transition-colors', device === id ? 'bg-primary text-primary-foreground' : 'hover:bg-secondary')}>
+            <button key={id} type="button" aria-pressed={device === id} aria-label={`${tr('Pratinjau')} ${label}`} title={label} onClick={() => setDevice(id)} className={cn('flex h-9 w-9 items-center justify-center rounded-md transition-colors', device === id ? 'bg-primary text-primary-foreground' : 'hover:bg-secondary')}>
               <Icon className="h-4 w-4" />
             </button>
           ))}
@@ -366,14 +368,14 @@ export function VisualEditor({ sections, pages, theme, role, publicPath }: { sec
             </a>
           )}
           <Button onClick={askPublish} disabled={busy || (unpublishedCount === 0 && saveState !== 'dirty')}>
-            <Rocket className="h-4 w-4" /> {unpublishedCount > 0 ? `Publikasikan (${unpublishedCount})` : 'Sudah tayang'}
+            <Rocket className="h-4 w-4" /> {unpublishedCount > 0 ? `${tr('Publikasikan')} (${unpublishedCount})` : tr('Sudah tayang')}
           </Button>
         </div>
       </div>
 
       {/* Pilihan tampilan di layar kecil */}
       <div className="grid grid-cols-3 gap-1 rounded-lg bg-secondary/60 p-1 lg:hidden" role="tablist">
-        {([['list', 'Bagian'], ['preview', 'Pratinjau'], ['edit', 'Edit']] as const).map(([id, label]) => (
+        {([['list', tr('Bagian')], ['preview', tr('Pratinjau')], ['edit', 'Edit']] as const).map(([id, label]) => (
           <button key={id} type="button" role="tab" aria-selected={mobileView === id} onClick={() => setMobileView(id)} className={cn('min-h-10 rounded-md text-sm font-medium transition-colors', mobileView === id ? 'bg-primary text-primary-foreground' : 'hover:bg-secondary')}>{label}</button>
         ))}
       </div>
@@ -382,15 +384,15 @@ export function VisualEditor({ sections, pages, theme, role, publicPath }: { sec
         {/* Daftar bagian */}
         <aside className={cn('flex-col overflow-hidden glass rounded-xl', mobileView === 'list' ? 'flex' : 'hidden', 'lg:flex')}>
           <div className="flex items-center justify-between gap-2 border-b p-3">
-            <div><p className="text-sm font-semibold">Isi Halaman</p><p className="text-xs text-muted-foreground">Seret untuk mengubah urutan</p></div>
-            <Button size="sm" onClick={() => setAddOpen(true)} disabled={busy}><Plus className="h-4 w-4" /> Tambah</Button>
+            <div><p className="text-sm font-semibold">{tr('Isi Halaman')}</p><p className="text-xs text-muted-foreground">{tr('Seret untuk mengubah urutan')}</p></div>
+            <Button size="sm" onClick={() => setAddOpen(true)} disabled={busy}><Plus className="h-4 w-4" /> {tr('Tambah')}</Button>
           </div>
           <div className="flex-1 space-y-2 overflow-y-auto p-3">
             {ordered.length === 0 && (
               <div className="rounded-xl border border-dashed p-6 text-center">
-                <p className="text-sm font-medium">Halaman ini masih kosong</p>
-                <p className="mt-1 text-xs text-muted-foreground">Mulai dengan menambahkan bagian pertama, misalnya Banner Utama.</p>
-                <Button className="mt-4" onClick={() => setAddOpen(true)}><Plus className="h-4 w-4" /> Tambah bagian pertama</Button>
+                <p className="text-sm font-medium">{tr('Halaman ini masih kosong')}</p>
+                <p className="mt-1 text-xs text-muted-foreground">{tr('Mulai dengan menambahkan bagian pertama, misalnya Banner Utama.')}</p>
+                <Button className="mt-4" onClick={() => setAddOpen(true)}><Plus className="h-4 w-4" /> {tr('Tambah bagian pertama')}</Button>
               </div>
             )}
             {ordered.map((s, index) => {
@@ -424,13 +426,13 @@ export function VisualEditor({ sections, pages, theme, role, publicPath }: { sec
                       <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-secondary"><Icon className="h-4 w-4" /></span>
                       <span className="min-w-0">
                         <span className="flex items-center gap-1.5 text-sm font-medium">
-                          {meta.label}
-                          {localHas(s) && <span className="h-2 w-2 rounded-full bg-amber-400" title="Belum dipublikasikan" />}
+                          {tr(meta.label)}
+                          {localHas(s) && <span className="h-2 w-2 rounded-full bg-amber-400" title={tr('Belum dipublikasikan')} />}
                         </span>
-                        <span className="block truncate text-xs text-muted-foreground">{e.enabled ? sectionSummary(e.type, text) : 'Disembunyikan dari website'}</span>
+                        <span className="block truncate text-xs text-muted-foreground">{e.enabled ? sectionSummary(e.type, text) : tr('Disembunyikan dari website')}</span>
                       </span>
                     </button>
-                    <button type="button" onClick={() => void toggleEnabled(s)} disabled={busy} aria-label={e.enabled ? 'Sembunyikan bagian ini' : 'Tampilkan bagian ini'} title={e.enabled ? 'Sembunyikan' : 'Tampilkan'} className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-secondary disabled:opacity-50">
+                    <button type="button" onClick={() => void toggleEnabled(s)} disabled={busy} aria-label={e.enabled ? tr('Sembunyikan bagian ini') : tr('Tampilkan bagian ini')} title={e.enabled ? tr('Sembunyikan') : tr('Tampilkan')} className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-secondary disabled:opacity-50">
                       {e.enabled ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
                     </button>
                   </div>
@@ -439,20 +441,20 @@ export function VisualEditor({ sections, pages, theme, role, publicPath }: { sec
                       <Button type="button" variant="ghost" size="sm" disabled={busy || index === 0} onClick={() => moveSection(s.id, -1)} aria-label="Naikkan"><ArrowUp className="h-4 w-4" /></Button>
                       <Button type="button" variant="ghost" size="sm" disabled={busy || index === ordered.length - 1} onClick={() => moveSection(s.id, 1)} aria-label="Turunkan"><ArrowDown className="h-4 w-4" /></Button>
                       <Button type="button" variant="ghost" size="sm" disabled={busy} onClick={() => void duplicateSection(s)}><Copy className="h-4 w-4" /> Gandakan</Button>
-                      {canDelete(role) && <Button type="button" variant="ghost" size="sm" disabled={busy} onClick={() => askDelete(s)} className="text-destructive"><Trash2 className="h-4 w-4" /> Hapus</Button>}
+                      {canDelete(role) && <Button type="button" variant="ghost" size="sm" disabled={busy} onClick={() => askDelete(s)} className="text-destructive"><Trash2 className="h-4 w-4" /> {tr('Hapus')}</Button>}
                     </div>
                   )}
                 </div>
               );
             })}
-            {!canDelete(role) && ordered.length > 0 && <p className="px-1 text-xs text-muted-foreground">Untuk menyingkirkan bagian, gunakan ikon mata agar disembunyikan. Menghapus permanen hanya bisa dilakukan Superadmin.</p>}
+            {!canDelete(role) && ordered.length > 0 && <p className="px-1 text-xs text-muted-foreground">{tr('Untuk menyingkirkan bagian, gunakan ikon mata agar disembunyikan. Menghapus permanen hanya bisa dilakukan Superadmin.')}</p>}
           </div>
         </aside>
 
         {/* Pratinjau */}
         <section className={cn('min-h-0 flex-col overflow-hidden rounded-xl border bg-muted/30', mobileView === 'preview' ? 'flex' : 'hidden', 'lg:flex')}>
           <div className="flex items-center justify-between gap-2 border-b border-white/10 px-3 py-2">
-            <p className="flex items-center gap-1.5 text-xs text-muted-foreground"><MousePointerClick className="h-3.5 w-3.5" /> {selected ? 'Bagian yang sedang diedit ditandai dengan garis biru.' : 'Klik bagian mana pun di pratinjau untuk mengeditnya.'}</p>
+            <p className="flex items-center gap-1.5 text-xs text-muted-foreground"><MousePointerClick className="h-3.5 w-3.5" /> {selected ? tr('Bagian yang sedang diedit ditandai dengan garis biru.') : tr('Klik bagian mana pun di pratinjau untuk mengeditnya.')}</p>
             {frameLoading && previewSrc && <span className="flex items-center gap-1.5 text-xs text-muted-foreground"><span className="h-3 w-3 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" /> Memperbarui…</span>}
           </div>
           <div className="flex min-h-0 flex-1 justify-center overflow-auto p-2 sm:p-3">
@@ -463,18 +465,18 @@ export function VisualEditor({ sections, pages, theme, role, publicPath }: { sec
                 src={previewSrc}
                 loading="lazy"
                 referrerPolicy="strict-origin-when-cross-origin"
-                title={'Pratinjau halaman ' + pageLabel(page)}
+                title={tr('Pratinjau halaman') + ' ' + pageLabel(page)}
                 onLoad={() => { setFrameLoading(false); postFocus(selectedIdRef.current, false); }}
                 className={cn('h-[70vh] rounded-lg border bg-white shadow-lg lg:h-full', deviceWidth ? 'shrink-0' : 'w-full')}
                 style={deviceWidth ? { width: deviceWidth, maxWidth: '100%' } : undefined}
               />
             ) : previewSrc ? (
               <div className="flex h-full min-h-[320px] w-full flex-col items-center justify-center gap-3 rounded-lg border border-dashed p-6 text-center">
-                <span className="text-sm text-muted-foreground">Preview website dimuat saat diminta agar resource situs publik tidak membebani editor.</span>
-                <Button type="button" onClick={() => { setFrameLoading(true); setPreviewEnabled(true); }}>Muat preview website</Button>
+                <span className="text-sm text-muted-foreground">{tr('Preview website dimuat saat diminta agar resource situs publik tidak membebani editor.')}</span>
+                <Button type="button" onClick={() => { setFrameLoading(true); setPreviewEnabled(true); }}>{tr('Muat preview website')}</Button>
               </div>
             ) : (
-              <div className="flex h-full min-h-[320px] w-full items-center justify-center rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">Website publik belum tersedia untuk gereja ini.</div>
+              <div className="flex h-full min-h-[320px] w-full items-center justify-center rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">{tr('Website publik belum tersedia untuk gereja ini.')}</div>
             )}
           </div>
         </section>
@@ -486,9 +488,9 @@ export function VisualEditor({ sections, pages, theme, role, publicPath }: { sec
               <div className="flex items-start justify-between gap-2 border-b p-3">
                 <div className="flex min-w-0 items-start gap-2">
                   <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/15 text-primary"><selectedMeta.icon className="h-4 w-4" /></span>
-                  <div className="min-w-0"><p className="text-sm font-semibold">{selectedMeta.label}</p><p className="text-xs text-muted-foreground">{selectedMeta.hint}</p></div>
+                  <div className="min-w-0"><p className="text-sm font-semibold">{tr(selectedMeta.label)}</p><p className="text-xs text-muted-foreground">{tr(selectedMeta.hint)}</p></div>
                 </div>
-                <Button type="button" variant="ghost" size="icon" onClick={() => void deselect()} aria-label="Tutup panel edit"><X className="h-4 w-4" /></Button>
+                <Button type="button" variant="ghost" size="icon" onClick={() => void deselect()} aria-label={tr('Tutup panel edit')}><X className="h-4 w-4" /></Button>
               </div>
               <div className="flex-1 overflow-y-auto p-3">
                 <SectionPanel key={selected.id} type={effective(selected).type as SectionTypeId} content={content} onChange={updateContent} pages={pageOptions} palette={palette} />
@@ -497,12 +499,12 @@ export function VisualEditor({ sections, pages, theme, role, publicPath }: { sec
           ) : (
             <div className="flex flex-1 flex-col items-center justify-center gap-3 p-6 text-center">
               <span className="flex h-12 w-12 items-center justify-center rounded-full bg-secondary"><MousePointerClick className="h-5 w-5 text-primary" /></span>
-              <p className="text-sm font-semibold">Pilih bagian untuk diedit</p>
+              <p className="text-sm font-semibold">{tr('Pilih bagian untuk diedit')}</p>
               <ol className="space-y-1.5 text-left text-xs text-muted-foreground">
-                <li>1. Klik bagian di pratinjau, atau pilih dari daftar.</li>
-                <li>2. Ubah tulisan, foto, dan warna di sini.</li>
+                <li>{tr('1. Klik bagian di pratinjau, atau pilih dari daftar.')}</li>
+                <li>{tr('2. Ubah tulisan, foto, dan warna di sini.')}</li>
                 <li>3. Perubahan tersimpan otomatis sebagai draf.</li>
-                <li>4. Tekan <b>Publikasikan</b> jika sudah siap tayang.</li>
+                <li>4. Tekan <b>{tr('Publikasikan')}</b> jika sudah siap tayang.</li>
               </ol>
             </div>
           )}
@@ -510,15 +512,15 @@ export function VisualEditor({ sections, pages, theme, role, publicPath }: { sec
       </div>
 
       {/* Tambah bagian */}
-      <Modal open={addOpen} onClose={() => setAddOpen(false)} title="Tambah bagian baru" wide>
-        <p className="mb-3 text-sm text-muted-foreground">Pilih jenis bagian. Bagian baru muncul di paling bawah halaman dan bisa dipindah kapan saja.</p>
+      <Modal open={addOpen} onClose={() => setAddOpen(false)} title={tr('Tambah bagian baru')} wide>
+        <p className="mb-3 text-sm text-muted-foreground">{tr('Pilih jenis bagian. Bagian baru muncul di paling bawah halaman dan bisa dipindah kapan saja.')}</p>
         <div className="grid gap-2 sm:grid-cols-2">
           {SECTION_ORDER.map((type) => {
             const meta = SECTION_META[type];
             return (
               <button key={type} type="button" onClick={() => void addSection(type)} className="flex items-start gap-3 rounded-xl border p-3 text-left transition-colors hover:border-primary hover:bg-primary/5">
                 <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-secondary"><meta.icon className="h-5 w-5" /></span>
-                <span><span className="block text-sm font-semibold">{meta.label}</span><span className="mt-0.5 block text-xs text-muted-foreground">{meta.hint}</span></span>
+                <span><span className="block text-sm font-semibold">{tr(meta.label)}</span><span className="mt-0.5 block text-xs text-muted-foreground">{tr(meta.hint)}</span></span>
               </button>
             );
           })}
@@ -529,7 +531,7 @@ export function VisualEditor({ sections, pages, theme, role, publicPath }: { sec
       <Modal open={confirm !== null} onClose={() => setConfirm(null)} title={confirm?.title || ''}>
         <p className="text-sm text-muted-foreground">{confirm?.body}</p>
         <div className="mt-5 flex justify-end gap-2">
-          <Button type="button" variant="secondary" onClick={() => setConfirm(null)}>Batal</Button>
+          <Button type="button" variant="secondary" onClick={() => setConfirm(null)}>{tr('Batal')}</Button>
           <Button type="button" variant={confirm?.danger ? 'destructive' : 'default'} onClick={() => confirm?.onConfirm()}>{confirm?.confirmLabel}</Button>
         </div>
       </Modal>

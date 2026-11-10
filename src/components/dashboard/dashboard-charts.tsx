@@ -5,7 +5,7 @@ import {
   Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, Pie, PieChart,
   ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from 'recharts';
-import { formatRupiah } from '@/lib/utils';
+import { formatRupiah, formatRupiahCompact } from '@/lib/utils';
 
 /**
  * Chart khusus halaman Dashboard (mobile-first).
@@ -82,7 +82,7 @@ function ChartEmpty({ label }: { label: string }) {
 /** 'MM-DD' -> 'DD/MM' */
 const shortDate = (v: string) => (v.includes('-') ? v.split('-').reverse().join('/') : v);
 
-const compactRupiah = new Intl.NumberFormat('id-ID', { notation: 'compact', maximumFractionDigits: 1 });
+const compactRupiah = { format: (v: number) => formatRupiahCompact(v).replace('Rp ', '') };
 
 /* ------------------------------------------------------------------ */
 /* Kehadiran per hari                                                  */

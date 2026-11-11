@@ -49,7 +49,15 @@ jobs:
           distribution: temurin
           java-version: 21
 
-      - uses: android-actions/setup-android@v3
+      # Android SDK "tools" sudah dihapus dari repository Google.
+      # setup-android@v3 secara default masih meminta "tools platform-tools",
+      # sehingga sdkmanager gagal sebelum proses build dimulai.
+      # Kita hanya membutuhkan platform-tools; Gradle mengunduh platform/build-tools
+      # yang diperlukan saat menjalankan task Android.
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          packages: 'platform-tools'
 
       - name: Install dependencies
         run: npm install --no-audit --no-fund

@@ -1,0 +1,80 @@
+name: Build APK
+
+# APK membungkus situs Vercel (server.url di capacitor.config.ts), jadi perubahan
+# kode web TIDAK perlu build APK ulang. Workflow ini jalan saat file native
+# berubah, atau manual lewat tab Actions > Build APK > Run workflow.
+on:
+  push:
+    branches:
+      - experiments
+    paths:
+      - 'capacitor.config.ts'
+      - 'package.json'
+      - 'www/**'
+      - 'android/**'
+      - 'assets/GetChurchly-App-Icon/**'
+      - 'assets/GetChurchly_Splash_4.8s.mp4'
+      - 'scripts/android-apply-assets.mjs'
+      - '.github/workflows/build-apk.yml'
+  workflow_dispatch:
+    inputs:
+      server_url:
+        description: 'URL situs yang dimuat APK (kosongkan untuk default)'
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-apk-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      CAP_SERVER_URL: ${{ inputs.server_url || vars.CAP_SERVER_URL || 'https://getchurchly.vercel.app' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      # Capacitor 7 membutuhkan JDK 21
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - uses: android-actions/setup-android@v3
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      # Jika folder android/ belum di-commit, buat otomatis.
+      - name: Add Android platform
+        run: |
+          if [ ! -d android ]; then
+            npx cap add android
+          fi
+
+      - name: Sync Capacitor
+        run: npx cap sync android
+
+      - name: Apply icon and splash
+        run: node scripts/android-apply-assets.mjs
+
+      - name: Build debug APK
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: GetChurchly-APK
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error

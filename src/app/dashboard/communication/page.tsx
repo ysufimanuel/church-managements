@@ -8,7 +8,7 @@ export default async function CommunicationPage() {
   const supabase = await createClient();
   const profile = await getCurrentProfile();
   const [{ data: users }, { data: groups }, { data: messages }, { data: announcements }] = await Promise.all([
-    supabase.from('profiles').select('id, nama, role').eq('status', 'aktif').order('nama'),
+    supabase.from('profiles').select('id, nama, role, avatar_url').eq('status', 'aktif').order('nama'),
     supabase.from('groups').select('id, nama'),
     supabase.from('messages').select('*').or(`sender_id.eq.${profile!.id},receiver_id.eq.${profile!.id}`).order('created_at'),
     supabase.from('announcements').select('*').order('tanggal', { ascending: false }),

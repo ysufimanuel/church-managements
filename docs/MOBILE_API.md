@@ -26,3 +26,5 @@ The server-role key is read only from Vercel environment variables. It must neve
 
 
 The native registration and user-management routes are deployed with the web application and use the same Supabase tenant data model.
+
+The communication contact directory returns each profile's `avatar_url`; both web and native clients use the uploaded profile image when available and fall back to generated initials/avatar art otherwise.

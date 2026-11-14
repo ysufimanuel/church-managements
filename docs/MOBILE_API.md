@@ -23,3 +23,6 @@ All routes require `Authorization: Bearer <Supabase access token>`. The server v
 - `DELETE /api/mobile/users`: delete a user by `id`; deleting the current account is rejected.
 
 The server-role key is read only from Vercel environment variables. It must never be added to Android BuildConfig, source code, or client requests.
+
+
+The native registration and user-management routes are deployed with the web application and use the same Supabase tenant data model.

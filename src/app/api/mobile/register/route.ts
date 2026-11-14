@@ -83,8 +83,8 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ ok: true, message: 'Gereja berhasil didaftarkan. Silakan login dengan akun superadmin.' }, { status: 201 });
   } catch (error) {
-    if (userId) await admin.auth.admin.deleteUser(userId).catch(() => undefined);
-    if (churchId) await admin.from('churches').delete().eq('id', churchId).catch(() => undefined);
+    if (userId) { try { await admin.auth.admin.deleteUser(userId); } catch { /* best-effort rollback */ } }
+    if (churchId) { try { await admin.from('churches').delete().eq('id', churchId); } catch { /* best-effort rollback */ } }
     console.error('[MOBILE_REGISTER]', error);
     const message = error instanceof Error ? error.message : 'Registrasi gagal.';
     return NextResponse.json({ ok: false, error: message }, { status: 400 });

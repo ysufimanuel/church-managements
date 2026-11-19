@@ -139,3 +139,29 @@ Setiap action memanggil `requireRole(...)` di server — RBAC ditegakkan dua lap
 
 - Email broadcast membuat notifikasi in-app; untuk pengiriman email nyata, hubungkan `saveBroadcast` ke provider (Resend/SMTP) — titik integrasi sudah ditandai di kode.
 - Login memakai username → lookup email ke tabel `profiles`, lalu `signInWithPassword`.
+
+
+---
+
+## Repository and branch status
+
+- `main` is the default branch.
+- `experiments` is a separate, substantially expanded development line. At the time of this audit it is **294 commits ahead and 10 commits behind** `main`; the histories have diverged.
+- Do not merge or change the default branch based only on the commit count. Review the diff and run the web build, database migration, and role-based access tests first.
+
+The `experiments` branch contains additional mobile/Capacitor assets and CI workflows. The main branch remains the default reference until that branch has been deliberately reconciled and validated.
+
+## Local verification
+
+```bash
+npm ci
+cp .env.example .env.local
+npm run dev
+npm run build
+```
+
+Apply `supabase/schema.sql` to the intended Supabase project before testing authenticated workflows. Keep the service-role key on the server only; browser access must use the public anon/publishable key and rely on tested RLS policies.
+
+### Portfolio note
+
+This repository represents the web application. The native Android client lives in the separate `churchmanagement` repository.

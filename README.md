@@ -165,3 +165,7 @@ Apply `supabase/schema.sql` to the intended Supabase project before testing auth
 ### Portfolio note
 
 This repository represents the web application. The native Android client lives in the separate `churchmanagement` repository.
+
+## Deployment trigger
+
+Production deployment commits must include the keyword `deploy` in the commit message.

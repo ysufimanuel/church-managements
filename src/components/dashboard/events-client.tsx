@@ -1,7 +1,8 @@
 'use client';
 
+import { useUrlQuery } from '@/lib/search/use-url-query';
 import * as React from 'react';
-import { useLang } from '@/components/lang-context';
+import { useLang, tm } from '@/components/lang-context';
 import { Button } from '@/components/ui/button';
 import { Input, Label, Select, Textarea } from '@/components/ui/input';
 import { Modal } from '@/components/ui/modal';
@@ -16,7 +17,7 @@ const TYPES = ['ibadah', 'seminar', 'retret', 'sosial', 'lainnya'];
 
 export function EventsClient({ events, members, participants, role }: { events: any[]; members: any[]; participants: any[]; role: Role }) {
   const { t } = useLang();
-  const [search, setSearch] = React.useState('');
+  const [search, setSearch] = useUrlQuery();
   const [filterStatus, setFilterStatus] = React.useState('');
   const [modal, setModal] = React.useState(false);
   const [editing, setEditing] = React.useState<any>(null);
@@ -24,8 +25,9 @@ export function EventsClient({ events, members, participants, role }: { events: 
   const [partMember, setPartMember] = React.useState('');
   const [partManual, setPartManual] = React.useState('');
 
+  const query = search.trim().toLocaleLowerCase('id-ID');
   const filtered = events.filter((e) =>
-    e.nama.toLowerCase().includes(search.toLowerCase()) && (!filterStatus || e.status === filterStatus)
+    [e.nama,e.tipe,e.custom_type,e.lokasi,e.deskripsi].some((v) => String(v || '').toLocaleLowerCase('id-ID').includes(query)) && (!filterStatus || e.status === filterStatus)
   );
   const partsOf = (eid: number) => participants.filter((p) => p.event_id === eid);
   const memberName = (id: number | null) => members.find((m) => m.id === id)?.nama || '-';
@@ -41,7 +43,7 @@ export function EventsClient({ events, members, participants, role }: { events: 
       kapasitas: fd.get('kapasitas') ? Number(fd.get('kapasitas')) : undefined,
       status: String(fd.get('status')) as any,
     });
-    if (res.ok) { toast.success(t('save')); setModal(false); } else toast.error(res.error);
+    if (res.ok) { toast.success(t('save')); setModal(false); } else toast.error(tm(res.error));
   }
 
   const statusVariant = (s: string) => s === 'upcoming' ? 'warning' : s === 'ongoing' ? 'success' : 'secondary';
@@ -75,9 +77,9 @@ export function EventsClient({ events, members, participants, role }: { events: 
                 <Badge variant={statusVariant(e.status) as any} className="mt-1">{t(e.status)}</Badge>
               </div>
               <div className="flex gap-1">
-                <Button variant="ghost" size="icon" onClick={() => setPartModal(e)} aria-label="Peserta"><Users className="h-4 w-4" /></Button>
-                {canEdit(role) && <Button variant="ghost" size="icon" onClick={() => { setEditing(e); setModal(true); }} aria-label="Edit"><Pencil className="h-4 w-4" /></Button>}
-                {canDelete(role) && <Button variant="ghost" size="icon" aria-label="Hapus" onClick={async () => { if (confirm(t('confirmation'))) { const r = await deleteEvent(e.id); r.ok ? toast.success(t('save')) : toast.error(r.error); } }}><Trash2 className="h-4 w-4 text-destructive" /></Button>}
+                <Button variant="ghost" size="icon" onClick={() => setPartModal(e)} aria-label={t('act-participants')}><Users className="h-4 w-4" /></Button>
+                {canEdit(role) && <Button variant="ghost" size="icon" onClick={() => { setEditing(e); setModal(true); }} aria-label={t('act-edit')}><Pencil className="h-4 w-4" /></Button>}
+                {canDelete(role) && <Button variant="ghost" size="icon" aria-label={t('act-delete')} onClick={async () => { if (confirm(t('confirmation'))) { const r = await deleteEvent(e.id); r.ok ? toast.success(t('save')) : toast.error(tm(r.error)); } }}><Trash2 className="h-4 w-4 text-destructive" /></Button>}
               </div>
             </CardHeader>
             <CardContent className="space-y-1 text-sm">
@@ -128,11 +130,11 @@ export function EventsClient({ events, members, participants, role }: { events: 
                     <option value="">{t('select-member')}</option>
                     {members.map((m) => <option key={m.id} value={m.id}>{m.nama}</option>)}
                   </Select>
-                  <Button onClick={async () => { if (!partMember) return; const r = await addParticipant(partModal.id, Number(partMember)); r.ok ? toast.success(t('save')) : toast.error(r.error); setPartMember(''); }}>{t('add')}</Button>
+                  <Button onClick={async () => { if (!partMember) return; const r = await addParticipant(partModal.id, Number(partMember)); r.ok ? toast.success(t('save')) : toast.error(tm(r.error)); setPartMember(''); }}>{t('add')}</Button>
                 </div>
                 <div className="flex gap-2">
                   <Input placeholder={t('add-manual-participant')} value={partManual} onChange={(e) => setPartManual(e.target.value)} />
-                  <Button variant="secondary" onClick={async () => { if (!partManual.trim()) return; const r = await addParticipant(partModal.id, undefined, partManual.trim()); r.ok ? toast.success(t('save')) : toast.error(r.error); setPartManual(''); }}>{t('add')}</Button>
+                  <Button variant="secondary" onClick={async () => { if (!partManual.trim()) return; const r = await addParticipant(partModal.id, undefined, partManual.trim()); r.ok ? toast.success(t('save')) : toast.error(tm(r.error)); setPartManual(''); }}>{t('add')}</Button>
                 </div>
               </div>
             )}
@@ -142,7 +144,7 @@ export function EventsClient({ events, members, participants, role }: { events: 
                   <span>{p.member_id ? memberName(p.member_id) : p.nama_manual}</span>
                   <span className="flex items-center gap-2 text-xs text-muted-foreground">
                     {formatDateTime(p.registered_at)}
-                    {canEdit(role) && <Button variant="ghost" size="sm" onClick={async () => { const r = await removeParticipant(p.id); r.ok ? toast.success(t('save')) : toast.error(r.error); }}><Trash2 className="h-3 w-3 text-destructive" /></Button>}
+                    {canDelete(role) && <Button variant="ghost" size="sm" onClick={async () => { const r = await removeParticipant(p.id); r.ok ? toast.success(t('save')) : toast.error(tm(r.error)); }}><Trash2 className="h-3 w-3 text-destructive" /></Button>}
                   </span>
                 </li>
               ))}

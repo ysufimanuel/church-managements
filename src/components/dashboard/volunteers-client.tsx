@@ -1,7 +1,9 @@
 'use client';
 
+import { useUrlQuery } from '@/lib/search/use-url-query';
+import { useSearchParams } from 'next/navigation';
 import * as React from 'react';
-import { useLang } from '@/components/lang-context';
+import { useLang, tm } from '@/components/lang-context';
 import { Button } from '@/components/ui/button';
 import { Input, Label, Select, Textarea } from '@/components/ui/input';
 import { Modal, Tabs } from '@/components/ui/modal';
@@ -20,8 +22,10 @@ export function VolunteersClient({ volunteers, members, events, assignments, rol
   volunteers: any[]; members: any[]; events: any[]; assignments: any[]; role: Role;
 }) {
   const { t } = useLang();
-  const [tab, setTab] = React.useState('list');
-  const [search, setSearch] = React.useState('');
+  const searchParams = useSearchParams();
+  const [tab, setTab] = React.useState(() => searchParams.get('tab') === 'assignment' ? 'assignment' : 'list');
+  React.useEffect(() => { if (searchParams.get('tab') === 'assignment') setTab('assignment'); }, [searchParams]);
+  const [search, setSearch] = useUrlQuery();
   const [modal, setModal] = React.useState(false);
   const [editing, setEditing] = React.useState<any>(null);
   const [source, setSource] = React.useState<'member' | 'external'>('member');
@@ -33,7 +37,9 @@ export function VolunteersClient({ volunteers, members, events, assignments, rol
   const volName = (v: any) => v.member_id ? memberName(v.member_id) : v.external_nama;
   const volNameById = (id: number) => { const v = volunteers.find((x) => x.id === id); return v ? volName(v) : '-'; };
   const eventName = (id: number | null) => events.find((e) => e.id === id)?.nama || '-';
-  const filtered = volunteers.filter((v) => (volName(v) || '').toLowerCase().includes(search.toLowerCase()));
+  const query = search.trim().toLocaleLowerCase('id-ID');
+  const filtered = volunteers.filter((v) => [volName(v),v.external_email,v.external_telepon,v.area,v.status,...(v.jadwal || [])].some((x) => String(x || '').toLocaleLowerCase('id-ID').includes(query)));
+  const filteredAssignments = assignments.filter((a) => [volNameById(a.volunteer_id),eventName(a.event_id),a.tugas,a.tempat,a.catatan,a.status].some((x) => String(x || '').toLocaleLowerCase('id-ID').includes(query)));
 
   async function handleSave(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -48,7 +54,7 @@ export function VolunteersClient({ volunteers, members, events, assignments, rol
       jadwal,
       status: String(fd.get('status') || 'aktif'),
     });
-    if (res.ok) { toast.success(t('save')); setModal(false); } else toast.error(res.error);
+    if (res.ok) { toast.success(t('save')); setModal(false); } else toast.error(tm(res.error));
   }
 
   async function handleSaveAsg(e: React.FormEvent<HTMLFormElement>) {
@@ -64,7 +70,7 @@ export function VolunteersClient({ volunteers, members, events, assignments, rol
       tugas: String(fd.get('tugas') || ''),
       catatan: String(fd.get('catatan') || ''),
     });
-    if (res.ok) { toast.success(t('save')); setAsgModal(false); } else toast.error(res.error);
+    if (res.ok) { toast.success(t('save')); setAsgModal(false); } else toast.error(tm(res.error));
   }
 
   return (
@@ -95,8 +101,8 @@ export function VolunteersClient({ volunteers, members, events, assignments, rol
                     <Badge variant="default" className="mt-1 capitalize">{t(v.area)}</Badge>
                   </div>
                   <div className="flex gap-1">
-                    {canEdit(role) && <Button variant="ghost" size="icon" onClick={() => { setEditing(v); setSource(v.member_id ? 'member' : 'external'); setJadwal(v.jadwal || []); setModal(true); }} aria-label="Edit"><Pencil className="h-4 w-4" /></Button>}
-                    {canDelete(role) && <Button variant="ghost" size="icon" aria-label="Hapus" onClick={async () => { if (confirm(t('confirmation'))) { const r = await deleteVolunteer(v.id); r.ok ? toast.success(t('save')) : toast.error(r.error); } }}><Trash2 className="h-4 w-4 text-destructive" /></Button>}
+                    {canEdit(role) && <Button variant="ghost" size="icon" onClick={() => { setEditing(v); setSource(v.member_id ? 'member' : 'external'); setJadwal(v.jadwal || []); setModal(true); }} aria-label={t('act-edit')}><Pencil className="h-4 w-4" /></Button>}
+                    {canDelete(role) && <Button variant="ghost" size="icon" aria-label={t('act-delete')} onClick={async () => { if (confirm(t('confirmation'))) { const r = await deleteVolunteer(v.id); r.ok ? toast.success(t('save')) : toast.error(tm(r.error)); } }}><Trash2 className="h-4 w-4 text-destructive" /></Button>}
                   </div>
                 </CardHeader>
                 <CardContent className="text-sm space-y-1">
@@ -130,7 +136,7 @@ export function VolunteersClient({ volunteers, members, events, assignments, rol
         <div className="space-y-3">
           {canAdd(role) && <Button onClick={() => { setAsgEditing(null); setAsgModal(true); }}><Plus className="h-4 w-4" /> {t('add-assignment')}</Button>}
           <div className="space-y-2">
-            {assignments.map((a) => (
+            {filteredAssignments.map((a) => (
               <div key={a.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border p-3 text-sm">
                 <div>
                   <p className="font-medium">{volNameById(a.volunteer_id)} — {a.tugas}</p>
@@ -139,12 +145,12 @@ export function VolunteersClient({ volunteers, members, events, assignments, rol
                 </div>
                 <div className="flex items-center gap-2">
                   <Badge variant="secondary">{a.status}</Badge>
-                  {canEdit(role) && <Button variant="ghost" size="icon" onClick={() => { setAsgEditing(a); setAsgModal(true); }} aria-label="Edit"><Pencil className="h-4 w-4" /></Button>}
-                  {canDelete(role) && <Button variant="ghost" size="icon" aria-label="Hapus" onClick={async () => { if (confirm(t('confirmation'))) { const r = await deleteAssignment(a.id); r.ok ? toast.success(t('save')) : toast.error(r.error); } }}><Trash2 className="h-4 w-4 text-destructive" /></Button>}
+                  {canEdit(role) && <Button variant="ghost" size="icon" onClick={() => { setAsgEditing(a); setAsgModal(true); }} aria-label={t('act-edit')}><Pencil className="h-4 w-4" /></Button>}
+                  {canDelete(role) && <Button variant="ghost" size="icon" aria-label={t('act-delete')} onClick={async () => { if (confirm(t('confirmation'))) { const r = await deleteAssignment(a.id); r.ok ? toast.success(t('save')) : toast.error(tm(r.error)); } }}><Trash2 className="h-4 w-4 text-destructive" /></Button>}
                 </div>
               </div>
             ))}
-            {assignments.length === 0 && <p className="text-muted-foreground">{t('none')}</p>}
+            {filteredAssignments.length === 0 && <p className="text-muted-foreground">{t('none')}</p>}
           </div>
         </div>
       )}

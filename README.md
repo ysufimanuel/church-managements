@@ -79,6 +79,7 @@ Setiap action memanggil `requireRole(...)` di server — RBAC ditegakkan dua lap
 - **Dynamic Ratio Media** (`MediaFrame`): rasio `16:9, 19:9, 1:1, 4:3, 4:5, 2:3, 9:16, 2:9, 32:91` via padding-top aspect box; auto-normalisasi URL Google Drive→direct image, YouTube/Vimeo→embed; map selalu **1:1** dengan titik koordinat (`lat,lng` → Google Maps embed); layer **overlay/front** dan posisi objek (atas/bawah/kiri/kanan/tengah).
 - **Dashboard**: stat cards, chart recharts (kehadiran, distribusi jemaat, pemasukan/pengeluaran, per kategori), tabel + search/filter/export, modal form per modul.
 - **Web Manager 3 sub-tab**: Header & Navigasi (toggle visibility + custom label), Tampilan & Tema (color picker, font selector Poppins/Inter/Roboto/Montserrat, Media Link Manager dengan auto-preview), Editor Halaman (Hero/Event Feed/Info & Lokasi/Media/Map/RichText + **Live Preview iframe** + tombol **Publish/Draft**).
+- **Editor Visual** (tab pertama Web Manager, untuk admin non-teknis): pratinjau halaman di tengah, klik bagian mana pun untuk mengedit di panel kanan, daftar bagian dengan drag & drop / tombol naik-turun, sembunyikan / gandakan / hapus (hapus hanya Superadmin), tambah bagian lewat galeri berbahasa sederhana, pratinjau HP/Tablet/Komputer, **autosave** ke draf, dan tombol **Publikasikan** per halaman. Tab "Editor Halaman (Lanjutan)" tetap tersedia untuk pengaturan detail. Detail teknis: `components/dashboard/visual-editor*.tsx`, jembatan klik di `components/public/preview-bridge.tsx` (aktif hanya pada `?preview=draft&edit=1` di dalam iframe), dan server action `saveSectionContent` / `reorderSections` / `setSectionEnabled` di `lib/actions/webmanager.ts`.
 - **Situs publik** mengikuti `design-template.md`: dark-mode-first, hero dengan overlay, kartu event dengan badge tanggal, info lokasi + peta 1:1, navbar sticky dengan highlight aktif, responsif mobile (drawer).
 
 ## 5) Real-time & Notifikasi
@@ -141,30 +142,19 @@ Setiap action memanggil `requireRole(...)` di server — RBAC ditegakkan dua lap
 - Login memakai username → lookup email ke tabel `profiles`, lalu `signInWithPassword`.
 
 
----
+## Native mobile API
 
-## Repository and branch status
+The Android client uses the same Supabase project as the web app. Privileged Auth Admin operations run only on the server; never put the service-role key in the APK.
 
-- `main` is the default branch.
-- `experiments` is a separate, substantially expanded development line. At the time of this audit it is **294 commits ahead and 10 commits behind** `main`; the histories have diverged.
-- Do not merge or change the default branch based only on the commit count. Review the diff and run the web build, database migration, and role-based access tests first.
+- Registration: `POST /api/mobile/register` creates a church tenant and its initial Superadmin account.
+- User management: `GET/POST/PATCH/DELETE /api/mobile/users` requires a Supabase access token in the Bearer authorization header and a Superadmin profile in the caller's church.
+- API details: see [docs/MOBILE_API.md](docs/MOBILE_API.md).
 
-The `experiments` branch contains additional mobile/Capacitor assets and CI workflows. The main branch remains the default reference until that branch has been deliberately reconciled and validated.
+## Supabase setup and migrations
 
-## Local verification
+For a **new, empty Supabase project**, run `supabase/schema.sql` once as the base schema, then apply every SQL file in `supabase/migrations/` in ascending filename order. The migration files extend the base schema with tenant isolation, role policies, Web Manager publishing, and later fixes. The schema file alone is not the complete current application schema.
 
-```bash
-npm ci
-cp .env.example .env.local
-npm run dev
-npm run build
-```
-
-Apply `supabase/schema.sql` to the intended Supabase project before testing authenticated workflows. Keep the service-role key on the server only; browser access must use the public anon/publishable key and rely on tested RLS policies.
-
-### Portfolio note
-
-This repository represents the web application. The native Android client lives in the separate `churchmanagement` repository.
+For an **existing project**, do not rerun the base schema. Back up the database and apply only migrations that have not already been applied, preserving their timestamp order. Never apply these migrations to production without checking the project's migration history first.
 
 ## Deployment trigger
 

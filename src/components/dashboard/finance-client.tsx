@@ -1,7 +1,8 @@
 'use client';
 
+import { useUrlQuery } from '@/lib/search/use-url-query';
 import * as React from 'react';
-import { useLang } from '@/components/lang-context';
+import { useLang, tm } from '@/components/lang-context';
 import { Button } from '@/components/ui/button';
 import { Input, Label, Select, Textarea } from '@/components/ui/input';
 import { Table, THead, TBody, TR, TH, TD } from '@/components/ui/table';
@@ -10,7 +11,7 @@ import { Badge, Card, CardContent, CardHeader, CardTitle } from '@/components/ui
 import { Plus, Pencil, Trash2, Check, X, Download } from 'lucide-react';
 import { saveFinanceTransaction, approveTransaction, rejectTransaction, deleteTransaction, saveFinanceCategory, deleteFinanceCategory, updateSaldoAwal } from '@/lib/actions/finance';
 import { toast } from 'sonner';
-import { formatRupiah, formatDate } from '@/lib/utils';
+import { formatRupiahCompact, formatRupiah, formatDate } from '@/lib/utils';
 import { exportCSV, printPDF } from '@/lib/export';
 import { FinanceLineChart, CategoryPieChart } from './charts';
 import { canAdd, canEdit, canDelete, canApprove, type Role } from '@/lib/rbac';
@@ -23,7 +24,7 @@ export function FinanceClient({ transactions, categories, settings, history, don
   const [modal, setModal] = React.useState<null | { tipe: 'pemasukan' | 'pengeluaran'; editing?: any }>(null);
   const [catModal, setCatModal] = React.useState<null | any>(null);
   const [saldoModal, setSaldoModal] = React.useState(false);
-  const [search, setSearch] = React.useState('');
+  const [search, setSearch] = useUrlQuery();
   const [filterCat, setFilterCat] = React.useState('');
   const [filterMonth, setFilterMonth] = React.useState('');
 
@@ -64,7 +65,7 @@ export function FinanceClient({ transactions, categories, settings, history, don
     if (res.ok) {
       toast.success(modal?.editing ? t('save') : canApprove(role) ? t('approved') : t('pending-approval'));
       setModal(null);
-    } else toast.error(res.error);
+    } else toast.error(tm(res.error));
   }
 
   async function handleSaveCat(e: React.FormEvent<HTMLFormElement>) {
@@ -74,26 +75,28 @@ export function FinanceClient({ transactions, categories, settings, history, don
       id: catModal?.id, nama: String(fd.get('nama')),
       tipe: String(fd.get('tipe')) as any, deskripsi: String(fd.get('deskripsi') || ''),
     });
-    if (res.ok) { toast.success(t('save')); setCatModal(null); } else toast.error(res.error);
+    if (res.ok) { toast.success(t('save')); setCatModal(null); } else toast.error(tm(res.error));
   }
 
   function trxTable(tipe: 'pemasukan' | 'pengeluaran') {
     const rows = transactions.filter((x) => x.tipe === tipe &&
       (!filterCat || x.kategori_id === Number(filterCat)) &&
       (!filterMonth || x.tanggal.startsWith(filterMonth)) &&
-      (!search || (x.keterangan || '').toLowerCase().includes(search.toLowerCase())));
+      (!search || [x.keterangan,catName(x.kategori_id)].some((v) => String(v || '').toLocaleLowerCase('id-ID').includes(search.trim().toLocaleLowerCase('id-ID')))));
     return (
       <div className="space-y-3">
-        <div className="flex flex-wrap gap-2">
-          <Input placeholder={t('search-members')} value={search} onChange={(e) => setSearch(e.target.value)} className="max-w-xs" />
-          <Select value={filterCat} onChange={(e) => setFilterCat(e.target.value)} className="w-auto">
+        <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
+          <Input placeholder={t('search-members')} value={search} onChange={(e) => setSearch(e.target.value)} className="col-span-2 sm:max-w-xs" />
+          <Select value={filterCat} onChange={(e) => setFilterCat(e.target.value)} className="w-full sm:w-auto">
             <option value="">{t('all-categories')}</option>
             {categories.filter((c) => c.tipe === tipe).map((c) => <option key={c.id} value={c.id}>{c.nama}</option>)}
           </Select>
-          <Input type="month" value={filterMonth} onChange={(e) => setFilterMonth(e.target.value)} className="w-auto" />
-          <Button variant="secondary" onClick={() => exportCSV(rows.map((x) => ({ Tanggal: x.tanggal, Kategori: catName(x.kategori_id), Keterangan: x.keterangan, Jumlah: x.jumlah, Status: x.status })), tipe)}>
-            <Download className="h-4 w-4" /> {t('export')}
-          </Button>
+          <Input type="month" value={filterMonth} onChange={(e) => setFilterMonth(e.target.value)} className="w-full sm:w-auto" />
+          {(
+            <Button variant="secondary" onClick={() => exportCSV(rows.map((x) => ({ [t('date')]: x.tanggal, [t('category')]: catName(x.kategori_id), [t('description')]: x.keterangan, [t('amount')]: x.jumlah, [t('status')]: x.status })), tipe)}>
+              <Download className="h-4 w-4" /> {t('export')}
+            </Button>
+          )}
           {canAdd(role) && <Button onClick={() => setModal({ tipe })}><Plus className="h-4 w-4" /> {tipe === 'pemasukan' ? t('add-income') : t('add-expense')}</Button>}
         </div>
         <Table>
@@ -102,19 +105,19 @@ export function FinanceClient({ transactions, categories, settings, history, don
             {rows.map((x) => (
               <TR key={x.id}>
                 <TD>{formatDate(x.tanggal)}</TD><TD>{catName(x.kategori_id)}</TD><TD>{x.keterangan}</TD>
-                <TD>{donorName(x.donatur_id)}</TD>
+                <TD className="mobile-hide">{donorName(x.donatur_id)}</TD>
                 <TD className={x.tipe === 'pemasukan' ? 'text-emerald-400 font-semibold' : 'text-red-400 font-semibold'}>{formatRupiah(x.jumlah)}</TD>
                 <TD><Badge variant={x.status === 'approved' ? 'success' : x.status === 'rejected' ? 'destructive' : 'warning'}>{t(x.status)}</Badge></TD>
                 <TD>
                   <div className="flex gap-1">
                     {canApprove(role) && x.status === 'pending' && (
                       <>
-                        <Button variant="ghost" size="icon" aria-label={t('approve')} onClick={async () => { const r = await approveTransaction(x.id); r.ok ? toast.success(t('approved')) : toast.error(r.error); }}><Check className="h-4 w-4 text-emerald-400" /></Button>
-                        <Button variant="ghost" size="icon" aria-label={t('reject')} onClick={async () => { const r = await rejectTransaction(x.id); r.ok ? toast.success(t('rejected')) : toast.error(r.error); }}><X className="h-4 w-4 text-destructive" /></Button>
+                        <Button variant="ghost" size="icon" aria-label={t('approve')} onClick={async () => { const r = await approveTransaction(x.id); r.ok ? toast.success(t('approved')) : toast.error(tm(r.error)); }}><Check className="h-4 w-4 text-emerald-400" /></Button>
+                        <Button variant="ghost" size="icon" aria-label={t('reject')} onClick={async () => { const r = await rejectTransaction(x.id); r.ok ? toast.success(t('rejected')) : toast.error(tm(r.error)); }}><X className="h-4 w-4 text-destructive" /></Button>
                       </>
                     )}
-                    {canEdit(role) && x.status === 'pending' && <Button variant="ghost" size="icon" aria-label="Edit" onClick={() => setModal({ tipe, editing: x })}><Pencil className="h-4 w-4" /></Button>}
-                    {canDelete(role) && <Button variant="ghost" size="icon" aria-label="Hapus" onClick={async () => { if (confirm(t('confirmation'))) { const r = await deleteTransaction(x.id); r.ok ? toast.success(t('save')) : toast.error(r.error); } }}><Trash2 className="h-4 w-4 text-destructive" /></Button>}
+                    {canEdit(role) && x.status === 'pending' && <Button variant="ghost" size="icon" aria-label={t('act-edit')} onClick={() => setModal({ tipe, editing: x })}><Pencil className="h-4 w-4" /></Button>}
+                    {canDelete(role) && <Button variant="ghost" size="icon" aria-label={t('act-delete')} onClick={async () => { if (confirm(t('confirmation'))) { const r = await deleteTransaction(x.id); r.ok ? toast.success(t('save')) : toast.error(tm(r.error)); } }}><Trash2 className="h-4 w-4 text-destructive" /></Button>}
                   </div>
                 </TD>
               </TR>
@@ -127,10 +130,10 @@ export function FinanceClient({ transactions, categories, settings, history, don
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3 sm:space-y-4">
       <div>
-        <h1 className="text-2xl font-bold">{t('finance')}</h1>
-        <p className="text-muted-foreground">{t('manage-finance')}</p>
+        <h1 className="text-xl font-bold sm:text-2xl">{t('finance')}</h1>
+        <p className="hidden text-muted-foreground sm:block">{t('manage-finance')}</p>
       </div>
       <Tabs active={tab} onChange={setTab} tabs={[
         { id: 'dashboard', label: t('finance-dashboard') },
@@ -143,16 +146,16 @@ export function FinanceClient({ transactions, categories, settings, history, don
 
       {tab === 'dashboard' && (
         <div className="space-y-4">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            <Card><CardContent className="p-5"><p className="text-sm text-muted-foreground">{t('current-balance')}</p><p className="text-2xl font-bold text-primary">{formatRupiah(saldo)}</p>
+          <div className="grid grid-cols-3 gap-2 sm:grid-cols-2 sm:gap-4 xl:grid-cols-4">
+            <Card className="col-span-3 sm:col-span-1"><CardContent className="p-3 sm:p-5"><p className="text-xs text-muted-foreground sm:text-sm">{t('current-balance')}</p><p className="text-xl font-bold text-primary sm:text-2xl">{formatRupiah(saldo)}</p>
               {canApprove(role) && <Button variant="ghost" size="sm" className="mt-1" onClick={() => setSaldoModal(true)}>{t('saldo-awal')}: {formatRupiah(Number(settings?.saldo_awal || 0))}</Button>}
             </CardContent></Card>
-            <Card><CardContent className="p-5"><p className="text-sm text-muted-foreground">{t('total-income')}</p><p className="text-2xl font-bold text-emerald-400">{formatRupiah(totalIn)}</p></CardContent></Card>
-            <Card><CardContent className="p-5"><p className="text-sm text-muted-foreground">{t('total-expense')}</p><p className="text-2xl font-bold text-red-400">{formatRupiah(totalOut)}</p></CardContent></Card>
-            <Card><CardContent className="p-5"><p className="text-sm text-muted-foreground">{t('total-donors')}</p><p className="text-2xl font-bold">{donors.length}</p></CardContent></Card>
+            <Card><CardContent className="p-2.5 sm:p-5"><p className="truncate text-[11px] text-muted-foreground sm:text-sm">{t('total-income')}</p><p className="truncate text-sm font-bold text-emerald-400 sm:text-2xl"><span className="sm:hidden">{formatRupiahCompact(totalIn)}</span><span className="hidden sm:inline">{formatRupiah(totalIn)}</span></p></CardContent></Card>
+            <Card><CardContent className="p-2.5 sm:p-5"><p className="truncate text-[11px] text-muted-foreground sm:text-sm">{t('total-expense')}</p><p className="truncate text-sm font-bold text-red-400 sm:text-2xl"><span className="sm:hidden">{formatRupiahCompact(totalOut)}</span><span className="hidden sm:inline">{formatRupiah(totalOut)}</span></p></CardContent></Card>
+            <Card><CardContent className="p-2.5 sm:p-5"><p className="truncate text-[11px] text-muted-foreground sm:text-sm">{t('total-donors')}</p><p className="text-sm font-bold sm:text-2xl">{donors.length}</p></CardContent></Card>
           </div>
           <Card><CardHeader><CardTitle>{t('income-expense-chart')}</CardTitle></CardHeader><CardContent><FinanceLineChart data={chartData} /></CardContent></Card>
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <div className="snap-row grid grid-cols-1 gap-4 lg:grid-cols-2">
             <Card><CardHeader><CardTitle>{t('income-by-category')}</CardTitle></CardHeader><CardContent><CategoryPieChart data={catChart('pemasukan')} /></CardContent></Card>
             <Card><CardHeader><CardTitle>{t('expense-by-category')}</CardTitle></CardHeader><CardContent><CategoryPieChart data={catChart('pengeluaran')} /></CardContent></Card>
           </div>
@@ -174,8 +177,8 @@ export function FinanceClient({ transactions, categories, settings, history, don
                   <TD><Badge variant={c.tipe === 'pemasukan' ? 'success' : 'destructive'}>{t(c.tipe === 'pemasukan' ? 'income' : 'expense')}</Badge></TD>
                   <TD>{c.deskripsi}</TD>
                   <TD><div className="flex gap-1">
-                    {canEdit(role) && <Button variant="ghost" size="icon" onClick={() => setCatModal(c)} aria-label="Edit"><Pencil className="h-4 w-4" /></Button>}
-                    {canDelete(role) && <Button variant="ghost" size="icon" aria-label="Hapus" onClick={async () => { if (confirm(t('confirmation'))) { const r = await deleteFinanceCategory(c.id); r.ok ? toast.success(t('save')) : toast.error(r.error); } }}><Trash2 className="h-4 w-4 text-destructive" /></Button>}
+                    {canEdit(role) && <Button variant="ghost" size="icon" onClick={() => setCatModal(c)} aria-label={t('act-edit')}><Pencil className="h-4 w-4" /></Button>}
+                    {canDelete(role) && <Button variant="ghost" size="icon" aria-label={t('act-delete')} onClick={async () => { if (confirm(t('confirmation'))) { const r = await deleteFinanceCategory(c.id); r.ok ? toast.success(t('save')) : toast.error(tm(r.error)); } }}><Trash2 className="h-4 w-4 text-destructive" /></Button>}
                   </div></TD>
                 </TR>
               ))}
@@ -186,21 +189,23 @@ export function FinanceClient({ transactions, categories, settings, history, don
 
       {tab === 'laporan' && (
         <div className="space-y-3">
-          <Button variant="secondary" onClick={() => printPDF(t('laporan-keuangan'), transactions.map((x) => ({ Tanggal: x.tanggal, Tipe: x.tipe, Kategori: catName(x.kategori_id), Keterangan: x.keterangan, Jumlah: x.jumlah, Status: x.status })))}>
-            <Download className="h-4 w-4" /> {t('export-report')}
-          </Button>
-          <Card><CardContent className="p-6 space-y-2">
-            <h3 className="text-lg font-bold">{t('laporan-keuangan')}</h3>
-            <p>{t('saldo-awal')}: <b>{formatRupiah(Number(settings?.saldo_awal || 0))}</b></p>
-            <p>{t('total-income')}: <b className="text-emerald-400">{formatRupiah(totalIn)}</b></p>
-            <p>{t('total-expense')}: <b className="text-red-400">{formatRupiah(totalOut)}</b></p>
-            <p className="text-xl">{t('current-balance')}: <b className="text-primary">{formatRupiah(saldo)}</b></p>
+          {(
+            <Button variant="secondary" onClick={() => printPDF(t('laporan-keuangan'), transactions.map((x) => ({ [t('date')]: x.tanggal, [t('type')]: x.tipe, [t('category')]: catName(x.kategori_id), [t('description')]: x.keterangan, [t('amount')]: x.jumlah, [t('status')]: x.status })))}>
+              <Download className="h-4 w-4" /> {t('export-report')}
+            </Button>
+          )}
+          <Card><CardContent className="space-y-1.5 p-3 text-sm sm:space-y-2 sm:p-6 sm:text-base">
+            <h3 className="text-base font-bold sm:text-lg">{t('laporan-keuangan')}</h3>
+            <p className="flex justify-between gap-3 border-b border-white/10 pb-1.5"><span>{t('saldo-awal')}</span><b className="tabular-nums">{formatRupiah(Number(settings?.saldo_awal || 0))}</b></p>
+            <p className="flex justify-between gap-3 border-b border-white/10 pb-1.5"><span>{t('total-income')}</span><b className="tabular-nums text-emerald-400">{formatRupiah(totalIn)}</b></p>
+            <p className="flex justify-between gap-3 border-b border-white/10 pb-1.5"><span>{t('total-expense')}</span><b className="tabular-nums text-red-400">{formatRupiah(totalOut)}</b></p>
+            <p className="flex justify-between gap-3 text-base sm:text-xl"><span>{t('current-balance')}</span><b className="tabular-nums text-primary">{formatRupiah(saldo)}</b></p>
           </CardContent></Card>
         </div>
       )}
 
       {tab === 'approval' && (
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
           <div>
             <h3 className="mb-2 font-semibold">{t('pending-approval')}</h3>
             <Table>
@@ -212,8 +217,8 @@ export function FinanceClient({ transactions, categories, settings, history, don
                     <TD>{formatRupiah(x.jumlah)}</TD>
                     <TD>{canApprove(role) ? (
                       <div className="flex gap-1">
-                        <Button size="sm" onClick={async () => { const r = await approveTransaction(x.id); r.ok ? toast.success(t('approved')) : toast.error(r.error); }}><Check className="h-3 w-3" /> {t('approve')}</Button>
-                        <Button size="sm" variant="destructive" onClick={async () => { const r = await rejectTransaction(x.id); r.ok ? toast.success(t('rejected')) : toast.error(r.error); }}><X className="h-3 w-3" /> {t('reject')}</Button>
+                        <Button size="sm" onClick={async () => { const r = await approveTransaction(x.id); r.ok ? toast.success(t('approved')) : toast.error(tm(r.error)); }}><Check className="h-3 w-3" /> {t('approve')}</Button>
+                        <Button size="sm" variant="destructive" onClick={async () => { const r = await rejectTransaction(x.id); r.ok ? toast.success(t('rejected')) : toast.error(tm(r.error)); }}><X className="h-3 w-3" /> {t('reject')}</Button>
                       </div>
                     ) : <Badge variant="warning">{t('pending')}</Badge>}</TD>
                   </TR>
@@ -286,7 +291,7 @@ export function FinanceClient({ transactions, categories, settings, history, don
           e.preventDefault();
           const v = Number(new FormData(e.currentTarget).get('saldo'));
           const r = await updateSaldoAwal(v);
-          r.ok ? (toast.success(t('save')), setSaldoModal(false)) : toast.error(r.error);
+          r.ok ? (toast.success(t('save')), setSaldoModal(false)) : toast.error(tm(r.error));
         }}>
           <Input name="saldo" type="number" defaultValue={Number(settings?.saldo_awal || 0)} required />
           <div className="flex justify-end gap-2">

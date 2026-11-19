@@ -2,7 +2,7 @@ import { MapPin, Mail, Phone } from 'lucide-react';
 
 export function PublicFooter({ church }: { church: any }) {
   return (
-    <footer className="border-t bg-card">
+    <footer className="border-t glass-subtle">
       <div className="container grid gap-8 py-10 md:grid-cols-3">
         <div>
           <h3 className="mb-2 font-bold">{church?.nama || 'WKC Church'}</h3>

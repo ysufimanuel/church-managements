@@ -6,13 +6,14 @@ import { requireRole } from './helpers';
 import { canAdd, canDelete, type Role } from '@/lib/rbac';
 
 export async function checkInMember(eventId: number, memberId: number) {
-  const { denied } = await requireRole((r: Role) => canAdd(r));
+  const { profile, denied } = await requireRole((r: Role) => canAdd(r));
   if (denied) return { ok: false, error: denied };
   const supabase = await createClient();
   const now = new Date();
   const { error } = await supabase.from('attendance').upsert({
     event_id: eventId,
     member_id: memberId,
+    church_id: profile.church_id,
     tanggal: now.toISOString().slice(0, 10),
     waktu: now.toTimeString().slice(0, 8),
     status: 'hadir',
@@ -23,10 +24,10 @@ export async function checkInMember(eventId: number, memberId: number) {
 }
 
 export async function deleteAttendance(id: number) {
-  const { denied } = await requireRole((r: Role) => canDelete(r), 'Hanya Superadmin yang dapat menghapus data');
+  const { profile, denied } = await requireRole((r: Role) => canDelete(r), 'Hanya Superadmin yang dapat menghapus data');
   if (denied) return { ok: false, error: denied };
   const supabase = await createClient();
-  const { error } = await supabase.from('attendance').delete().eq('id', id);
+  const { error } = await supabase.from('attendance').delete().eq('id', id).eq('church_id', profile.church_id);
   if (error) return { ok: false, error: error.message };
   revalidatePath('/dashboard/attendance');
   return { ok: true };

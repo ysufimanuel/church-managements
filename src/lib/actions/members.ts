@@ -17,16 +17,16 @@ export interface MemberInput {
 
 export async function saveMember(input: MemberInput) {
   return runAction('saveMember', async () => {
-    const { denied } = await requireRole((r: Role) => (input.id ? canEdit(r) : canAdd(r)));
+    const { profile, denied } = await requireRole((r: Role) => (input.id ? canEdit(r) : canAdd(r)));
     if (denied) return { ok: false, error: denied };
     const supabase = await createClient();
     const payload = { ...input, id: undefined };
     delete (payload as any).id;
     let error;
     if (input.id) {
-      ({ error } = await supabase.from('members').update(payload).eq('id', input.id));
+      ({ error } = await supabase.from('members').update(payload).eq('id', input.id).eq('church_id', profile.church_id));
     } else {
-      ({ error } = await supabase.from('members').insert(payload));
+      ({ error } = await supabase.from('members').insert({ ...payload, church_id: profile.church_id }));
     }
     if (error) return { ok: false, error: error.message };
     revalidatePath('/dashboard/members');
@@ -36,10 +36,10 @@ export async function saveMember(input: MemberInput) {
 
 export async function deleteMember(id: number) {
   return runAction('deleteMember', async () => {
-    const { denied } = await requireRole((r: Role) => canDelete(r), 'Hanya Superadmin yang dapat menghapus data');
+    const { profile, denied } = await requireRole((r: Role) => canDelete(r), 'Hanya Superadmin yang dapat menghapus data');
     if (denied) return { ok: false, error: denied };
     const supabase = await createClient();
-    const { error } = await supabase.from('members').delete().eq('id', id);
+    const { error } = await supabase.from('members').delete().eq('id', id).eq('church_id', profile.church_id);
     if (error) return { ok: false, error: error.message };
     revalidatePath('/dashboard/members');
     return { ok: true };

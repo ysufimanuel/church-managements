@@ -1,7 +1,8 @@
 'use client';
 
+import { useUrlQuery } from '@/lib/search/use-url-query';
 import * as React from 'react';
-import { useLang } from '@/components/lang-context';
+import { useLang, tm } from '@/components/lang-context';
 import { Button } from '@/components/ui/button';
 import { Input, Label, Select } from '@/components/ui/input';
 import { Modal } from '@/components/ui/modal';
@@ -13,11 +14,12 @@ import { canAdd, canEdit, canDelete, type Role } from '@/lib/rbac';
 
 export function FamiliesClient({ families, members, familyMembers, role }: { families: any[]; members: any[]; familyMembers: any[]; role: Role }) {
   const { t } = useLang();
-  const [search, setSearch] = React.useState('');
+  const [search, setSearch] = useUrlQuery();
   const [modal, setModal] = React.useState(false);
   const [editing, setEditing] = React.useState<any>(null);
 
-  const filtered = families.filter((f) => f.nama.toLowerCase().includes(search.toLowerCase()));
+  const query = search.trim().toLocaleLowerCase('id-ID');
+  const filtered = families.filter((f) => [f.nama,f.alamat,f.kota].some((v) => String(v || '').toLocaleLowerCase('id-ID').includes(query)));
   const anggotaOf = (fid: number) => familyMembers.filter((fm) => fm.family_id === fid).map((fm) => fm.member_id);
   const memberName = (id: number | null) => members.find((m) => m.id === id)?.nama || '-';
 
@@ -32,7 +34,7 @@ export function FamiliesClient({ families, members, familyMembers, role }: { fam
       alamat: String(fd.get('alamat') || ''), kota: String(fd.get('kota') || ''),
       anggota,
     });
-    if (res.ok) { toast.success(t('save')); setModal(false); } else toast.error(res.error);
+    if (res.ok) { toast.success(t('save')); setModal(false); } else toast.error(tm(res.error));
   }
 
   return (
@@ -55,8 +57,8 @@ export function FamiliesClient({ families, members, familyMembers, role }: { fam
             <CardHeader className="flex-row items-start justify-between">
               <CardTitle className="text-base">{f.nama}</CardTitle>
               <div className="flex gap-1">
-                {canEdit(role) && <Button variant="ghost" size="icon" onClick={() => { setEditing(f); setModal(true); }} aria-label="Edit"><Pencil className="h-4 w-4" /></Button>}
-                {canDelete(role) && <Button variant="ghost" size="icon" aria-label="Hapus" onClick={async () => { if (confirm(t('confirmation'))) { const r = await deleteFamily(f.id); r.ok ? toast.success(t('save')) : toast.error(r.error); } }}><Trash2 className="h-4 w-4 text-destructive" /></Button>}
+                {canEdit(role) && <Button variant="ghost" size="icon" onClick={() => { setEditing(f); setModal(true); }} aria-label={t('act-edit')}><Pencil className="h-4 w-4" /></Button>}
+                {canDelete(role) && <Button variant="ghost" size="icon" aria-label={t('act-delete')} onClick={async () => { if (confirm(t('confirmation'))) { const r = await deleteFamily(f.id); r.ok ? toast.success(t('save')) : toast.error(tm(r.error)); } }}><Trash2 className="h-4 w-4 text-destructive" /></Button>}
               </div>
             </CardHeader>
             <CardContent className="space-y-2 text-sm">
@@ -85,7 +87,13 @@ export function FamiliesClient({ families, members, familyMembers, role }: { fam
             <div className="max-h-40 space-y-1 overflow-y-auto rounded-md border p-2">
               {members.map((m) => (
                 <label key={m.id} className="flex min-h-[36px] items-center gap-2 text-sm cursor-pointer">
-                  <input type="checkbox" name="anggota" value={m.id} defaultChecked={editing ? anggotaOf(editing.id).includes(m.id) : false} />
+                  <input
+                    type="checkbox"
+                    name="anggota"
+                    value={m.id}
+                    defaultChecked={editing ? anggotaOf(editing.id).includes(m.id) : false}
+                    disabled={role !== 'superadmin' && Boolean(editing && anggotaOf(editing.id).includes(m.id))}
+                  />
                   {m.nama}
                 </label>
               ))}

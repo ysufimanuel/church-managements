@@ -1,7 +1,8 @@
 'use client';
 
+import { useUrlQuery } from '@/lib/search/use-url-query';
 import * as React from 'react';
-import { useLang } from '@/components/lang-context';
+import { useLang, tm } from '@/components/lang-context';
 import { Button } from '@/components/ui/button';
 import { Input, Label, Select } from '@/components/ui/input';
 import { Modal } from '@/components/ui/modal';
@@ -10,10 +11,11 @@ import { Plus, Pencil, Trash2, Search } from 'lucide-react';
 import { saveUser, deleteUser } from '@/lib/actions/users';
 import { toast } from 'sonner';
 import { roleLabel } from '@/lib/rbac';
+import { InitialsAvatar } from '@/components/ui/initials-avatar';
 
 export function UsersClient({ users, selfId }: { users: any[]; selfId: string }) {
   const { t } = useLang();
-  const [search, setSearch] = React.useState('');
+  const [search, setSearch] = useUrlQuery();
   const [modal, setModal] = React.useState(false);
   const [editing, setEditing] = React.useState<any>(null);
 
@@ -28,7 +30,7 @@ export function UsersClient({ users, selfId }: { users: any[]; selfId: string })
       email: String(fd.get('email')), password: String(fd.get('password') || '') || undefined,
       role: String(fd.get('role')) as any, status: String(fd.get('status') || 'aktif'),
     });
-    if (res.ok) { toast.success(t('save')); setModal(false); } else toast.error(res.error);
+    if (res.ok) { toast.success(t('save')); setModal(false); } else toast.error(tm(res.error));
   }
 
   return (
@@ -49,7 +51,7 @@ export function UsersClient({ users, selfId }: { users: any[]; selfId: string })
         {filtered.map((u) => (
           <Card key={u.id}>
             <CardContent className="flex items-center gap-4 p-5">
-              <img src={u.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(u.nama)}&background=1A1D24&color=00e5ff`} alt="" className="h-12 w-12 rounded-full" />
+              <InitialsAvatar name={u.nama} className="h-12 w-12 text-sm" />
               <div className="min-w-0 flex-1">
                 <p className="truncate font-medium">{u.nama}</p>
                 <p className="truncate text-sm text-muted-foreground">@{u.username}</p>
@@ -59,9 +61,9 @@ export function UsersClient({ users, selfId }: { users: any[]; selfId: string })
                 </div>
               </div>
               <div className="flex flex-col gap-1">
-                <Button variant="ghost" size="icon" onClick={() => { setEditing(u); setModal(true); }} aria-label="Edit"><Pencil className="h-4 w-4" /></Button>
+                <Button variant="ghost" size="icon" onClick={() => { setEditing(u); setModal(true); }} aria-label={t('act-edit')}><Pencil className="h-4 w-4" /></Button>
                 {u.id !== selfId && (
-                  <Button variant="ghost" size="icon" aria-label="Hapus" onClick={async () => { if (confirm(t('confirmation'))) { const r = await deleteUser(u.id); r.ok ? toast.success(t('save')) : toast.error(r.error); } }}>
+                  <Button variant="ghost" size="icon" aria-label={t('act-delete')} onClick={async () => { if (confirm(t('confirmation'))) { const r = await deleteUser(u.id); r.ok ? toast.success(t('save')) : toast.error(tm(r.error)); } }}>
                     <Trash2 className="h-4 w-4 text-destructive" />
                   </Button>
                 )}
@@ -76,7 +78,7 @@ export function UsersClient({ users, selfId }: { users: any[]; selfId: string })
           <div className="space-y-2"><Label>{t('full-name')}</Label><Input name="nama" defaultValue={editing?.nama} required /></div>
           <div className="space-y-2"><Label>{t('username')}</Label><Input name="username" defaultValue={editing?.username} required /></div>
           <div className="space-y-2"><Label>{t('email')}</Label><Input name="email" type="email" defaultValue={editing?.email} required /></div>
-          <div className="space-y-2"><Label>{t('password')} {editing && <span className="text-xs text-muted-foreground">(kosongkan jika tidak diubah)</span>}</Label>
+          <div className="space-y-2"><Label>{t('password')} {editing && <span className="text-xs text-muted-foreground">{t('leave-blank-unchanged')}</span>}</Label>
             <Input name="password" type="password" required={!editing} minLength={6} />
           </div>
           <div className="space-y-2"><Label>Role</Label>

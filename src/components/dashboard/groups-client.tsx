@@ -1,7 +1,8 @@
 'use client';
 
+import { useUrlQuery } from '@/lib/search/use-url-query';
 import * as React from 'react';
-import { useLang } from '@/components/lang-context';
+import { useLang, tm } from '@/components/lang-context';
 import { Button } from '@/components/ui/button';
 import { Input, Label, Select, Textarea } from '@/components/ui/input';
 import { Modal, Switch, Tabs } from '@/components/ui/modal';
@@ -13,14 +14,15 @@ import { canAdd, canEdit, canDelete, type Role } from '@/lib/rbac';
 
 export function GroupsClient({ groups, members, groupMembers, role }: { groups: any[]; members: any[]; groupMembers: any[]; role: Role }) {
   const { t } = useLang();
-  const [search, setSearch] = React.useState('');
+  const [search, setSearch] = useUrlQuery();
   const [modal, setModal] = React.useState(false);
   const [memberModal, setMemberModal] = React.useState<any>(null);
   const [editing, setEditing] = React.useState<any>(null);
   const [showPhone, setShowPhone] = React.useState(true);
   const [selectedMember, setSelectedMember] = React.useState('');
 
-  const filtered = groups.filter((g) => g.nama.toLowerCase().includes(search.toLowerCase()));
+  const query = search.trim().toLocaleLowerCase('id-ID');
+  const filtered = groups.filter((g) => [g.nama,g.deskripsi,g.jadwal].some((v) => String(v || '').toLocaleLowerCase('id-ID').includes(query)));
   const membersOf = (gid: number) => groupMembers.filter((gm) => gm.group_id === gid).map((gm) => gm.member_id);
   const memberName = (id: number | null) => members.find((m) => m.id === id)?.nama || '-';
 
@@ -32,7 +34,7 @@ export function GroupsClient({ groups, members, groupMembers, role }: { groups: 
       leader_id: fd.get('leader_id') ? Number(fd.get('leader_id')) : null,
       jadwal: String(fd.get('jadwal') || ''), show_phone: showPhone,
     });
-    if (res.ok) { toast.success(t('save')); setModal(false); } else toast.error(res.error);
+    if (res.ok) { toast.success(t('save')); setModal(false); } else toast.error(tm(res.error));
   }
 
   return (
@@ -55,9 +57,9 @@ export function GroupsClient({ groups, members, groupMembers, role }: { groups: 
             <CardHeader className="flex-row items-start justify-between">
               <CardTitle className="text-base">{g.nama}</CardTitle>
               <div className="flex gap-1">
-                {canEdit(role) && <Button variant="ghost" size="icon" onClick={() => setMemberModal(g)} aria-label="Kelola anggota"><UserPlus className="h-4 w-4" /></Button>}
-                {canEdit(role) && <Button variant="ghost" size="icon" onClick={() => { setEditing(g); setShowPhone(g.show_phone); setModal(true); }} aria-label="Edit"><Pencil className="h-4 w-4" /></Button>}
-                {canDelete(role) && <Button variant="ghost" size="icon" aria-label="Hapus" onClick={async () => { if (confirm(t('confirmation'))) { const r = await deleteGroup(g.id); r.ok ? toast.success(t('save')) : toast.error(r.error); } }}><Trash2 className="h-4 w-4 text-destructive" /></Button>}
+                {canEdit(role) && <Button variant="ghost" size="icon" onClick={() => setMemberModal(g)} aria-label={t('act-manage-members')}><UserPlus className="h-4 w-4" /></Button>}
+                {canEdit(role) && <Button variant="ghost" size="icon" onClick={() => { setEditing(g); setShowPhone(g.show_phone); setModal(true); }} aria-label={t('act-edit')}><Pencil className="h-4 w-4" /></Button>}
+                {canDelete(role) && <Button variant="ghost" size="icon" aria-label={t('act-delete')} onClick={async () => { if (confirm(t('confirmation'))) { const r = await deleteGroup(g.id); r.ok ? toast.success(t('save')) : toast.error(tm(r.error)); } }}><Trash2 className="h-4 w-4 text-destructive" /></Button>}
               </div>
             </CardHeader>
             <CardContent className="space-y-2 text-sm">
@@ -102,7 +104,7 @@ export function GroupsClient({ groups, members, groupMembers, role }: { groups: 
               <Button onClick={async () => {
                 if (!selectedMember) return;
                 const r = await addGroupMember(memberModal.id, Number(selectedMember));
-                r.ok ? toast.success(t('save')) : toast.error(r.error);
+                r.ok ? toast.success(t('save')) : toast.error(tm(r.error));
                 setSelectedMember('');
               }}><Plus className="h-4 w-4" /> {t('add')}</Button>
             </div>
@@ -110,10 +112,10 @@ export function GroupsClient({ groups, members, groupMembers, role }: { groups: 
               {membersOf(memberModal.id).map((mid) => (
                 <li key={mid} className="flex items-center justify-between rounded-md border px-3 py-2 text-sm">
                   {memberName(mid)}
-                  {canEdit(role) && (
+                  {canDelete(role) && (
                     <Button variant="ghost" size="sm" onClick={async () => {
                       const r = await removeGroupMember(memberModal.id, mid);
-                      r.ok ? toast.success(t('save')) : toast.error(r.error);
+                      r.ok ? toast.success(t('save')) : toast.error(tm(r.error));
                     }}><Trash2 className="h-3 w-3 text-destructive" /></Button>
                   )}
                 </li>

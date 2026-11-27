@@ -119,7 +119,7 @@ function RegisterForm() {
 
       <div
         ref={cardRef}
-        className="relative z-10 w-full max-w-[460px] overflow-hidden rounded-[28px] border border-white/[0.10] bg-white/[0.055] p-5 shadow-[0_24px_90px_rgba(0,0,0,0.48)] backdrop-blur-xl sm:p-8"
+        className="relative z-10 w-full max-w-[460px] overflow-hidden glass-strong rounded-[28px] border border-white/[0.10] bg-white/[0.055] p-5 shadow-[0_24px_90px_rgba(0,0,0,0.48)] backdrop-blur-xl sm:p-8"
       >
         <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-cyan-300/70 to-transparent" />
 

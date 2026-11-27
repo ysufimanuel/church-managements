@@ -48,7 +48,7 @@
 }
 
 /* ---- Glass utilities ---- */
-.glass, .glass-strong, .glass-subtle {
+.glass, .glass-strong, .glass-subtle, .glass-nav {
   border: 1px solid var(--glass-border);
   box-shadow: var(--glass-shadow);
   background: rgb(26 29 36 / .82); /* fallback tanpa backdrop-filter */
@@ -56,6 +56,7 @@
 @supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
   .glass { background: var(--glass-bg); -webkit-backdrop-filter: blur(var(--glass-blur)); backdrop-filter: blur(var(--glass-blur)); }
   .glass-strong { background: var(--glass-bg-strong); -webkit-backdrop-filter: blur(calc(var(--glass-blur) * 1.25)); backdrop-filter: blur(calc(var(--glass-blur) * 1.25)); }
+  .glass-nav { background: var(--glass-bg-strong); -webkit-backdrop-filter: blur(var(--glass-blur)); backdrop-filter: blur(var(--glass-blur)); }
   .glass-subtle { background: rgb(255 255 255 / .04); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(6px); box-shadow: inset 0 1px 0 rgb(255 255 255 / .08); }
 }
 .glass-input { background: rgb(255 255 255 / .06); border: 1px solid rgb(255 255 255 / .16); }
@@ -245,7 +246,7 @@ mark.sx-hit { background: hsl(var(--primary) / .28); color: inherit; border-radi
 
 /* Perf: users who ask for less transparency/motion get opaque surfaces and no animation. */
 @media (prefers-reduced-transparency: reduce) {
-  .glass, .glass-strong, .glass-subtle { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; background: rgb(26 29 36 / .96) !important; }
+  .glass, .glass-strong, .glass-subtle, .glass-nav { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; background: rgb(26 29 36 / .96) !important; }
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }

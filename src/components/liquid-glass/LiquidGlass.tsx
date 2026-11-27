@@ -1,7 +1,6 @@
 'use client';
 
-import React, { useEffect, useId, useRef, useState } from 'react';
-import { toCanvas } from 'html-to-image';
+import React, { useEffect, useId, useRef } from 'react';
 
 type Props = React.HTMLAttributes<HTMLDivElement> & {
   bevelWidth?: number;
@@ -32,77 +31,66 @@ uniform float u_strength;
 uniform float u_chromatic;
 uniform vec4 u_tint;
 uniform vec2 u_pointer;
+varying vec2 v_uv;
 
-float roundedBoxDistance(vec2 p, vec2 halfSize, float radius) {
-  vec2 q = abs(p) - halfSize + radius;
-  return length(max(q, 0.0)) + min(max(q.x, q.y), 0.0) - radius;
+float sdRoundRect(vec2 p, vec2 b, float r) {
+  vec2 q = abs(p) - b + r;
+  return length(max(q, 0.0)) + min(max(q.x, q.y), 0.0) - r;
 }
-
 void main() {
   vec2 sizeCss = u_resolution / u_pixelRatio;
   vec2 localPx = vec2(gl_FragCoord.x, u_resolution.y - gl_FragCoord.y) / u_pixelRatio;
   vec2 centered = localPx - sizeCss * 0.5;
   vec2 halfSize = sizeCss * 0.5;
   float radius = min(u_radius, min(halfSize.x, halfSize.y));
-  float distanceToEdge = roundedBoxDistance(centered, halfSize, radius);
-  if (distanceToEdge > 0.0) discard;
+  float d = sdRoundRect(centered, halfSize, radius);
+  if (d > 0.0) discard;
+
+  // Gradient of the rounded-rectangle SDF gives a stable surface normal.
+  float eps = 1.0;
+  vec2 grad = vec2(
+    sdRoundRect(centered + vec2(eps, 0.0), halfSize, radius) - sdRoundRect(centered - vec2(eps, 0.0), halfSize, radius),
+    sdRoundRect(centered + vec2(0.0, eps), halfSize, radius) - sdRoundRect(centered - vec2(0.0, eps), halfSize, radius)
+  ) / (2.0 * eps);
+  float edge = 1.0 - smoothstep(-u_bevel, 0.0, d);
+  float bevelProfile = sin(edge * 1.5707963);
+  vec3 normal = normalize(vec3(-grad * bevelProfile * 1.25, 1.0));
+  vec3 incident = vec3(0.0, 0.0, -1.0);
+  vec3 refractedRay = refract(incident, normal, 0.76);
+  vec2 displacement = refractedRay.xy * u_strength * (0.25 + edge * 0.95);
 
   vec2 screenPx = localPx + u_rectOrigin;
   vec2 baseUv = vec2(screenPx.x / u_viewport.x, 1.0 - screenPx.y / u_viewport.y);
-
-  vec2 radial = centered / max(halfSize, vec2(1.0));
-  float radialLength = length(radial);
-  float rimFactor = smoothstep(0.28, 0.98, radialLength);
-  vec2 radialDirection = normalize(centered + vec2(0.0001));
-  float curvature = 0.18 + rimFactor * 0.82;
-  vec2 displacementPx = -radialDirection * (u_strength * curvature);
-
-  vec2 q = abs(centered) - halfSize + radius;
-  vec2 outsideCorner = max(q, 0.0);
-  vec2 edgeNormal;
-  if (length(outsideCorner) > 0.001) {
-    edgeNormal = sign(centered) * normalize(outsideCorner);
-  } else if (q.x > q.y) {
-    edgeNormal = vec2(sign(centered.x), 0.0);
-  } else {
-    edgeNormal = vec2(0.0, sign(centered.y));
-  }
-  displacementPx += edgeNormal * (u_bevel * 0.10 * rimFactor);
-
-  float pointerGlow = 0.0;
-  if (u_pointer.x >= 0.0) {
-    vec2 pointerDelta = (localPx - u_pointer) / max(sizeCss, vec2(1.0));
-    vec2 glowCoord = pointerDelta * vec2(1.1, 1.8);
-    pointerGlow = exp(-dot(glowCoord, glowCoord) * 18.0);
-  }
-
-  vec2 sampleUv = baseUv + displacementPx / u_viewport;
+  vec2 sampleUv = baseUv + vec2(displacement.x, -displacement.y) / u_viewport;
   vec4 refracted;
   if (u_chromatic > 0.5) {
-    float ca = (0.35 + rimFactor * 0.55) / u_viewport.x;
-    float red = texture2D(u_backdrop, sampleUv + vec2(ca, 0.0)).r;
-    float green = texture2D(u_backdrop, sampleUv).g;
-    float blue = texture2D(u_backdrop, sampleUv - vec2(ca, 0.0)).b;
-    refracted = vec4(red, green, blue, 1.0);
+    float ca = (0.25 + edge * 0.8) / u_viewport.x;
+    refracted = vec4(
+      texture2D(u_backdrop, sampleUv + vec2(ca, 0.0)).r,
+      texture2D(u_backdrop, sampleUv).g,
+      texture2D(u_backdrop, sampleUv - vec2(ca, 0.0)).b,
+      1.0
+    );
   } else {
     refracted = texture2D(u_backdrop, sampleUv);
   }
 
-  float insideDistance = max(0.0, -distanceToEdge);
-  float rimLight = 1.0 - smoothstep(0.0, max(2.0, u_bevel * 0.22), insideDistance);
-  float upperSweep = exp(-pow((localPx.y / max(sizeCss.y, 1.0)) * 3.2, 2.0))
-                   * exp(-pow((localPx.x / max(sizeCss.x, 1.0) - 0.22) * 2.4, 2.0));
-  float lowerReflection = exp(-pow((localPx.y / max(sizeCss.y, 1.0) - 0.96) * 18.0, 2.0));
-
+  float rim = 1.0 - smoothstep(0.0, max(1.5, u_bevel * 0.16), -d);
+  float facing = max(dot(normal, normalize(vec3(-0.35, 0.55, 1.0))), 0.0);
+  float specular = pow(facing, 20.0) * edge;
+  float pointerGlow = 0.0;
+  if (u_pointer.x >= 0.0) {
+    vec2 pd = (localPx - u_pointer) / max(sizeCss, vec2(1.0));
+    pointerGlow = exp(-dot(pd * vec2(1.1, 1.8), pd * vec2(1.1, 1.8)) * 18.0);
+  }
   vec3 color = mix(refracted.rgb, u_tint.rgb, u_tint.a);
-  color += vec3(1.0) * rimLight * 0.22;
-  color += vec3(1.0) * upperSweep * 0.12;
-  color += vec3(0.78, 0.88, 1.0) * lowerReflection * 0.045;
-  color += vec3(1.0) * pointerGlow * 0.09;
+  color += vec3(1.0) * rim * 0.12;
+  color += vec3(1.0) * specular * 0.24;
+  color += vec3(1.0) * pointerGlow * 0.08;
   gl_FragColor = vec4(color, 1.0);
 }`;
 
-function compileShader(gl: WebGLRenderingContext, type: number, source: string) {
+function compile(gl: WebGLRenderingContext, type: number, source: string) {
   const shader = gl.createShader(type);
   if (!shader) return null;
   gl.shaderSource(shader, source);
@@ -116,203 +104,106 @@ function compileShader(gl: WebGLRenderingContext, type: number, source: string) 
 }
 
 export function LiquidGlass({
-  children,
-  className = '',
-  bevelWidth = 28,
-  refractionStrength = 36,
-  borderRadius = 24,
-  tintColor = 'rgba(255,255,255,.07)',
-  chromaticAberration = false,
-  style,
-  ...props
+  children, className = '', bevelWidth = 28, refractionStrength = 36,
+  borderRadius = 24, tintColor = 'rgba(255,255,255,.07)',
+  chromaticAberration = false, style, ...props
 }: Props) {
   const uid = useId().replace(/:/g, '');
   const rootRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [webglReady, setWebglReady] = useState(false);
 
   useEffect(() => {
     const root = rootRef.current;
     const canvas = canvasRef.current;
-    if (!root || !canvas) return;
-
-    const gl = canvas.getContext('webgl', {
-      alpha: true,
-      antialias: true,
-      premultipliedAlpha: false,
-      preserveDrawingBuffer: false,
-      powerPreference: 'low-power',
-    });
-    if (!gl) return;
-
-    const vertex = compileShader(gl, gl.VERTEX_SHADER, vertexShader);
-    const fragment = compileShader(gl, gl.FRAGMENT_SHADER, fragmentShader);
-    if (!vertex || !fragment) return;
-
-    const program = gl.createProgram();
-    if (!program) return;
-    gl.attachShader(program, vertex);
-    gl.attachShader(program, fragment);
-    gl.linkProgram(program);
-    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-      console.error('LiquidGlass program link failed:', gl.getProgramInfoLog(program));
+    const backdrop = document.querySelector<HTMLCanvasElement>('[data-liquid-glass-backdrop="true"]');
+    if (!root || !canvas || !backdrop) {
+      console.error('LiquidGlass requires a dedicated canvas backdrop.');
       return;
     }
+    const gl = canvas.getContext('webgl', { alpha: true, antialias: true, premultipliedAlpha: false, powerPreference: 'high-performance' });
+    if (!gl) return;
+    const vs = compile(gl, gl.VERTEX_SHADER, vertexShader);
+    const fs = compile(gl, gl.FRAGMENT_SHADER, fragmentShader);
+    if (!vs || !fs) return;
+    const program = gl.createProgram();
+    if (!program) return;
+    gl.attachShader(program, vs); gl.attachShader(program, fs); gl.linkProgram(program);
+    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+      console.error('LiquidGlass program link failed:', gl.getProgramInfoLog(program)); return;
+    }
     gl.useProgram(program);
-
     const buffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
-    const position = gl.getAttribLocation(program, 'a_position');
-    gl.enableVertexAttribArray(position);
-    gl.vertexAttribPointer(position, 2, gl.FLOAT, false, 0, 0);
-
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1,1,-1,-1,1,1,1]), gl.STATIC_DRAW);
+    const pos = gl.getAttribLocation(program, 'a_position');
+    gl.enableVertexAttribArray(pos); gl.vertexAttribPointer(pos, 2, gl.FLOAT, false, 0, 0);
     const texture = gl.createTexture();
-    gl.activeTexture(gl.TEXTURE0);
-    gl.bindTexture(gl.TEXTURE_2D, texture);
+    gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, texture);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-    gl.uniform1i(gl.getUniformLocation(program, 'u_backdrop'), 0);
-
-    const getUniform = (name: string) => gl.getUniformLocation(program, name);
-    const tint = tintColor.match(/[\d.]+/g)?.map(Number) ?? [255, 255, 255, 0.07];
-    const tintRgba = tint.length >= 4
-      ? [tint[0] > 1 ? tint[0] / 255 : tint[0], tint[1] > 1 ? tint[1] / 255 : tint[1], tint[2] > 1 ? tint[2] / 255 : tint[2], tint[3]]
-      : [1, 1, 1, 0.07];
-
-    let captureTimer: number | undefined;
-    let capturing = false;
-    let disposed = false;
+    const u = (name: string) => gl.getUniformLocation(program, name);
+    gl.uniform1i(u('u_backdrop'), 0);
+    const rgba = tintColor.match(/[\\d.]+/g)?.map(Number) ?? [255,255,255,.07];
+    const tint = rgba.length >= 4 ? [rgba[0] > 1 ? rgba[0]/255 : rgba[0], rgba[1] > 1 ? rgba[1]/255 : rgba[1], rgba[2] > 1 ? rgba[2]/255 : rgba[2], rgba[3]] : [1,1,1,.07];
     let pointer = { x: -1, y: -1 };
-    let hasFrame = false;
-
-    const draw = async () => {
-      if (capturing || disposed || !root.isConnected) return;
-      capturing = true;
-      try {
-        const backdrop = document.querySelector<HTMLElement>('[data-liquid-glass-backdrop="true"]');
-        if (!backdrop) throw new Error('Missing dedicated liquid glass backdrop');
-
-        // The source is fixed to the viewport; capture and sample in the same coordinate space.
-        const viewportWidth = Math.max(1, window.innerWidth);
-        const viewportHeight = Math.max(1, window.innerHeight);
-        const snapshot = await toCanvas(backdrop, {
-          width: viewportWidth,
-          height: viewportHeight,
-          pixelRatio: 1,
-          backgroundColor: '#09090b',
-          cacheBust: true,
-        });
-        if (disposed) return;
-
-        const rect = root.getBoundingClientRect();
-        const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
-        const width = Math.max(1, Math.round(rect.width * dpr));
-        const height = Math.max(1, Math.round(rect.height * dpr));
-        canvas.width = width;
-        canvas.height = height;
-        canvas.style.width = `${rect.width}px`;
-        canvas.style.height = `${rect.height}px`;
-        gl.viewport(0, 0, width, height);
-
-        gl.bindTexture(gl.TEXTURE_2D, texture);
-        gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1);
-        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, snapshot);
-
-        gl.uniform2f(getUniform('u_resolution'), width, height);
-        gl.uniform2f(getUniform('u_viewport'), viewportWidth, viewportHeight);
-        gl.uniform2f(getUniform('u_rectOrigin'), rect.left, rect.top);
-        gl.uniform1f(getUniform('u_pixelRatio'), dpr);
-        gl.uniform1f(getUniform('u_radius'), Math.min(borderRadius, rect.width / 2, rect.height / 2));
-        gl.uniform1f(getUniform('u_bevel'), Math.max(1, bevelWidth));
-        gl.uniform1f(getUniform('u_strength'), refractionStrength);
-        gl.uniform1f(getUniform('u_chromatic'), chromaticAberration ? 1 : 0);
-        gl.uniform4f(getUniform('u_tint'), tintRgba[0], tintRgba[1], tintRgba[2], tintRgba[3]);
-        gl.uniform2f(getUniform('u_pointer'), pointer.x, pointer.y);
-        gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-        hasFrame = true;
-        setWebglReady(true);
-      } catch (error) {
-        console.error('LiquidGlass backdrop capture failed:', error);
-        setWebglReady(false);
-      } finally {
-        capturing = false;
-      }
-    };
-
-    const scheduleCapture = () => {
-      if (captureTimer) window.clearTimeout(captureTimer);
-      captureTimer = window.setTimeout(draw, 120);
-    };
-    const onPointerMove = (event: PointerEvent) => {
+    let raf = 0;
+    let disposed = false;
+    const draw = () => {
+      raf = 0;
+      if (disposed || !root.isConnected) return;
       const rect = root.getBoundingClientRect();
-      pointer = { x: event.clientX - rect.left, y: event.clientY - rect.top };
-      if (hasFrame) {
-        gl.useProgram(program);
-        gl.uniform2f(getUniform('u_pointer'), pointer.x, pointer.y);
-        gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-      }
+      const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+      const w = Math.max(1, Math.round(rect.width * dpr));
+      const h = Math.max(1, Math.round(rect.height * dpr));
+      if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; }
+      gl.viewport(0, 0, w, h);
+      gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, texture);
+      gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, backdrop);
+      gl.uniform2f(u('u_resolution'), w, h);
+      gl.uniform2f(u('u_viewport'), backdrop.width, backdrop.height);
+      gl.uniform2f(u('u_rectOrigin'), rect.left, rect.top);
+      gl.uniform1f(u('u_pixelRatio'), dpr);
+      gl.uniform1f(u('u_radius'), borderRadius);
+      gl.uniform1f(u('u_bevel'), bevelWidth);
+      gl.uniform1f(u('u_strength'), refractionStrength);
+      gl.uniform1f(u('u_chromatic'), chromaticAberration ? 1 : 0);
+      gl.uniform4f(u('u_tint'), tint[0], tint[1], tint[2], tint[3]);
+      gl.uniform2f(u('u_pointer'), pointer.x, pointer.y);
+      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
     };
-    const onPointerLeave = () => {
-      pointer = { x: -1, y: -1 };
-      if (hasFrame) {
-        gl.useProgram(program);
-        gl.uniform2f(getUniform('u_pointer'), -1, -1);
-        gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-      }
+    const schedule = () => { if (!raf) raf = requestAnimationFrame(draw); };
+    const onPointerMove = (e: PointerEvent) => {
+      const rect = root.getBoundingClientRect();
+      pointer = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+      schedule();
     };
-
-    const observer = new ResizeObserver(scheduleCapture);
-    observer.observe(root);
-    window.addEventListener('scroll', scheduleCapture, { passive: true });
-    window.addEventListener('resize', scheduleCapture, { passive: true });
+    const onPointerLeave = () => { pointer = { x: -1, y: -1 }; schedule(); };
+    const resize = new ResizeObserver(schedule); resize.observe(root); resize.observe(backdrop);
+    window.addEventListener('scroll', schedule, { passive: true, capture: true });
+    window.addEventListener('resize', schedule, { passive: true });
     root.addEventListener('pointermove', onPointerMove, { passive: true });
     root.addEventListener('pointerleave', onPointerLeave, { passive: true });
-    scheduleCapture();
-
+    schedule();
     return () => {
-      disposed = true;
-      if (captureTimer) window.clearTimeout(captureTimer);
-      observer.disconnect();
-      window.removeEventListener('scroll', scheduleCapture);
-      window.removeEventListener('resize', scheduleCapture);
-      root.removeEventListener('pointermove', onPointerMove);
-      root.removeEventListener('pointerleave', onPointerLeave);
-      gl.deleteTexture(texture);
-      gl.deleteProgram(program);
-      gl.deleteShader(vertex);
-      gl.deleteShader(fragment);
-      gl.deleteBuffer(buffer);
+      disposed = true; if (raf) cancelAnimationFrame(raf); resize.disconnect();
+      window.removeEventListener('scroll', schedule, true); window.removeEventListener('resize', schedule);
+      root.removeEventListener('pointermove', onPointerMove); root.removeEventListener('pointerleave', onPointerLeave);
+      gl.deleteTexture(texture); gl.deleteProgram(program); gl.deleteShader(vs); gl.deleteShader(fs); gl.deleteBuffer(buffer);
     };
   }, [borderRadius, bevelWidth, refractionStrength, chromaticAberration, tintColor]);
 
-  return (
-    <div
-      ref={rootRef}
-      data-liquid-glass={uid}
-      className={`relative isolate overflow-hidden ${className}`}
-      style={{ borderRadius, background: tintColor, ...style }}
-      {...props}
-    >
-      <canvas
-        ref={canvasRef}
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-0 z-0 h-full w-full"
-        style={{ borderRadius, opacity: webglReady ? 1 : 0, transition: 'opacity 180ms ease' }}
-      />
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-0 z-[1]"
-        style={{
-          borderRadius,
-          background: 'radial-gradient(ellipse 82% 30% at 18% 0%, rgba(255,255,255,.26), transparent 72%), linear-gradient(145deg, rgba(255,255,255,.20), transparent 27%, transparent 66%, rgba(255,255,255,.11))',
-          border: '1px solid rgba(255,255,255,.42)',
-          boxShadow: 'inset 0 2px 4px rgba(255,255,255,.65), inset 0 -3px 9px rgba(0,0,0,.20), 0 18px 38px -10px rgba(0,0,0,.28)',
-        }}
-      />
-      <div className="relative z-10">{children}</div>
-    </div>
-  );
+  return <div ref={rootRef} data-liquid-glass={uid} className={`relative isolate overflow-hidden ${className}`} style={{ borderRadius, background: tintColor, ...style }} {...props}>
+    <canvas ref={canvasRef} aria-hidden="true" className="pointer-events-none absolute inset-0 z-0 h-full w-full" style={{ borderRadius }} />
+    {/* Independent optical reflection layer: rim, specular sweep and lower bounce. */}
+    <div aria-hidden="true" className="pointer-events-none absolute inset-0 z-[1]" style={{
+      borderRadius,
+      background: 'radial-gradient(ellipse 72% 22% at 18% 0%, rgba(255,255,255,.34), transparent 76%), radial-gradient(ellipse 58% 16% at 82% 100%, rgba(180,220,255,.16), transparent 78%), linear-gradient(155deg, rgba(255,255,255,.20), transparent 24%, transparent 72%, rgba(255,255,255,.08))',
+      border: '1px solid rgba(255,255,255,.46)',
+      boxShadow: 'inset 0 1.5px 3px rgba(255,255,255,.72), inset 0 -2px 7px rgba(0,0,0,.24), inset 1px 0 3px rgba(255,255,255,.24), inset -1px 0 3px rgba(255,255,255,.18), 0 18px 38px -10px rgba(0,0,0,.28)',
+    }} />
+    <div className="relative z-10">{children}</div>
+  </div>;
 }

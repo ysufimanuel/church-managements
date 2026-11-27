@@ -11,15 +11,15 @@ type Props = React.HTMLAttributes<HTMLDivElement> & {
   chromaticAberration?: boolean;
 };
 
-const vertexShader = \`
+const vertexShader = `
 attribute vec2 a_position;
 varying vec2 v_uv;
 void main() {
   v_uv = a_position * 0.5 + 0.5;
   gl_Position = vec4(a_position, 0.0, 1.0);
-}\`;
+}`;
 
-const fragmentShader = \`
+const fragmentShader = `
 precision highp float;
 uniform sampler2D u_backdrop;
 uniform vec2 u_resolution;
@@ -100,7 +100,7 @@ void main() {
   color += vec3(0.78, 0.88, 1.0) * lowerReflection * 0.045;
   color += vec3(1.0) * pointerGlow * 0.09;
   gl_FragColor = vec4(color, 1.0);
-}\`;
+}`;
 
 function compileShader(gl: WebGLRenderingContext, type: number, source: string) {
   const shader = gl.createShader(type);
@@ -213,8 +213,8 @@ export function LiquidGlass({
         const height = Math.max(1, Math.round(rect.height * dpr));
         canvas.width = width;
         canvas.height = height;
-        canvas.style.width = \`\${rect.width}px\`;
-        canvas.style.height = \`\${rect.height}px\`;
+        canvas.style.width = `${rect.width}px`;
+        canvas.style.height = `${rect.height}px`;
         gl.viewport(0, 0, width, height);
 
         gl.bindTexture(gl.TEXTURE_2D, texture);
@@ -292,7 +292,7 @@ export function LiquidGlass({
     <div
       ref={rootRef}
       data-liquid-glass={uid}
-      className={\`relative isolate overflow-hidden \${className}\`}
+      className={`relative isolate overflow-hidden ${className}`}
       style={{ borderRadius, background: tintColor, ...style }}
       {...props}
     >

@@ -10,7 +10,7 @@ export function PublicHeader({ nav, churchName }: { nav: { label: string; href: 
   const [open, setOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-40 border-b bg-background/80 backdrop-blur">
+    <header className="glass-nav sticky top-0 z-40 border-b bg-background/80 backdrop-blur">
       <div className="container flex h-16 items-center justify-between">
         <Link href="/" className="flex items-center gap-2 font-bold">
           <Church className="h-6 w-6 text-primary" />

@@ -163,7 +163,7 @@ export function LiquidGlass({
       gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1);
       gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, backdrop);
       gl.uniform2f(u('u_resolution'), w, h);
-      gl.uniform2f(u('u_viewport'), backdrop.width, backdrop.height);
+      gl.uniform2f(u('u_viewport'), window.innerWidth, window.innerHeight);
       gl.uniform2f(u('u_rectOrigin'), rect.left, rect.top);
       gl.uniform1f(u('u_pixelRatio'), dpr);
       gl.uniform1f(u('u_radius'), borderRadius);

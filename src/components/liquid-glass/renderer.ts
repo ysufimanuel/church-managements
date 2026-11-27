@@ -219,7 +219,7 @@ class GlassRenderer {
     const canvas = this.canvas;
     if (!gl || !program || !canvas || !this.texture) return;
     this.time = time;
-    const visible = [...this.rects.values()].filter((r) => r.w > 0 && r.h > 0 && r.x < window.innerWidth && r.y < window.innerHeight && r.x + r.w > 0 && r.y + r.h > 0).slice(0, MAX_GLASS);
+    const visible = Array.from(this.rects.values()).filter((r) => r.w > 0 && r.h > 0 && r.x < window.innerWidth && r.y < window.innerHeight && r.x + r.w > 0 && r.y + r.h > 0).slice(0, MAX_GLASS);
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     const rects = new Float32Array(MAX_GLASS * 4);
     const radius = new Float32Array(MAX_GLASS);

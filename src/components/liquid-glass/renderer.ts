@@ -19,6 +19,8 @@ class GlassRenderer {
   private galleryTimer: number | null = null;
   private galleryUrls: string[] = [];
   private galleryIndex = 0;
+  private surfaceObserver: MutationObserver | null = null;
+  private autoSurfaceId = 0;
 
   init(canvas: HTMLCanvasElement, backdrop?: string) {
     if (this.canvas === canvas && this.gl) {
@@ -44,7 +46,35 @@ class GlassRenderer {
     window.addEventListener('pointermove', this.onPointerMove, { passive: true });
     this.started = true;
     this.rects.forEach((rect, id) => this.observeRect(id, rect.element));
+    this.scanGlassSurfaces();
+    this.surfaceObserver = new MutationObserver(() => this.scanGlassSurfaces());
+    this.surfaceObserver.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] });
     this.invalidate();
+  }
+
+  private scanGlassSurfaces() {
+    const selector = '.glass, .glass-strong, .glass-subtle, .glass-nav, [data-liquid-glass]';
+    const elements = Array.from(document.querySelectorAll<HTMLElement>(selector));
+    const connected = new Set(elements);
+    this.rects.forEach((rect, id) => {
+      if (!rect.element.isConnected) this.unregister(id);
+    });
+    elements.forEach((element) => {
+      const alreadyRegistered = Array.from(this.rects.values()).some((rect) => rect.element === element);
+      if (alreadyRegistered) return;
+      const id = element.dataset.glassRendererId || `auto-glass-${++this.autoSurfaceId}`;
+      element.dataset.glassRendererId = id;
+      const strong = element.classList.contains('glass-strong');
+      const subtle = element.classList.contains('glass-subtle');
+      const params: GlassParams = {
+        bend: strong ? 0.075 : subtle ? 0.035 : 0.06,
+        chromatic: strong ? 0.011 : subtle ? 0.004 : 0.008,
+        highlight: strong ? 1.05 : subtle ? 0.55 : 0.85,
+        tint: strong ? 0.14 : subtle ? 0.08 : 0.12,
+        radius: Math.max(8, parseFloat(getComputedStyle(element).borderTopLeftRadius) || 24),
+      };
+      this.register(id, element, params);
+    });
   }
 
   private compile(type: number, source: string) {
@@ -296,6 +326,8 @@ class GlassRenderer {
       window.removeEventListener('scroll', this.onScroll, true);
       window.removeEventListener('pointermove', this.onPointerMove);
     }
+    this.surfaceObserver?.disconnect();
+    this.surfaceObserver = null;
     this.observers.forEach((observer) => observer.disconnect());
     this.observers.clear();
     this.gl?.deleteTexture(this.texture);

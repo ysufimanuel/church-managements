@@ -165,6 +165,15 @@ class GlassRenderer {
     this.syncRect(id);
   }
 
+  setGlobalParams(params: Partial<GlassParams>) {
+    this.rects.forEach((rect) => {
+      rect.params = { ...rect.params, ...params };
+      rect.radius = rect.params.radius;
+      this.syncRect(rect.id);
+    });
+    this.invalidate();
+  }
+
   update(id: string, params: GlassParams) {
     const rect = this.rects.get(id);
     if (!rect) return;

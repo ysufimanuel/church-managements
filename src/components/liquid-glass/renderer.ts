@@ -16,6 +16,7 @@ class GlassRenderer {
   private mouse = { x: 0.5, y: 0.5 };
   private time = 0;
   private fallback = false;
+  private galleryTimer: number | null = null;
 
   init(canvas: HTMLCanvasElement, backdrop?: string) {
     if (this.canvas === canvas && this.gl) {
@@ -115,6 +116,22 @@ class GlassRenderer {
     ctx.fillStyle = blue;
     ctx.fillRect(0, 0, 1600, 1000);
     return source;
+  }
+
+  setBackdropGallery(urls: string[]) {
+    this.clearBackdropGallery();
+    if (!urls.length) return;
+    let index = 0;
+    this.setBackdrop(urls[index]);
+    this.galleryTimer = window.setInterval(() => {
+      index = (index + 1) % urls.length;
+      this.setBackdrop(urls[index]);
+    }, 2000);
+  }
+
+  clearBackdropGallery() {
+    if (this.galleryTimer !== null) window.clearInterval(this.galleryTimer);
+    this.galleryTimer = null;
   }
 
   setBackdrop(url?: string) {
@@ -258,6 +275,7 @@ class GlassRenderer {
   }
 
   dispose() {
+    this.clearBackdropGallery();
     if (this.raf) cancelAnimationFrame(this.raf);
     this.raf = 0;
     if (this.started) {

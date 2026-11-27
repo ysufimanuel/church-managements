@@ -27,7 +27,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" className="dark">
       <body>
         <GlassCanvas />
-        <div className="relative z-[1]">{children}</div>
+        {children}
         <Toaster richColors position="top-right" />
       </body>
     </html>

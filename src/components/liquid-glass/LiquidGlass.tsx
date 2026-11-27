@@ -25,7 +25,7 @@ uniform sampler2D u_backdrop;
 uniform vec2 u_resolution;
 uniform vec2 u_documentSize;
 uniform float u_pixelRatio;
-uniform vec4 u_rect;
+uniform vec4 u_rect; // document x/y, element width/height in CSS pixels
 uniform float u_radius;
 uniform float u_bevel;
 uniform float u_strength;
@@ -39,42 +39,57 @@ float roundedBox(vec2 p, vec2 halfSize, float radius) {
 }
 
 void main() {
-  vec2 localPx = gl_FragCoord.xy;
-  vec2 cssTop = vec2(localPx.x, u_resolution.y - localPx.y) / u_pixelRatio;
-  vec2 docPx = u_rect.xy + cssTop;
-  vec2 baseUv = vec2(docPx.x / u_documentSize.x, 1.0 - docPx.y / u_documentSize.y);
+  // gl_FragCoord is in physical pixels; convert to CSS pixels before document lookup.
+  vec2 localCss = vec2(gl_FragCoord.x, u_resolution.y - gl_FragCoord.y) / u_pixelRatio;
+  vec2 documentCss = u_rect.xy + localCss;
+  vec2 baseUv = vec2(
+    documentCss.x / u_documentSize.x,
+    1.0 - documentCss.y / u_documentSize.y
+  );
 
-  vec2 p = (v_uv - 0.5) * 2.0;
-  vec2 halfSize = vec2(0.5);
-  float dist = roundedBox(p * 0.5, halfSize * 0.5, min(u_radius / min(u_resolution.x, u_resolution.y), 0.24));
-  float edge = 1.0 - smoothstep(-u_bevel, 0.0, dist);
+  // Evaluate a true rounded-rectangle signed distance field in CSS-pixel space.
+  vec2 centered = localCss - u_rect.zw * 0.5;
+  vec2 halfSize = u_rect.zw * 0.5;
+  float radius = min(u_radius, min(halfSize.x, halfSize.y));
+  vec2 q = abs(centered) - halfSize + vec2(radius);
+  vec2 outside = max(q, 0.0);
+  float dist = length(outside) + min(max(q.x, q.y), 0.0) - radius;
 
-  // A shallow convex lens bends the whole surface; the bevel adds stronger edge curvature.
-  vec2 radialNormal = normalize(p + vec2(0.0001));
-  vec2 bevelNormal = normalize(vec2(
-    sign(p.x) * max(abs(p.x) - (1.0 - 2.0 * u_radius / u_resolution.x), 0.0),
-    sign(p.y) * max(abs(p.y) - (1.0 - 2.0 * u_radius / u_resolution.y), 0.0)
-  ) + radialNormal * 0.0001);
-  vec2 normal = mix(radialNormal * 0.28, bevelNormal, edge * 0.82);
-  float lens = 0.28 + edge * 0.95;
-  vec2 offset = normal * (u_strength * lens) / u_documentSize;
+  // Surface normal of the rounded rectangle, pointing out through the glass rim.
+  vec2 normal;
+  if (length(outside) > 0.001) {
+    normal = sign(centered) * normalize(outside);
+  } else if (q.x > q.y) {
+    normal = vec2(sign(centered.x), 0.0);
+  } else {
+    normal = vec2(0.0, sign(centered.y));
+  }
+
+  float bevel = max(1.0, u_bevel);
+  float rim = 1.0 - smoothstep(-bevel, 0.0, dist);
+  float interior = 1.0 - smoothstep(0.0, bevel * 2.5, -dist);
+
+  // Mild center magnification plus stronger curved displacement near the rim.
+  vec2 centerDirection = normalize(centered + vec2(0.001));
+  vec2 bend = centerDirection * 0.18 + normal * (0.22 + rim * 0.95);
+  vec2 offset = bend * u_strength / u_documentSize;
 
   vec4 refracted;
   if (u_chromatic > 0.5) {
-    float ca = 0.65 / u_documentSize.x;
-    vec4 red = texture2D(u_backdrop, baseUv + offset + vec2(ca, 0.0));
-    vec4 green = texture2D(u_backdrop, baseUv + offset);
-    vec4 blue = texture2D(u_backdrop, baseUv + offset - vec2(ca, 0.0));
-    refracted = vec4(red.r, green.g, blue.b, 1.0);
+    float ca = 0.45 / u_documentSize.x;
+    float red = texture2D(u_backdrop, baseUv + offset + vec2(ca, 0.0)).r;
+    float green = texture2D(u_backdrop, baseUv + offset).g;
+    float blue = texture2D(u_backdrop, baseUv + offset - vec2(ca, 0.0)).b;
+    refracted = vec4(red, green, blue, 1.0);
   } else {
     refracted = texture2D(u_backdrop, baseUv + offset);
   }
 
-  float rim = smoothstep(-u_bevel * 0.22, 0.0, dist);
   vec3 color = mix(refracted.rgb, u_tint.rgb, u_tint.a);
-  color += vec3(0.10, 0.13, 0.18) * edge * 0.10;
-  color += vec3(1.0) * rim * 0.035;
+  color += vec3(1.0) * rim * 0.055;
+  color += vec3(0.08, 0.12, 0.18) * interior * 0.025;
   gl_FragColor = vec4(color, 1.0);
+}
 }`;
 
 function compileShader(gl: WebGLRenderingContext, type: number, source: string) {
@@ -192,7 +207,7 @@ export function LiquidGlass({
         gl.uniform1f(uniform('u_pixelRatio'), dpr);
         gl.uniform4f(uniform('u_rect'), rect.left + window.scrollX, rect.top + window.scrollY, rect.width, rect.height);
         gl.uniform1f(uniform('u_radius'), Math.min(borderRadius, rect.width / 2, rect.height / 2));
-        gl.uniform1f(uniform('u_bevel'), Math.max(1, bevelWidth) / Math.max(1, Math.min(width, height)));
+        gl.uniform1f(uniform('u_bevel'), Math.max(1, bevelWidth));
         gl.uniform1f(uniform('u_strength'), refractionStrength);
         gl.uniform1f(uniform('u_chromatic'), chromaticAberration ? 1 : 0);
         gl.uniform4f(uniform('u_tint'), tintRgba[0], tintRgba[1], tintRgba[2], tintRgba[3]);

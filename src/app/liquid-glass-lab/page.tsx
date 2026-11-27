@@ -13,7 +13,7 @@ export default function LiquidGlassLabPage() {
 
   return (
     <div className="relative min-h-[180vh] overflow-x-hidden bg-neutral-950 text-white selection:bg-orange-500 selection:text-white">
-      <div aria-hidden="true" className="pointer-events-none fixed inset-0 opacity-85" style={{ backgroundImage: 'radial-gradient(circle at 20% 25%, #ea580c 0%, transparent 45%), radial-gradient(circle at 80% 65%, #2563eb 0%, transparent 50%), repeating-linear-gradient(-30deg,rgba(255,255,255,.06) 0 18px,transparent 18px 42px)' }} />
+      <div aria-hidden="true" className="pointer-events-none fixed inset-0 opacity-85" style={{ backgroundImage: 'radial-gradient(ellipse at 18% 22%, rgba(249, 88, 22, .98) 0%, rgba(180, 55, 18, .42) 30%, transparent 58%), radial-gradient(ellipse at 82% 68%, rgba(37, 99, 235, .95) 0%, rgba(30, 64, 175, .38) 34%, transparent 62%), radial-gradient(ellipse at 52% 48%, rgba(255,255,255,.12) 0%, transparent 48%), linear-gradient(135deg, #09090b 0%, #171717 52%, #09090b 100%)' }} />
       <main className="relative z-10 mx-auto flex max-w-5xl flex-col items-center px-6 pb-40 pt-24">
         <LiquidGlassHeroCard
           badge="Experimental Optical UI"

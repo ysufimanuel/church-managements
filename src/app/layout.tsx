@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import './default-web.css';
 import { Toaster } from 'sonner';
+import GlassCanvas from '@/components/liquid-glass/GlassCanvas';
 
 export const metadata: Metadata = {
   title: { default: 'WKC Church — Church Management System', template: '%s | WKC Church CMS' },
@@ -25,7 +26,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className="dark">
       <body>
-        {children}
+        <GlassCanvas />
+        <div className="relative z-[1]">{children}</div>
         <Toaster richColors position="top-right" />
       </body>
     </html>

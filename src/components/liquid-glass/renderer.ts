@@ -40,6 +40,7 @@ class GlassRenderer {
     window.addEventListener('scroll', this.onScroll, { passive: true, capture: true });
     window.addEventListener('pointermove', this.onPointerMove, { passive: true });
     this.started = true;
+    this.rects.forEach((rect, id) => this.observeRect(id, rect.element));
     this.invalidate();
   }
 
@@ -143,9 +144,7 @@ class GlassRenderer {
 
   register(id: string, element: HTMLElement, params: GlassParams) {
     this.rects.set(id, { id, element, x: 0, y: 0, w: 0, h: 0, radius: params.radius, params });
-    const observer = new ResizeObserver(() => this.syncRect(id));
-    observer.observe(element);
-    this.observers.set(id, observer);
+    this.observeRect(id, element);
     this.syncRect(id);
   }
 
@@ -162,6 +161,13 @@ class GlassRenderer {
     this.observers.delete(id);
     this.rects.delete(id);
     this.invalidate();
+  }
+
+  private observeRect(id: string, element: HTMLElement) {
+    this.observers.get(id)?.disconnect();
+    const observer = new ResizeObserver(() => this.syncRect(id));
+    observer.observe(element);
+    this.observers.set(id, observer);
   }
 
   private syncRect(id: string) {

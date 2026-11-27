@@ -175,16 +175,18 @@ export function LiquidGlass({
       if (capturing || disposed || !root.isConnected) return;
       capturing = true;
       try {
-        const body = document.body;
-        const docWidth = Math.max(body.scrollWidth, document.documentElement.clientWidth);
-        const docHeight = Math.max(body.scrollHeight, document.documentElement.clientHeight);
-        const snapshot = await toCanvas(body, {
+        // Capture only the dedicated visual backdrop. Never snapshot document.body:
+        // doing so feeds foreground cards/text back into their own glass surface.
+        const backdrop = document.querySelector<HTMLElement>('[data-liquid-glass-backdrop="true"]');
+        if (!backdrop) throw new Error('Dedicated glass backdrop is missing');
+        const docWidth = Math.max(1, document.documentElement.clientWidth);
+        const docHeight = Math.max(1, document.documentElement.clientHeight);
+        const snapshot = await toCanvas(backdrop, {
           width: docWidth,
           height: docHeight,
           pixelRatio: 1,
           backgroundColor: '#111111',
           cacheBust: true,
-          filter: (node) => !(node instanceof HTMLElement && node.hasAttribute('data-liquid-glass')),
         });
         if (disposed) return;
 
@@ -205,7 +207,7 @@ export function LiquidGlass({
         gl.uniform2f(uniform('u_resolution'), width, height);
         gl.uniform2f(uniform('u_documentSize'), docWidth, docHeight);
         gl.uniform1f(uniform('u_pixelRatio'), dpr);
-        gl.uniform4f(uniform('u_rect'), rect.left + window.scrollX, rect.top + window.scrollY, rect.width, rect.height);
+        gl.uniform4f(uniform('u_rect'), rect.left, rect.top, rect.width, rect.height);
         gl.uniform1f(uniform('u_radius'), Math.min(borderRadius, rect.width / 2, rect.height / 2));
         gl.uniform1f(uniform('u_bevel'), Math.max(1, bevelWidth));
         gl.uniform1f(uniform('u_strength'), refractionStrength);
@@ -268,9 +270,9 @@ export function LiquidGlass({
         className="pointer-events-none absolute inset-0 z-[1]"
         style={{
           borderRadius,
-          background: 'linear-gradient(145deg, rgba(255,255,255,.16), transparent 28%, transparent 72%, rgba(255,255,255,.055))',
-          border: '1px solid rgba(255,255,255,.28)',
-          boxShadow: 'inset 0 1.5px 2px rgba(255,255,255,.42), inset 0 -2px 5px rgba(0,0,0,.18), 0 18px 38px -10px rgba(0,0,0,.3)',
+          background: 'radial-gradient(ellipse 75% 34% at 18% 0%, rgba(255,255,255,.25), transparent 68%), linear-gradient(145deg, rgba(255,255,255,.19), transparent 25%, transparent 68%, rgba(255,255,255,.10))',
+          border: '1px solid rgba(255,255,255,.38)',
+          boxShadow: 'inset 0 2px 3px rgba(255,255,255,.62), inset 0 -3px 8px rgba(0,0,0,.22), 0 18px 38px -10px rgba(0,0,0,.3)',
         }}
       />
       <div className="relative z-10">{children}</div>

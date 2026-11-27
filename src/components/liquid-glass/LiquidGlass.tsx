@@ -24,6 +24,7 @@ precision highp float;
 uniform sampler2D u_backdrop;
 uniform vec2 u_resolution;
 uniform vec2 u_viewport;
+uniform vec2 u_rectOrigin;
 uniform float u_pixelRatio;
 uniform float u_radius;
 uniform float u_bevel;
@@ -46,9 +47,8 @@ void main() {
   float distanceToEdge = roundedBoxDistance(centered, halfSize, radius);
   if (distanceToEdge > 0.0) discard;
 
-  vec2 screenPx = gl_FragCoord.xy / u_pixelRatio;
-  screenPx.y = u_viewport.y - screenPx.y;
-  vec2 baseUv = vec2(screenPx.x / u_viewport.x, screenPx.y / u_viewport.y);
+  vec2 screenPx = localPx + u_rectOrigin;
+  vec2 baseUv = vec2(screenPx.x / u_viewport.x, 1.0 - screenPx.y / u_viewport.y);
 
   vec2 radial = centered / max(halfSize, vec2(1.0));
   float radialLength = length(radial);
@@ -186,6 +186,7 @@ export function LiquidGlass({
     let capturing = false;
     let disposed = false;
     let pointer = { x: -1, y: -1 };
+    let hasFrame = false;
 
     const draw = async () => {
       if (capturing || disposed || !root.isConnected) return;
@@ -222,6 +223,7 @@ export function LiquidGlass({
 
         gl.uniform2f(getUniform('u_resolution'), width, height);
         gl.uniform2f(getUniform('u_viewport'), viewportWidth, viewportHeight);
+        gl.uniform2f(getUniform('u_rectOrigin'), rect.left, rect.top);
         gl.uniform1f(getUniform('u_pixelRatio'), dpr);
         gl.uniform1f(getUniform('u_radius'), Math.min(borderRadius, rect.width / 2, rect.height / 2));
         gl.uniform1f(getUniform('u_bevel'), Math.max(1, bevelWidth));
@@ -230,6 +232,7 @@ export function LiquidGlass({
         gl.uniform4f(getUniform('u_tint'), tintRgba[0], tintRgba[1], tintRgba[2], tintRgba[3]);
         gl.uniform2f(getUniform('u_pointer'), pointer.x, pointer.y);
         gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+        hasFrame = true;
         setWebglReady(true);
       } catch (error) {
         console.error('LiquidGlass backdrop capture failed:', error);
@@ -246,11 +249,19 @@ export function LiquidGlass({
     const onPointerMove = (event: PointerEvent) => {
       const rect = root.getBoundingClientRect();
       pointer = { x: event.clientX - rect.left, y: event.clientY - rect.top };
-      scheduleCapture();
+      if (hasFrame) {
+        gl.useProgram(program);
+        gl.uniform2f(getUniform('u_pointer'), pointer.x, pointer.y);
+        gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+      }
     };
     const onPointerLeave = () => {
       pointer = { x: -1, y: -1 };
-      scheduleCapture();
+      if (hasFrame) {
+        gl.useProgram(program);
+        gl.uniform2f(getUniform('u_pointer'), -1, -1);
+        gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+      }
     };
 
     const observer = new ResizeObserver(scheduleCapture);

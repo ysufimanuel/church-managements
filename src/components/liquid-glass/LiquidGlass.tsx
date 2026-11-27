@@ -190,7 +190,7 @@ export function LiquidGlass({
         gl.uniform2f(uniform('u_documentSize'), docWidth, docHeight);
         gl.uniform4f(uniform('u_rect'), rect.left + window.scrollX, rect.top + window.scrollY, rect.width, rect.height);
         gl.uniform1f(uniform('u_radius'), Math.min(borderRadius, rect.width / 2, rect.height / 2));
-        gl.uniform1f(uniform('u_bevel'), Math.max(1, bevelWidth));
+        gl.uniform1f(uniform('u_bevel'), Math.max(1, bevelWidth) / Math.max(1, Math.min(width, height)));
         gl.uniform1f(uniform('u_strength'), refractionStrength);
         gl.uniform1f(uniform('u_chromatic'), chromaticAberration ? 1 : 0);
         gl.uniform4f(uniform('u_tint'), tintRgba[0], tintRgba[1], tintRgba[2], tintRgba[3]);

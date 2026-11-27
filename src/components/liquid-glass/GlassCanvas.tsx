@@ -25,7 +25,7 @@ export default function GlassCanvas({ backdrop, className = '' }: GlassCanvasPro
         ref={ref}
         aria-hidden="true"
         className={className}
-        style={{ position: 'fixed', inset: 0, width: '100%', height: '100%', zIndex: 20, pointerEvents: 'none' }}
+        style={{ position: 'fixed', inset: 0, width: '100%', height: '100%', zIndex: 0, pointerEvents: 'none' }}
       />
       <style jsx global>{`
         .no-webgl [data-liquid-glass] {

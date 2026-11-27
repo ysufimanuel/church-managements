@@ -24,6 +24,7 @@ precision highp float;
 uniform sampler2D u_backdrop;
 uniform vec2 u_resolution;
 uniform vec2 u_documentSize;
+uniform float u_pixelRatio;
 uniform vec4 u_rect;
 uniform float u_radius;
 uniform float u_bevel;
@@ -39,7 +40,7 @@ float roundedBox(vec2 p, vec2 halfSize, float radius) {
 
 void main() {
   vec2 localPx = gl_FragCoord.xy;
-  vec2 cssTop = vec2(localPx.x, u_resolution.y - localPx.y);
+  vec2 cssTop = vec2(localPx.x, u_resolution.y - localPx.y) / u_pixelRatio;
   vec2 docPx = u_rect.xy + cssTop;
   vec2 baseUv = vec2(docPx.x / u_documentSize.x, 1.0 - docPx.y / u_documentSize.y);
 
@@ -188,6 +189,7 @@ export function LiquidGlass({
 
         gl.uniform2f(uniform('u_resolution'), width, height);
         gl.uniform2f(uniform('u_documentSize'), docWidth, docHeight);
+        gl.uniform1f(uniform('u_pixelRatio'), dpr);
         gl.uniform4f(uniform('u_rect'), rect.left + window.scrollX, rect.top + window.scrollY, rect.width, rect.height);
         gl.uniform1f(uniform('u_radius'), Math.min(borderRadius, rect.width / 2, rect.height / 2));
         gl.uniform1f(uniform('u_bevel'), Math.max(1, bevelWidth) / Math.max(1, Math.min(width, height)));

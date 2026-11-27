@@ -52,7 +52,7 @@ void main() {
     sdRoundRect(centered + vec2(eps, 0.0), halfSize, radius) - sdRoundRect(centered - vec2(eps, 0.0), halfSize, radius),
     sdRoundRect(centered + vec2(0.0, eps), halfSize, radius) - sdRoundRect(centered - vec2(0.0, eps), halfSize, radius)
   ) / (2.0 * eps);
-  float edge = 1.0 - smoothstep(-u_bevel, 0.0, d);
+  float edge = smoothstep(-u_bevel, 0.0, d);
   float bevelProfile = sin(edge * 1.5707963);
   vec3 normal = normalize(vec3(-grad * bevelProfile * 1.25, 1.0));
   vec3 incident = vec3(0.0, 0.0, -1.0);

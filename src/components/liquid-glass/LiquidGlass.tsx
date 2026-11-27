@@ -21,6 +21,11 @@ export function LiquidGlass({
   preset = 'liquid',
   radius,
   borderRadius,
+  bevelWidth: _bevelWidth,
+  refractionStrength: _refractionStrength,
+  tintColor: _tintColor,
+  chromaticAberration: _chromaticAberration,
+  track: _track,
   style,
   ...props
 }: Props) {
@@ -35,7 +40,7 @@ export function LiquidGlass({
       style={{
         ...style,
         position: 'relative',
-        zIndex: 30,
+        zIndex: 10,
         borderRadius: glassRadius,
         background: 'transparent',
       }}

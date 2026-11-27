@@ -13,7 +13,11 @@ export default function LiquidGlassLabPage() {
 
   return (
     <div className="relative min-h-[180vh] overflow-x-hidden bg-neutral-950 text-white selection:bg-orange-500 selection:text-white">
-      <div data-liquid-glass-backdrop="true" aria-hidden="true" className="pointer-events-none fixed inset-0 opacity-85" style={{ backgroundImage: 'radial-gradient(ellipse at 18% 22%, rgba(249, 88, 22, .98) 0%, rgba(180, 55, 18, .42) 30%, transparent 58%), radial-gradient(ellipse at 82% 68%, rgba(37, 99, 235, .95) 0%, rgba(30, 64, 175, .38) 34%, transparent 62%), radial-gradient(ellipse at 52% 48%, rgba(255,255,255,.12) 0%, transparent 48%), linear-gradient(135deg, #09090b 0%, #171717 52%, #09090b 100%)' }} />
+      <div data-liquid-glass-backdrop="true" aria-hidden="true" className="pointer-events-none fixed inset-0 overflow-hidden opacity-95" style={{ backgroundImage: 'radial-gradient(ellipse at 18% 22%, rgba(249, 88, 22, .98) 0%, rgba(180, 55, 18, .42) 30%, transparent 58%), radial-gradient(ellipse at 82% 68%, rgba(37, 99, 235, .95) 0%, rgba(30, 64, 175, .38) 34%, transparent 62%), radial-gradient(ellipse at 52% 48%, rgba(255,255,255,.12) 0%, transparent 48%), linear-gradient(135deg, #09090b 0%, #171717 52%, #09090b 100%)' }}>
+        <div className="absolute left-[8%] top-[14%] h-64 w-64 rounded-full border border-white/35 bg-gradient-to-br from-orange-200/70 via-rose-500/30 to-transparent shadow-[0_0_90px_rgba(249,88,22,.28)]" />
+        <div className="absolute right-[9%] top-[38%] h-80 w-80 rounded-full border border-sky-100/30 bg-gradient-to-br from-cyan-200/55 via-blue-500/35 to-transparent shadow-[0_0_100px_rgba(37,99,235,.3)]" />
+        <div className="absolute bottom-[-10%] left-[38%] h-56 w-[42rem] -rotate-12 rounded-[50%] border border-white/20 bg-gradient-to-r from-transparent via-white/15 to-transparent" />
+      </div>
       <main className="relative z-10 mx-auto flex max-w-5xl flex-col items-center px-6 pb-40 pt-24">
         <LiquidGlassHeroCard
           badge="Experimental Optical UI"

@@ -53,7 +53,7 @@ class GlassRenderer {
   }
 
   private scanGlassSurfaces() {
-    const selector = '.glass, .glass-strong, .glass-subtle, .glass-nav, .btn-fx, [data-liquid-glass]';
+    const selector = '[data-liquid-glass]';
     const elements = Array.from(document.querySelectorAll<HTMLElement>(selector));
     this.rects.forEach((rect, id) => {
       if (!rect.element.isConnected) this.unregister(id);
